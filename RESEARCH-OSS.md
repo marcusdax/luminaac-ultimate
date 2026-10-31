@@ -1,0 +1,136 @@
+# Open-source research for LuminAAC
+
+Researched 31 Oct 2026 with the GitHub API. Stars and last-push dates come from `gh api` on that day.
+
+**How we picked.** LuminAAC ships as plain HTML, CSS and JS with no build step. So we favoured:
+- permissive licences (MIT, Apache-2.0, BSD)
+- a single file we can vendor
+- active maintenance
+
+⚠️ marks copyleft licences (GPL/AGPL/MPL/CC BY-SA). We study those projects but don't copy their code.
+
+## Top 10 to adopt now
+
+| # | Project | Stars | Last push | Licence | How it helps LuminAAC | Status |
+|---|---|---|---|---|---|---|
+| 1 | [Leaflet/Leaflet](https://github.com/Leaflet/Leaflet) | 45.8k | 2026-10-31 | BSD-2 | Safe-zone map: tap to place a circle, see zones. 40 KB gzipped, no build. | **Adopted** (`vendor/leaflet`, 1.9.4) |
+| 2 | [hfg-gmuend/openmoji](https://github.com/hfg-gmuend/openmoji) | 4.6k | 2026-08 | CC BY-SA 4.0 (graphics) ⚠️ share-alike for the pictures only | One drawn style for every tile. Fixes the ARASAAC 404s and works offline. | **Adopted** (126 SVGs in `vendor/openmoji`, credited) |
+| 3 | [kazuhikoarase/qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) | 2.4k | 2026-02 | MIT | Pairing QR as crisp inline SVG, one file. | **Adopted** (`vendor/qrcode.js`, 1.4.4) |
+| 4 | [cozmo/jsQR](https://github.com/cozmo/jsQR) | 4.0k | 2026-05 | Apache-2.0 | Scan the pairing QR in My Voice, even where `BarcodeDetector` isn't available. Loaded only when the camera is used. | **Adopted** (`vendor/jsQR.js`, 1.4.0) |
+| 5 | [motiondivision/motion](https://github.com/motiondivision/motion) | 34.7k | 2026-10-31 | MIT | Restrained motion in three places only: an alert arriving, a confirm "pop", a card fade. Skipped when reduced motion is on. | **Adopted** (`vendor/motion.js`, 11.18.2, used via `motion-lite.js`) |
+| 6 | [huggingface/transformers.js](https://github.com/huggingface/transformers.js) | 16.4k | 2026-10-30 | Apache-2.0 | On-device speech-emotion and Whisper models, plus Kokoro TTS in the browser. The next step for emotion AI and "My Voice" voices. | Recommended next (CDN ES module, opt-in download) |
+| 7 | [vladmandic/human](https://github.com/vladmandic/human) | 3.4k | 2025-12 | MIT | Face-expression estimate on video moments, fully in the browser. | **Adopted, optional**: loaded from jsDelivr only if the caregiver turns it on; falls back to voice only |
+| 8 | [MasterKale/SimpleWebAuthn](https://github.com/MasterKale/SimpleWebAuthn) | 2.4k | active | MIT | Reference for passkey edge cases. We wrote a zero-dependency verifier (`backend/webauthn.js`) to its spec. Switch to this if attestation formats beyond "none" are needed. | Studied; swap-in path documented |
+| 9 | [dequelabs/axe-core](https://github.com/dequelabs/axe-core) | 7.7k | 2026-10-29 | MPL-2.0 ⚠️ (file-level copyleft; fine as an unmodified dev tool) | Automated WCAG checks in the Playwright suite. | Recommended (dev-only, not shipped) |
+| 10 | [flwrlabs/flower](https://github.com/flwrlabs/flower) | 7.2k | active | Apache-2.0 | Production federated-learning server: secure aggregation with dropout recovery, plus strategies. Our FedAvg endpoint matches its protocol shape, so we can migrate later. | Recommended for scale |
+
+Honourable mentions:
+- **a11y-dialog** (MIT, 2.5k, pushed today). We use native `<dialog>`, which now covers this.
+- **anime.js** (MIT, 74k). An alternative to Motion.
+- **Turf** (MIT, 10.5k). Use it for polygon zones later.
+- **PeerJS** (MIT, 13.5k). Use it for direct device-to-device sync with no server.
+
+## Everything we looked at, by area
+
+### AAC apps (learn from them, don't copy)
+| Project | Stars | Last push | Licence | What we take from it |
+|---|---|---|---|---|
+| [cboard-org/cboard](https://github.com/cboard-org/cboard) | 766 | 2026-10-30 | **GPL-3.0** ⚠️ | Board/OBF data model, Global Symbols integration, scanning UX. Ideas only. |
+| [asterics/AsTeRICS-Grid](https://github.com/asterics/AsTeRICS-Grid) | 129 | 2026-10-27 | **AGPL-3.0** ⚠️ | Offline-first sync (PouchDB) and input methods (scanning, head tracking). Ideas only, because AGPL network clauses would bind our server. |
+| [RonanOD/OpenAAC](https://github.com/RonanOD/OpenAAC) | 34 | 2024-11 | Apache-2.0 | Small Flutter AAC app. Stale, so low value. |
+| [open-aac/openaac.org](https://github.com/open-aac/openaac.org) | 8 | 2026-10 | MIT | The Open Board Format (OBF) spec site. Target for import/export. |
+| CoughDrop / Otto | — | — | (historically AGPL-3.0 ⚠️) | The main repo is no longer public under CoughDrop/coughdrop. Only [CoughDrop/extra-tts](https://github.com/CoughDrop/extra-tts) (MIT, 2025-09) and an old fork (AGPL, 2016) remain. |
+
+### Symbols
+| Project | Stars | Last push | Licence | Notes |
+|---|---|---|---|---|
+| ARASAAC ([juanda99/arasaac-frontend](https://github.com/juanda99/arasaac-frontend), [agfaya/arasaac-api](https://github.com/agfaya/arasaac-api)) | 16 / 5 | 2026-10 / 2026-03 | MIT code. Pictograms are **CC BY-NC-SA** ⚠️ (non-commercial) | Already used online. The NC licence matters for a paid tier, so OpenMoji is the safe default. |
+| [mulberrysymbols/mulberry-symbols](https://github.com/mulberrysymbols/mulberry-symbols) | 62 | 2026-10-27 | CC BY-SA 2.0 UK ⚠️ | 3,400 adult-friendly AAC symbols. Good next pack for older users. |
+| [hfg-gmuend/openmoji](https://github.com/hfg-gmuend/openmoji) | 4,575 | 2026-08 | CC BY-SA 4.0 ⚠️ | **Adopted** as the fallback. |
+| [jdecked/twemoji](https://github.com/jdecked/twemoji) | 1,903 | 2026-06 | MIT code, CC BY 4.0 graphics | No share-alike, so the cleanest licence if CC BY-SA is a concern. A drop-in swap in `setMoji()`. |
+| Global Symbols (globalsymbols.com) | — | — | per-set | Has an API, but no public GitHub repo for the service. Cboard shows how to integrate it. |
+
+### Text to speech
+| Project | Stars | Last push | Licence | Notes |
+|---|---|---|---|---|
+| [rhasspy/piper](https://github.com/rhasspy/piper) | 11.3k | archived | MIT | Archived. Development moved to **[OHF-Voice/piper1-gpl](https://github.com/OHF-Voice/piper1-gpl)** (6.1k, **GPL-3.0** ⚠️). Use the voices through a WASM build such as piper-tts-web, not the GPL code. |
+| [coqui-ai/TTS](https://github.com/coqui-ai/TTS) | 46.2k | 2024-08 | MPL-2.0 ⚠️ | Stale since the company closed. XTTS model licence is non-commercial ⚠️. |
+| [hexgrad/kokoro](https://github.com/hexgrad/kokoro) | 9.8k | 2025-08 | Apache-2.0 | Best small open voice model. Runs in the browser via kokoro-js on transformers.js. |
+| [met4citizen/HeadTTS](https://github.com/met4citizen/HeadTTS) | 183 | 2026-10-24 | MIT | Kokoro in the browser with word timestamps and visemes. Useful for word highlighting in stories. |
+| [rhulha/StreamingKokoroJS](https://github.com/rhulha/StreamingKokoroJS) | 374 | 2025-06 | Apache-2.0 | Streaming Kokoro in a web worker. |
+
+### Accessible UI
+| Project | Stars | Licence | Notes |
+|---|---|---|---|
+| [radix-ui/primitives](https://github.com/radix-ui/primitives) | 19.5k | MIT | React only. Reference for focus management. |
+| [adobe/react-spectrum](https://github.com/adobe/react-spectrum) (React Aria) | 16.0k | Apache-2.0 | React only. Best-in-class keyboard and screen-reader patterns to copy by hand. |
+| [KittyGiraudel/a11y-dialog](https://github.com/KittyGiraudel/a11y-dialog) | 2.5k | MIT | Vanilla. Not needed with native `<dialog>`. |
+| [alphagov/accessible-autocomplete](https://github.com/alphagov/accessible-autocomplete) | 961 | MIT | Vanilla. Candidate for word search in Vocabulary. |
+| [dequelabs/axe-core](https://github.com/dequelabs/axe-core) | 7.7k | MPL-2.0 ⚠️ | Testing. |
+
+### Motion
+| Project | Stars | Last push | Licence | Notes |
+|---|---|---|---|---|
+| [motiondivision/motion](https://github.com/motiondivision/motion) | 34.7k | 2026-10-31 | MIT | **Adopted**. |
+| [juliangarnier/anime](https://github.com/juliangarnier/anime) | 74.1k | 2026-08 | MIT | Alternative. |
+| [airbnb/lottie-web](https://github.com/airbnb/lottie-web) | 32.3k | 2025-09 | MIT | For a designed celebration animation later. Heavy (250 KB). |
+| [LottieFiles/dotlottie-web](https://github.com/LottieFiles/dotlottie-web) | 932 | active | MIT | Lighter Lottie player (WASM). |
+| [rive-app/rive-wasm](https://github.com/rive-app/rive-wasm) | 1.0k | active | MIT | Interactive mascot for "Lumi". Needs Rive-authored files. |
+
+### On-device ML and emotion
+| Project | Stars | Last push | Licence | Notes |
+|---|---|---|---|---|
+| [tensorflow/tfjs](https://github.com/tensorflow/tfjs) | 19.2k | 2026-06 | Apache-2.0 | General ML. Overkill for our 17-weight model. |
+| [google-ai-edge/mediapipe](https://github.com/google-ai-edge/mediapipe) | 37.5k | active | Apache-2.0 | Face landmarker with blendshapes. Another face-expression route (WASM from CDN). |
+| [microsoft/onnxruntime](https://github.com/microsoft/onnxruntime) (onnxruntime-web) | 22.2k | active | MIT | Runs exported speech-emotion models (for example wav2vec2-SER). |
+| [huggingface/transformers.js](https://github.com/huggingface/transformers.js) | 16.4k | 2026-10-30 | Apache-2.0 | See the top 10. |
+| [vladmandic/human](https://github.com/vladmandic/human) | 3.4k | 2025-12 | MIT | **Adopted (optional)**. |
+| [vladmandic/face-api](https://github.com/vladmandic/face-api) | 1.1k | archived | MIT | Superseded by Human. |
+| [justadudewhohacks/face-api.js](https://github.com/justadudewhohacks/face-api.js) | 18.0k | 2024-01 | MIT | Stale. |
+| [meyda/meyda](https://github.com/meyda/meyda) | 1.7k | 2024-07 | MIT | Audio features (MFCC, spectral). Good if prosody needs more than our hand-written features. |
+| [cwilso/PitchDetect](https://github.com/cwilso/PitchDetect) | 1.4k | old | MIT | The autocorrelation approach our `emotion.js` follows. |
+| [peterkhayes/pitchfinder](https://github.com/peterkhayes/pitchfinder) | 504 | old | none listed ⚠️ | Has no licence, so we can't use it. |
+| [audeering/opensmile](https://github.com/audeering/opensmile) | 855 | active | Custom, non-commercial ⚠️ | The research standard for prosody (eGeMAPS), but not usable commercially. |
+
+### Geofencing
+| Project | Stars | Licence | Notes |
+|---|---|---|---|
+| [Leaflet/Leaflet](https://github.com/Leaflet/Leaflet) | 45.8k | BSD-2 | **Adopted**. OSM tiles follow the OSMF tile policy. Self-host tiles for production. |
+| [manuelbieh/geolib](https://github.com/manuelbieh/geolib) | 4.3k | MIT | We need only haversine, so we wrote 10 lines (`geo.js`). |
+| [Turfjs/turf](https://github.com/Turfjs/turf) | 10.5k | MIT | Point-in-polygon for drawn zones later. |
+| Geofence demo repos | <150 | mostly unlicensed | Google-Maps-bound. Nothing reusable. |
+
+### Pairing, QR and WebRTC
+| Project | Stars | Licence | Notes |
+|---|---|---|---|
+| [kazuhikoarase/qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) | 2.4k | MIT | **Adopted**. |
+| [soldair/node-qrcode](https://github.com/soldair/node-qrcode) | 8.2k | MIT | Needs a bundle. Not needed. |
+| [cozmo/jsQR](https://github.com/cozmo/jsQR) | 4.0k | Apache-2.0 | **Adopted**. |
+| [mebjas/html5-qrcode](https://github.com/mebjas/html5-qrcode) | 6.2k | Apache-2.0 | Full scanner UI. Heavier than we need. |
+| [nimiq/qr-scanner](https://github.com/nimiq/qr-scanner) | 2.9k | MIT | Faster worker-based scanner. Alternative to jsQR. |
+| [peers/peerjs](https://github.com/peers/peerjs) | 13.5k | MIT | Serverless device-to-device sync after pairing (future). |
+| [feross/simple-peer](https://github.com/feross/simple-peer) | 7.8k | MIT | Same, with a lower-level API. |
+
+### Accounts and passkeys
+| Project | Stars | Licence | Notes |
+|---|---|---|---|
+| [better-auth/better-auth](https://github.com/better-auth/better-auth) | 30.5k | MIT | Best full framework if the backend moves to a framework and database. |
+| [lucia-auth/lucia](https://github.com/lucia-auth/lucia) | 10.5k | MIT | Now a learning resource, not a library. Our session design follows it: random token, SHA-256 at rest, sliding expiry. |
+| [MasterKale/SimpleWebAuthn](https://github.com/MasterKale/SimpleWebAuthn) | 2.4k | MIT | See the top 10. |
+| [passwordless-id/webauthn](https://github.com/passwordless-id/webauthn) | 616 | MIT | Small, zero-dependency alternative. |
+| [github/webauthn-json](https://github.com/github/webauthn-json) | 786 | MIT, archived | Superseded by `PublicKeyCredential.parseCreationOptionsFromJSON`. |
+
+### Federated learning
+| Project | Stars | Licence | Notes |
+|---|---|---|---|
+| [flwrlabs/flower](https://github.com/flwrlabs/flower) | 7.2k | Apache-2.0 | See the top 10. SecAgg+ handles dropouts. |
+| [google-parfait/tensorflow-federated](https://github.com/google-parfait/tensorflow-federated) | 2.5k | Apache-2.0 | Research simulation. Python only. |
+| [FedML-AI/FedML](https://github.com/FedML-AI/FedML) | 4.1k | Apache-2.0 | Last push 2025-10, slowing. Platform-oriented. |
+| [OpenMined/PySyft](https://github.com/OpenMined/PySyft) | 10.0k | Apache-2.0 | Remote data science. Not a fit for on-device AAC. |
+
+## Licence flags (don't vendor these)
+- **GPL-3.0:** Cboard, piper1-gpl.
+- **AGPL-3.0:** AsTeRICS Grid, old CoughDrop.
+- **Non-commercial:** ARASAAC pictograms (CC BY-NC-SA), openSMILE, Coqui XTTS weights.
+- **No licence:** pitchfinder.
+- **Share-alike:** OpenMoji and Mulberry graphics (CC BY-SA). Fine for pictures we ship with credit. Changes to the SVGs must stay CC BY-SA.

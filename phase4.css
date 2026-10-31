@@ -1,0 +1,12 @@
+/* Phase 4: model downloads, face check, email verification, voice preview. */
+.model-box { display: grid; gap: .6rem; margin-top: .8rem; padding: .9rem 1rem; border-radius: 14px; background: var(--paper-2, #f6efe3); }
+.model-box progress, .voice-extra progress { width: 100%; height: 12px; accent-color: var(--sky-deep, #2f6f9f); }
+.face-try { display: grid; gap: .5rem; }
+.face-try video { width: min(320px, 100%); aspect-ratio: 4 / 3; border-radius: 12px; background: #22313d; object-fit: cover; transform: scaleX(-1); }
+.verify-note { padding: .6rem .8rem; border-radius: 12px; background: #fff6e0; border: 1px solid #f2d48a; }
+.voice-extra { display: grid; gap: .4rem; margin: .2rem 0 .6rem; }
+#formForgot h3 { margin: 0; }
+dialog#dlgReset { border: 0; border-radius: 18px; padding: 1.4rem; max-width: min(440px, 92vw); box-shadow: 0 20px 50px rgb(34 49 61 / .25); }
+dialog#dlgReset::backdrop { background: rgb(34 49 61 / .45); }
+@media (prefers-reduced-motion: reduce) { .model-box progress { transition: none; } }
+.model-box progress[hidden], .voice-extra progress[hidden] { display: none; }

@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>The Bridge · LuminAAC</title>
+  <meta name="description" content="The Bridge: capture magic moments, say what they meant, and help LuminAAC learn your child's own language." />
+  <meta name="theme-color" content="#22313d" />
+  <link rel="manifest" href="bridge.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="tokens.css" />
+  <link rel="stylesheet" href="brand/brand-tokens.css" />
+  <link rel="stylesheet" href="bridge.css" />
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+  <link rel="stylesheet" href="phase3.css" />
+  <link rel="stylesheet" href="phase4.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <a class="logo" href="index.html" aria-label="LuminAAC, back to My Voice">
+      <img src="brand/logo-mark.svg" alt="" width="40" height="40" />
+      <span class="logo-word">The Bridge</span>
+    </a>
+    <p class="who" id="who"></p>
+    <button class="pill-link" type="button" data-install hidden>Install app</button>
+    <a class="pill-link" href="guide.html" id="helpLink">Help and guide</a>
+    <a class="pill-link" href="index.html">Open My Voice</a>
+  </header>
+
+  <div class="layout">
+    <nav class="tabs" aria-label="Bridge sections">
+      <button type="button" class="tab" data-tab="today" aria-current="page">Today</button>
+      <button type="button" class="tab" data-tab="signals">Signals</button>
+      <button type="button" class="tab" data-tab="vocab">Vocabulary</button>
+      <button type="button" class="tab" data-tab="routines">Stories</button>
+      <button type="button" class="tab" data-tab="insights">Insights</button>
+      <button type="button" class="tab" data-tab="team">Team</button>
+      <button type="button" class="tab" data-tab="safety">Safety</button>
+      <button type="button" class="tab" data-tab="account">Account and devices</button>
+      <button type="button" class="tab" data-tab="privacy">Privacy</button>
+      <a class="tab tab-link" href="guide.html">Caretaker guide</a>
+    </nav>
+
+    <main id="main" tabindex="-1">
+      <div class="alert-bar" id="alertBar" role="alert" hidden></div>
+      <!-- TODAY: capture + timeline + annotation -->
+      <section class="panel" id="tab-today" aria-labelledby="h-today">
+        <h1 id="h-today">Today with <span class="child-name">your child</span></h1>
+        <div class="capture-card">
+          <div class="capture-main">
+            <video id="preview" muted playsinline aria-label="Live camera preview" hidden></video>
+            <div class="listen" id="listenViz" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div>
+              <h2>Catch a magic moment</h2>
+              <p class="soft" id="captureStatus">Start listening and LuminAAC keeps only the last <b id="bufSecs">15</b> seconds, on this device. When something meaningful happens, tap once to keep it.</p>
+            </div>
+          </div>
+          <div class="capture-actions">
+            <fieldset class="seg" aria-label="What to capture">
+              <label><input type="radio" name="cmode" value="audio" checked /> Sound</label>
+              <label><input type="radio" name="cmode" value="video" /> Sound and video</label>
+            </fieldset>
+            <button type="button" class="btn quiet" id="btnListen">Start listening</button>
+            <button type="button" class="btn moment" id="btnCapture" disabled>
+              <span class="moment-dot" aria-hidden="true"></span> Keep that moment
+            </button>
+            <button type="button" class="btn quiet" id="btnDemo">Add a practice moment</button>
+          </div>
+        </div>
+
+        <div class="split">
+          <section class="card" aria-labelledby="h-timeline">
+            <div class="card-head">
+              <h2 id="h-timeline">Day viewer</h2>
+              <label class="inline">Day <input type="date" id="dayPick" /></label>
+            </div>
+            <div class="timeline" id="timeline" role="list" aria-label="Moments, AAC taps, and detected events on this day"></div>
+            <ul class="tl-key" aria-label="Timeline key">
+              <li><i class="k-moment"></i>Captured moment</li>
+              <li><i class="k-aac"></i>Word spoken on My Voice</li>
+              <li><i class="k-flag"></i>Pattern noticed</li>
+            </ul>
+          </section>
+
+          <section class="card" aria-labelledby="h-ask">
+            <h2 id="h-ask">LuminAAC is wondering</h2>
+            <ul class="questions" id="questions"></ul>
+          </section>
+        </div>
+
+        <section class="card" aria-labelledby="h-moments">
+          <div class="card-head"><h2 id="h-moments">Moments to explain</h2><span class="count" id="todoCount"></span></div>
+          <ul class="moments" id="moments"></ul>
+        </section>
+      </section>
+
+      <!-- SIGNALS -->
+      <section class="panel" id="tab-signals" aria-labelledby="h-signals" hidden>
+        <h1 id="h-signals">Signal library</h1>
+        <p class="lede">Each signal is something your child does that means something. The more you confirm it, the sooner My Voice offers it.</p>
+        <ul class="signals" id="signals"></ul>
+      </section>
+
+      <!-- VOCAB -->
+      <section class="panel" id="tab-vocab" aria-labelledby="h-vocab" hidden>
+        <h1 id="h-vocab">Vocabulary manager</h1>
+        <div class="split">
+          <section class="card" aria-labelledby="h-addbtn">
+            <h2 id="h-addbtn">Add a button to My things</h2>
+            <form id="formPersonal" class="form">
+              <label>What it says <input name="label" required maxlength="60" placeholder="Uncle John's silly dance" /></label>
+              <label>Picture (an emoji works) <input name="e" maxlength="4" placeholder="🕺" /></label>
+              <label>Plays a moment (optional)
+                <select name="momentId" id="momentPick"><option value="">Just speak the words</option></select>
+              </label>
+              <button class="btn" type="submit">Add button</button>
+            </form>
+            <ul class="mini-list" id="personalList"></ul>
+          </section>
+          <section class="card" aria-labelledby="h-rules">
+            <h2 id="h-rules">When pages show up first</h2>
+            <form id="formRule" class="form">
+              <label>Page name <input name="page" required placeholder="School" /></label>
+              <div class="row">
+                <label>From <input name="from" type="number" min="0" max="23" value="8" /></label>
+                <label>Until <input name="to" type="number" min="1" max="24" value="15" /></label>
+              </div>
+              <fieldset class="days"><legend>Days</legend></fieldset>
+              <button class="btn" type="submit">Save rule</button>
+            </form>
+            <ul class="mini-list" id="ruleList"></ul>
+          </section>
+        </div>
+        <section class="card" aria-labelledby="h-access">
+          <h2 id="h-access">How My Voice responds</h2>
+          <form id="formAccess" class="form access-form">
+            <label>Layout
+              <select name="mode">
+                <option value="standard">Standard</option>
+                <option value="playful">Playful (bigger pictures, rounder buttons)</option>
+                <option value="large">Large and clear (bigger text, fewer extras)</option>
+                <option value="focus">Focus (just the board and suggestions)</option>
+              </select></label>
+            <label>Button size <span class="soft" id="sizeOut"></span><input type="range" name="size" min="80" max="160" step="10" /></label>
+            <label>Select by resting the pointer (dwell)
+              <select name="dwell"><option value="0">Off</option><option value="800">0.8 seconds</option><option value="1200">1.2 seconds</option><option value="2000">2 seconds</option></select></label>
+            <label class="check"><input type="checkbox" name="scan" /> Switch scanning (highlight moves on its own; Space or Enter picks)</label>
+            <label>Scanning speed
+              <select name="scanMs"><option value="1000">Fast (1 second)</option><option value="1500">Medium (1.5 seconds)</option><option value="2500">Slow (2.5 seconds)</option></select></label>
+            <label class="check"><input type="checkbox" name="safety" /> Show "I need help" and "Take me home" buttons</label>
+          </form>
+        </section>
+        <section class="card" aria-labelledby="h-explore">
+          <h2 id="h-explore">What they explored quietly</h2>
+          <p class="soft">Taps made in Explore quietly mode. Words that come up again and again may be new interests.</p>
+          <div id="exploreList" class="explore"></div>
+        </section>
+      </section>
+
+      <!-- STORIES & PRACTICE (LunaScript) -->
+      <section class="panel" id="tab-routines" aria-labelledby="h-routines" hidden>
+        <h1 id="h-routines">Stories, routines and practice</h1>
+        <p class="soft lead">Short picture stories prepare <span class="child-name">your child</span> for new things. Routines show "first, then". Sound practice offers a calm, low-pressure way to try sounds, with a reward you choose.</p>
+        <div class="split">
+          <section class="card" aria-labelledby="h-story">
+            <h2 id="h-story">Write a story or routine</h2>
+            <form id="formStory" class="form">
+              <label>Title <input name="title" required maxlength="60" placeholder="Haircut day" /></label>
+              <fieldset class="seg"><legend class="sr-only">Kind</legend>
+                <label><input type="radio" name="kind" value="story" checked /> Story</label>
+                <label><input type="radio" name="kind" value="routine" /> Routine (first, then)</label>
+              </fieldset>
+              <label>Steps, one per line. Start a line with an emoji for its picture.
+                <textarea name="steps" rows="5" required placeholder="💈 We go to the barber.&#10;🪑 I sit in the chair.&#10;✂️ The scissors make a snip sound.&#10;🍦 Then we get ice cream."></textarea></label>
+              <button class="btn" type="submit">Save to My Voice</button>
+            </form>
+            <ul class="mini-list" id="storyList"></ul>
+          </section>
+          <section class="card" aria-labelledby="h-practice">
+            <h2 id="h-practice">Sound practice</h2>
+            <form id="formPractice" class="form">
+              <div class="row">
+                <label>Sound <input name="sound" required maxlength="4" placeholder="p" /></label>
+                <label>Word <input name="word" required maxlength="20" placeholder="pop" /></label>
+                <label>Picture <input name="e" maxlength="4" placeholder="🎈" /></label>
+              </div>
+              <button class="btn" type="submit">Add sound</button>
+            </form>
+            <label class="reward-pick">Reward after a try
+              <select id="rewardPick"><option value="stars">Three stars</option><option value="bubbles">Bubbles</option><option value="quiet">A quiet tick (least stimulating)</option></select></label>
+            <ul class="mini-list practice-list" id="practiceList"></ul>
+            <p class="soft">LuminAAC doesn't grade speech. It counts the tries your child marks, so you and your therapist can see what they're working on.</p>
+          </section>
+        </div>
+      </section>
+
+      <!-- INSIGHTS -->
+      <section class="panel" id="tab-insights" aria-labelledby="h-insights" hidden>
+        <h1 id="h-insights">How the conversation is growing</h1>
+        <div class="stats" id="stats"></div>
+        <div class="split">
+          <section class="card" aria-labelledby="h-trend"><h2 id="h-trend">Moments explained, last 14 days</h2><div id="trend"></div></section>
+          <section class="card" aria-labelledby="h-map"><h2 id="h-map">Personality map</h2><div id="pmap"></div></section>
+        </div>
+        <div class="split">
+          <section class="card" aria-labelledby="h-pod"><h2 id="h-pod">When the conversation happens</h2><div id="podChart"></div></section>
+          <section class="card" aria-labelledby="h-sugg"><h2 id="h-sugg">Are the suggestions helping?</h2><div id="suggStats"></div></section>
+        </div>
+        <div class="split">
+          <section class="card" aria-labelledby="h-intent"><h2 id="h-intent">What the moments were about</h2><div id="intentStats"></div></section>
+          <section class="card" aria-labelledby="h-feel"><h2 id="h-feel">Feelings, as estimated and checked by you</h2><div id="feelStats"></div></section>
+          <section class="card" aria-labelledby="h-ms"><h2 id="h-ms">Milestones</h2><ul class="mini-list" id="milestoneList"></ul></section>
+        </div>
+      </section>
+
+      <!-- TEAM -->
+      <section class="panel" id="tab-team" aria-labelledby="h-team" hidden>
+        <h1 id="h-team">Your child's circle</h1>
+        <p class="lede">Teachers, therapists, and family see what you choose, so they can finally see what you see.</p>
+        <div class="split">
+          <section class="card" aria-labelledby="h-invite">
+            <h2 id="h-invite">Invite someone</h2>
+            <form id="formInvite" class="form">
+              <label>Name <input name="name" required /></label>
+              <label>Role <select name="role"><option value="teacher">Teacher</option><option value="therapist">Therapist</option><option value="family">Family</option></select></label>
+              <label>They can see <select name="access"><option value="signals">Signals and suggested phrases</option><option value="notes">Signals and shared notes</option><option value="full">Everything, including moments</option></select></label>
+              <button class="btn" type="submit">Create invite</button>
+            </form>
+            <ul class="mini-list" id="teamList"></ul>
+          </section>
+          <section class="card" aria-labelledby="h-viewas">
+            <div class="card-head"><h2 id="h-viewas">See it as</h2>
+              <select id="viewAs" aria-label="Preview the shared view as"><option value="teacher">a teacher</option><option value="therapist">a therapist</option><option value="family">family</option></select></div>
+            <div id="sharePreview" class="share-preview"></div>
+            <form id="formNote" class="form">
+              <label>Add a note to the shared log <textarea name="text" rows="2" required></textarea></label>
+              <button class="btn quiet" type="submit">Post note</button>
+            </form>
+            <div class="row gap">
+              <button class="btn quiet" type="button" id="btnPrint">Print a one-page guide</button>
+              <button class="btn quiet" type="button" id="btnShareFile">Download share file</button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- PRIVACY -->
+
+      <section class="panel" id="tab-safety" aria-labelledby="h-safety" hidden>
+        <h1 id="h-safety" class="sr-only">Safety</h1>
+        <div class="grid two">
+          <section class="card" aria-labelledby="h-zones">
+            <div class="card-head"><h2 id="h-zones">Safe zones</h2><span class="pill" id="geoState">Off</span></div>
+            <p class="soft" id="geoIntro">Get a gentle alert when your child arrives at or leaves a place you choose, like home or school. Off until you turn it on.</p>
+            <div id="geoConsentBox">
+              <button class="btn" type="button" id="btnGeoConsent">Set up safe zones</button>
+            </div>
+            <div id="geoOn" hidden>
+              <div id="zoneMap" class="zone-map" role="region" aria-label="Map of safe zones. You can also add zones with the form below."></div>
+              <p class="soft small" id="mapNote"></p>
+              <form id="formZone" class="form">
+                <h3>Add a zone</h3>
+                <label>Name <input name="name" required maxlength="40" placeholder="School" /></label>
+                <div class="row gap wrap">
+                  <label>Latitude <input name="lat" required inputmode="decimal" pattern="-?\d{1,2}(\.\d+)?" placeholder="41.8781" /></label>
+                  <label>Longitude <input name="lng" required inputmode="decimal" pattern="-?\d{1,3}(\.\d+)?" placeholder="-87.6298" /></label>
+                </div>
+                <div class="range-head"><label for="zoneR">Size, from the centre</label> <output name="rOut" id="rOut" for="zoneR">150 m</output></div>
+                <input id="zoneR" name="r" type="range" min="50" max="1000" step="25" value="150" aria-describedby="rHelp" />
+                <p class="soft small" id="rHelp">Bigger zones mean fewer false alarms. 150 m suits most homes and schools.</p>
+                <div class="row gap">
+                  <button class="btn quiet" type="button" id="btnHere">Use where I am now</button>
+                  <button class="btn" type="submit">Add zone</button>
+                </div>
+              </form>
+              <ul class="mini-list" id="zoneList"></ul>
+            </div>
+          </section>
+          <section class="card" aria-labelledby="h-geopriv">
+            <h2 id="h-geopriv">Location privacy</h2>
+            <ul class="plain-list">
+              <li>Location is checked only on the My Voice device, only while it's open, and only after you turn this on.</li>
+              <li>The device compares its position with your zones itself. It sends just "arrived" or "left", plus where, to your own LuminAAC server.</li>
+              <li>Exact locations on alerts are deleted after 24 hours. No location history is kept.</li>
+              <li>Teachers, therapists and share links never see location.</li>
+            </ul>
+            <form id="formGeoPrefs" class="form">
+              <label class="check"><input type="checkbox" name="sendLocation" /> "Take me home" and zone alerts include where they are</label>
+              <label class="check"><input type="checkbox" name="watch" /> Watch zones on My Voice on this browser</label>
+            </form>
+            <h3>Recent zone events</h3>
+            <ul class="mini-list" id="geoEvents"></ul>
+            <button class="btn danger" type="button" id="btnGeoOff" hidden>Turn off and forget all zones</button>
+          </section>
+          <section class="card" aria-labelledby="h-bg">
+            <h2 id="h-bg">When the app is closed</h2>
+            <p>Honestly: a web app can't watch zones in the background. Browsers stop location as soon as My Voice is closed, the screen locks, or the tab is hidden. Installing it as an app helps it open faster and work offline, but it doesn't change this.</p>
+            <ul class="plain-list">
+              <li><b>Quiet-device alert:</b> while My Voice shares location, it checks in every few minutes. If it goes quiet for longer than the time you choose, your server sends you an alert, so silence never looks like "all fine".</li>
+              <li><b>Background zones:</b> the LuminAAC phone app (built from the same code with Capacitor) can use the phone's own geofencing. See native/README.md.</li>
+            </ul>
+            <div class="row gap"><button class="btn quiet" type="button" data-install hidden>Install the Bridge on this device</button></div>
+            <p class="soft small" id="pwaState"></p>
+          </section>
+        </div>
+      </section>
+
+      <section class="panel" id="tab-account" aria-labelledby="h-account" hidden>
+        <h1 id="h-account" class="sr-only">Account and devices</h1>
+        <div class="grid two">
+          <section class="card" aria-labelledby="h-acct">
+            <div class="card-head"><h2 id="h-acct">Your account</h2><span class="pill" id="acctState">Not signed in</span></div>
+            <div id="acctOut">
+              <p class="soft">You don't need an account. LuminAAC works fully on this device. An account lets your team sign in with their own role, and lets you pair devices.</p>
+              <form id="formAcct" class="form">
+                <label>Server address <input name="url" type="url" inputmode="url" autocomplete="off" placeholder="http://localhost:3001" required /></label>
+                <label>Email <input name="email" type="email" autocomplete="username" required /></label>
+                <label>Password <input name="password" type="password" autocomplete="current-password" minlength="10" required aria-describedby="pwHelp" /></label>
+                <p class="soft small" id="pwHelp">At least 10 characters. A short sentence works well.</p>
+                <label>Invite code, if someone invited you <input name="invite" autocomplete="off" /></label>
+                <div class="row gap">
+                  <button class="btn" type="submit" value="login">Sign in</button>
+                  <button class="btn quiet" type="submit" value="register">Create account</button>
+                  <button class="btn quiet" type="button" id="btnPasskeyLogin">Sign in with a passkey</button>
+                </div>
+                <p><button class="link-btn" type="button" id="btnForgot">Forgot your password?</button></p>
+              </form>
+              <form id="formForgot" class="form" hidden>
+                <h3 class="h3">Reset your password</h3>
+                <p class="soft">We'll email you a link that works once, for 30 minutes.</p>
+                <label>Email <input name="email" type="email" autocomplete="username" required /></label>
+                <div class="row gap"><button class="btn" type="submit">Send reset link</button><button class="btn quiet" type="button" id="btnForgotCancel">Back to sign in</button></div>
+              </form>
+            </div>
+            <div id="acctIn" hidden>
+              <p id="acctWho"></p>
+              <p id="acctVerify" class="verify-note" hidden></p>
+              <div class="row gap">
+                <button class="btn quiet" type="button" id="btnAddPasskey">Add a passkey</button>
+                <button class="btn quiet" type="button" id="btnSignOut">Sign out</button>
+              </div>
+              <ul class="mini-list" id="passkeyList"></ul>
+            </div>
+            <p class="soft" id="acctStatus" role="status"></p>
+          </section>
+          <section class="card" aria-labelledby="h-fam">
+            <h2 id="h-fam">Family and team</h2>
+            <div id="famBox"><p class="soft">Sign in to see your family's members and children.</p></div>
+          </section>
+          <section class="card" aria-labelledby="h-dev">
+            <h2 id="h-dev">Devices</h2>
+            <p class="soft">Pair your child's tablet or another caregiver's phone. Each device gets its own key that you can switch off at any time.</p>
+            <div class="row gap">
+              <label class="grow">Pair a <select id="pairKind"><option value="myvoice">My Voice device (child)</option><option value="bridge">caregiver phone</option></select></label>
+              <button class="btn" type="button" id="btnPair">Show pairing code</button>
+            </div>
+            <div id="pairBox" class="pair-box" hidden></div>
+            <ul class="mini-list" id="deviceList"></ul>
+            <details class="join">
+              <summary>Pair this browser using a code</summary>
+              <form id="formJoin" class="form">
+                <label>Server address <input name="url" type="url" inputmode="url" required placeholder="http://localhost:3001" /></label>
+                <label>6-digit code <input name="code" inputmode="numeric" pattern="\d{6}" maxlength="6" required autocomplete="one-time-code" /></label>
+                <label>Name for this device <input name="name" maxlength="40" placeholder="Dad's phone" /></label>
+                <button class="btn" type="submit">Pair</button>
+              </form>
+            </details>
+          </section>
+        </div>
+      </section>
+      <section class="panel" id="tab-privacy" aria-labelledby="h-privacy" hidden>
+        <h1 id="h-privacy">Privacy and settings</h1>
+        <div class="split">
+          <section class="card" aria-labelledby="h-priv">
+            <h2 id="h-priv">Your child's data stays yours</h2>
+            <form id="formPrivacy" class="form">
+              <label>Keep moments for
+                <select name="retainDays"><option value="7">7 days</option><option value="30">30 days</option><option value="90">90 days</option><option value="0">Until I delete them</option></select></label>
+              <label>Moment length (seconds) <input name="seconds" type="number" min="5" max="60" step="5" /></label>
+              <label class="check"><input type="checkbox" name="autoDetect" /> Let LuminAAC flag possible patterns for me to check</label>
+              <label class="check"><input type="checkbox" name="blurFaces" /> Blur other people's faces when sharing</label>
+              <label class="check"><input type="checkbox" name="shareMedia" /> Include video and audio in shared views</label>
+              <label class="check"><input type="checkbox" name="cloudBackup" disabled /> Encrypted cloud backup (coming soon)</label>
+              <label>Where are you now? <select name="place"><option value="home">Home</option><option value="school">School</option><option value="therapy">Therapy</option><option value="out">Out and about</option></select></label>
+            </form>
+          </section>
+          <section class="card" aria-labelledby="h-sync">
+            <h2 id="h-sync">Sync, alerts and share links</h2>
+            <p class="soft">Optional. Connect to a LuminAAC server you run (see <code>backend/</code>) to sync between devices, get "I need help" alerts on your phone, and send read-only links to a teacher or therapist. Recordings never leave this device.</p>
+            <form id="formSync" class="form">
+              <label>Server address <input name="url" type="url" inputmode="url" placeholder="http://localhost:3001" autocomplete="off" /></label>
+              <label>Family key <input name="key" autocomplete="off" minlength="16" placeholder="Created for you. Use the same key on each device." /></label>
+              <div class="row gap">
+                <button class="btn" type="submit">Connect and sync</button>
+                <button class="btn quiet" type="button" id="btnNewKey">New family key</button>
+                <button class="btn quiet" type="button" id="btnDisconnect">Disconnect</button>
+              </div>
+            </form>
+            <p class="soft" id="syncStatus" role="status"></p>
+            <div class="row gap">
+              <label>Share link for <select id="shareRole"><option value="teacher">a teacher</option><option value="therapist">a therapist</option><option value="family">family</option></select></label>
+              <button class="btn quiet" type="button" id="btnShareLink">Create link</button>
+            </div>
+            <ul class="mini-list" id="shareLinks"></ul>
+          </section>
+          <section class="card" aria-labelledby="h-feelpref">
+            <h2 id="h-feelpref">Feeling estimates</h2>
+            <p class="soft">When you explain a recorded moment, LuminAAC can guess how it sounded (excited, calm, upset…) from pitch, loudness and pace. The guess is made on this device, is labelled as an estimate, and only counts once you confirm it.</p>
+            <form id="formFeel" class="form">
+              <label class="check"><input type="checkbox" name="voice" /> Estimate feelings from voice</label>
+              <label class="check"><input type="checkbox" name="ser" /> Use the speech feelings model too. It listens to how the voice sounds with a trained model (about 95 MB, downloaded once from Hugging Face, then works offline).</label>
+              <label class="check"><input type="checkbox" name="face" /> Also read facial expression in videos. The small face models come with the app, and the video never leaves this device.</label>
+            </form>
+            <div class="model-box" id="serBox">
+              <p class="soft small" id="serState" role="status">The speech feelings model isn't downloaded.</p>
+              <progress id="serProg" max="100" value="0" hidden aria-label="Speech feelings model download"></progress>
+              <div class="row gap"><button class="btn quiet" type="button" id="btnSerLoad">Download the speech model</button><button class="btn quiet" type="button" id="btnFaceTry">Try the face estimate with the camera</button></div>
+              <div class="face-try" id="faceTry" hidden><video id="faceVid" playsinline muted aria-label="Camera preview for the face estimate"></video><p id="faceOut" role="status"></p></div>
+            </div>
+          </section>
+          <section class="card" aria-labelledby="h-fl">
+            <h2 id="h-fl">Help improve suggestions for everyone</h2>
+            <p class="soft">Optional and off by default. LuminAAC can learn which suggestions tend to help (by time of day, place and feeling), right here on this device. If you join, only a small set of numbers is sent: it is clipped, blurred with random noise, and mixed with other families' numbers so the server can only see the total. Moments, words, recordings and names are never sent.</p>
+            <form id="formFl" class="form"><label class="check"><input type="checkbox" name="optIn" /> Take part in shared learning</label></form>
+            <div class="row gap"><button class="btn quiet" type="button" id="btnFlTrain">Train on this device</button><button class="btn quiet" type="button" id="btnFlSend">Send an update</button></div>
+            <p class="soft" id="flStatus" role="status"></p>
+          </section>
+          <section class="card" aria-labelledby="h-data">
+            <h2 id="h-data">Your data</h2>
+            <p class="soft">Everything is stored in this browser only. Nothing is uploaded.</p>
+            <div class="row gap">
+              <button class="btn quiet" type="button" id="btnExport">Download everything</button>
+              <label class="btn quiet file">Restore from file <input type="file" id="importFile" accept="application/json" /></label>
+              <button class="btn danger" type="button" id="btnWipe">Delete all moments and signals</button>
+              <button class="btn quiet" type="button" id="btnRedo">Run setup again</button>
+            </div>
+            <h3>Recent activity</h3>
+            <ul class="audit" id="audit"></ul>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Annotation studio -->
+  <dialog class="sheet" id="annotate" aria-labelledby="h-ann">
+    <form method="dialog" id="formAnnotate" class="form">
+      <h2 id="h-ann">What did that mean?</h2>
+      <div id="annMedia" class="ann-media"></div>
+      <p class="soft" id="annContext"></p>
+      <label class="sr-only" for="annText">Meaning, in your words</label>
+      <textarea id="annText" name="meaning" rows="3" required placeholder="He's asking for the blue blanket, not the red one."></textarea>
+      <div class="smart" id="annSmart" aria-live="polite"></div>
+      <div class="feel" id="annFeel" aria-live="polite" hidden></div>
+      <label>Words they'd say <input name="phrase" id="annPhrase" placeholder="I want the blue blanket" /></label>
+      <label>What did you notice? (comma separated) <input name="cues" id="annCues" placeholder="soft hum, looks at window" /></label>
+      <label>What kind of message was it? <select name="intent" id="annIntent"><option value="">Not sure yet</option></select></label>
+      <div class="row gap end">
+        <button class="btn quiet" value="cancel" formnovalidate>Not now</button>
+        <button class="btn" value="save" id="annSave">Teach LuminAAC</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Safe zones consent -->
+  <dialog class="sheet" id="geoConsent" aria-labelledby="h-gc">
+    <form method="dialog" class="form" id="formGeoConsent">
+      <h2 id="h-gc">Turn on safe zones?</h2>
+      <p>Here's exactly what happens:</p>
+      <ul class="plain-list">
+        <li>My Voice asks this device for its location while it's open. The browser will ask too, and you can say no there.</li>
+        <li>It checks the zones you draw on the device itself.</li>
+        <li>When your child arrives at or leaves a zone, you get an alert with where they are. "Take me home" includes where they are too.</li>
+        <li>Alerts go only to your family's LuminAAC server. Exact locations are deleted after 24 hours.</li>
+        <li>You can turn this off at any time. Turning it off deletes your zones.</li>
+      </ul>
+      <label class="check"><input type="checkbox" name="agree" required /> I'm a parent or legal guardian, and I agree to location checks on my child's device</label>
+      <div class="row gap end">
+        <button class="btn quiet" value="cancel" formnovalidate>Not now</button>
+        <button class="btn" value="ok">Turn on safe zones</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Onboarding: a conversation, not a configuration -->
+  <dialog class="sheet onboard" id="onboard" aria-labelledby="h-ob">
+    <form method="dialog" class="form" id="formOnboard">
+      <img src="brand/logo-mark.svg" alt="" width="56" height="56" />
+      <h2 id="h-ob">You know your child better than anyone.</h2>
+      <p class="soft" id="obText">LuminAAC learns from you. Let's start with a few small things.</p>
+      <div class="ob-step" data-step="0">
+        <label>What's your child's name? <input name="child" autocomplete="off" placeholder="Sam" /></label>
+      </div>
+      <div class="ob-step" data-step="1" hidden>
+        <label>And what should we call you? <input name="caregiver" autocomplete="given-name" placeholder="Mom" /></label>
+        <label>You are their <select name="role"><option value="parent">Parent</option><option value="teacher">Teacher</option><option value="therapist">Therapist</option><option value="family">Family member</option></select></label>
+      </div>
+      <div class="ob-step" data-step="2" hidden>
+        <p>Here's the whole idea:</p>
+        <ol class="ob-loop">
+          <li><b>Catch it.</b> Tap once to keep the last 15 seconds.</li>
+          <li><b>Say what it meant.</b> In your own words.</li>
+          <li><b>Watch them be heard.</b> My Voice starts offering the right words.</li>
+        </ol>
+        <p class="soft">Moments stay on this device unless you choose to share.</p>
+      </div>
+      <div class="row gap end">
+        <button class="btn quiet" type="button" id="obSkip">Skip for now</button>
+        <button class="btn" type="button" id="obNext">Next</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <script src="vendor/motion.js" defer></script>
+  <script src="motion-lite.js" defer></script>
+  <script src="vendor/qrcode.js" defer></script>
+  <script src="vendor/leaflet/leaflet.js" defer></script>
+  <script type="module" src="bridge.js"></script>
+  <script type="module" src="bridge-plus.js"></script>
+  <script type="module" src="bridge-p3.js"></script>
+  <script type="module" src="bridge-p4.js"></script>
+  <dialog id="dlgReset" aria-labelledby="dlgResetT">
+    <form id="formReset" class="form" method="dialog">
+      <h2 id="dlgResetT">Choose a new password</h2>
+      <label>New password <input name="password" type="password" autocomplete="new-password" minlength="10" required aria-describedby="rsHelp" /></label>
+      <p class="soft small" id="rsHelp">At least 10 characters. You'll be signed out on every device, then you can sign in with it.</p>
+      <p class="soft" id="resetMsg" role="status"></p>
+      <div class="row gap"><button class="btn quiet" value="cancel" formnovalidate>Cancel</button><button class="btn" value="ok">Save new password</button></div>
+    </form>
+  </dialog>
+  <script src="pwa.js" defer></script>
+</body>
+</html>

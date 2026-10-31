@@ -1,0 +1,13 @@
+<!-- Add these keys to ios/App/App/Info.plist after `npx cap add ios`. -->
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>LuminAAC uses your location only for safe zones your parent turned on, to tell your family when you arrive or leave.</string>
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>So your family still gets "arrived" and "left" notes when LuminAAC is closed. Location goes only to your family's own LuminAAC server.</string>
+<key>NSCameraUsageDescription</key>
+<string>To scan the pairing code and, if you choose, to record moments. Videos stay on this device.</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>To record moments and, if you choose, estimate feelings from voice. Recordings stay on this device.</string>
+<key>UIBackgroundModes</key>
+<array>
+  <string>location</string>
+</array>

@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>LuminAAC</title>
+  <meta name="description" content="LuminAAC: a calm, fast talker for people who communicate with symbols, and the people who support them." />
+  <meta name="theme-color" content="#22313d" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="tokens.css" />
+  <link rel="stylesheet" href="app.css" />
+  <link rel="stylesheet" href="brand/brand-tokens.css" />
+  <link rel="stylesheet" href="myvoice.css" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="phase3.css" />
+  <link rel="stylesheet" href="phase4.css" />
+</head>
+<body>
+  <a class="skip" href="#main">Skip to board</a>
+
+  <div class="shell">
+    <!-- Sentence strip: the one lit, branded element -->
+    <header class="strip-wrap">
+      <div class="brand" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="28" height="28"><path d="M5 20c3-6 5-6 8 0s5 6 8 0" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="25" cy="9" r="3.5" fill="var(--lumen)"/><path d="M25 2.5v2M25 13.5v2M18.5 9h2M29.5 9h2" stroke="var(--lumen)" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <button class="strip" id="strip" type="button" aria-label="Message. Tap to speak.">
+        <span class="strip-words" id="stripWords" aria-live="polite"></span>
+        <span class="strip-empty" id="stripEmpty">Tap words to build a message</span>
+      </button>
+      <div class="strip-actions">
+        <button class="icon-btn" id="btnBack" type="button" aria-label="Delete last word">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h11v14H9l-6-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9.5l5 5M17 9.5l-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button class="icon-btn" id="btnClear" type="button" aria-label="Clear message">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+        <button class="speak-btn" id="btnSpeak" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 010 7M19 6a8.5 8.5 0 010 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Speak</span>
+        </button>
+      </div>
+    </header>
+
+    <nav class="nav" aria-label="Sections">
+      <button class="nav-btn" data-view="talk" aria-current="page" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        <span>Talk</span>
+      </button>
+      <button class="nav-btn" data-view="calm" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/></svg>
+        <span>Calm</span>
+      </button>
+      <button class="nav-btn" data-view="plans" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h3M5 12h3M5 18h3M11 6h8M11 12h8M11 18h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>Plans</span>
+      </button>
+      <a class="nav-btn nav-bridge" href="bridge.html">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17c3-6 6-8 9-8s6 2 9 8M3 17h18M7 17v-4M12 17V9M17 17v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>Bridge</span>
+      </a>
+      <button class="nav-btn nav-care" id="careBtn" type="button" aria-describedby="careHint">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 10V7a4 4 0 018 0v3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+        <span>Caregiver</span>
+        <i class="hold-ring" aria-hidden="true"></i>
+      </button>
+      <span class="sr-only" id="careHint">Press and hold for two seconds to open</span>
+    </nav>
+
+    <main id="main" tabindex="-1">
+      <!-- TALK -->
+      <section class="view" id="view-talk" aria-label="Talk">
+        <div class="quick" role="group" aria-label="Quick phrases" id="quick"></div>
+        <div class="next" role="group" aria-label="Next word ideas">
+          <span class="next-label" id="nextLabel">Next</span>
+          <div class="next-row" id="nextRow"></div>
+        </div>
+        <div class="folders" role="tablist" aria-label="Word folders" id="folders"></div>
+        <div class="grid" id="grid" role="grid" aria-label="Word board"></div>
+        <p class="legend" id="legend"></p>
+      </section>
+
+      <!-- CALM -->
+      <section class="view" id="view-calm" aria-label="Calm" hidden>
+        <h1 class="h1">How big are your feelings?</h1>
+        <div class="scale" role="group" aria-label="Feelings scale" id="scale"></div>
+
+        <div class="calm-room" id="calmRoom" hidden>
+          <div class="breathe" id="breathe">
+            <div class="breathe-orb" id="orb" aria-hidden="true"></div>
+            <p class="breathe-cue" id="breatheCue" aria-live="polite">Breathe in</p>
+            <button class="ghost-btn" id="breatheToggle" type="button">Pause breathing</button>
+          </div>
+          <div>
+            <h2 class="h2">I need</h2>
+            <div class="needs" id="needs"></div>
+          </div>
+        </div>
+
+        <aside class="partner-card" id="partnerCard" hidden>
+          <h2 class="h2">For the person helping</h2>
+          <ul class="partner-list">
+            <li>Use fewer words. Say one short thing, then wait.</li>
+            <li>Lower the lights and sound if you can.</li>
+            <li>Offer space. Don't touch unless asked.</li>
+            <li>Wait at least 10 seconds for an answer.</li>
+            <li>Talk about what happened later, when calm.</li>
+          </ul>
+        </aside>
+      </section>
+
+      <!-- PLANS -->
+      <section class="view" id="view-plans" aria-label="Plans" hidden>
+        <div class="plan-picker" id="planPicker" role="tablist" aria-label="Choose a plan"></div>
+        <div class="first-then" id="firstThen" aria-live="polite"></div>
+        <ol class="steps" id="steps"></ol>
+      </section>
+
+      <!-- CAREGIVER -->
+      <section class="view" id="view-care" aria-label="Caregiver" hidden>
+        <div class="care-head">
+          <h1 class="h1">Caregiver</h1>
+          <button class="ghost-btn" id="lockBtn" type="button">Lock and return to Talk</button>
+        </div>
+        <p class="note">Everything here stays on this device. Nothing is uploaded.</p>
+
+        <div class="care-grid">
+          <article class="panel">
+            <h2 class="h2">This week</h2>
+            <dl class="stats" id="stats"></dl>
+            <h3 class="h3">Most used words</h3>
+            <ol class="bars" id="bars"></ol>
+          </article>
+
+          <article class="panel">
+            <h2 class="h2">Moments</h2>
+            <p class="note">When you notice a sign, write down what it meant. Over time this becomes a shared guide for everyone who helps.</p>
+            <form class="moment-form" id="momentForm">
+              <label>What did you see or hear?
+                <input name="sign" required maxlength="120" placeholder="Rocks and hums near the door" />
+              </label>
+              <label>What did it mean?
+                <input name="meaning" required maxlength="120" placeholder="Wants to go outside" />
+              </label>
+              <label>Where or when?
+                <input name="context" maxlength="80" placeholder="After lunch, at home" />
+              </label>
+              <button class="solid-btn" type="submit">Save moment</button>
+            </form>
+            <ul class="moments" id="moments"></ul>
+          </article>
+
+          <article class="panel">
+            <h2 class="h2">Add a word</h2>
+            <form class="word-form" id="wordForm">
+              <label>Word or phrase
+                <input name="w" required maxlength="40" placeholder="swimming" />
+              </label>
+              <label>Picture
+                <input name="e" maxlength="4" placeholder="🏊" />
+              </label>
+              <label>Kind of word
+                <select name="c">
+                  <option value="thing">Thing or place</option>
+                  <option value="action">Action</option>
+                  <option value="describe">Describing</option>
+                  <option value="people">Person</option>
+                  <option value="social">Social</option>
+                  <option value="question">Question</option>
+                  <option value="negate">Stop or no</option>
+                </select>
+              </label>
+              <label>Folder
+                <select name="f" id="folderSelect"></select>
+              </label>
+              <button class="solid-btn" type="submit">Add word</button>
+            </form>
+            <ul class="custom-list" id="customList"></ul>
+          </article>
+
+          <article class="panel">
+            <h2 class="h2">Settings</h2>
+            <form class="settings" id="settings">
+              <fieldset>
+                <legend>Look</legend>
+                <label class="radio"><input type="radio" name="theme" value="auto" /> Match device</label>
+                <label class="radio"><input type="radio" name="theme" value="day" /> Day</label>
+                <label class="radio"><input type="radio" name="theme" value="night" /> Night</label>
+                <label class="radio"><input type="radio" name="theme" value="contrast" /> High contrast</label>
+              </fieldset>
+              <fieldset>
+                <legend>Board</legend>
+                <label class="radio"><input type="radio" name="cols" value="4" /> 4 across, bigger</label>
+                <label class="radio"><input type="radio" name="cols" value="6" /> 6 across</label>
+                <label class="check"><input type="checkbox" name="pictos" /> Use ARASAAC pictures (needs internet)</label>
+                <label class="check"><input type="checkbox" name="labelsTop" /> Words above pictures</label>
+              </fieldset>
+              <fieldset>
+                <legend>Voice</legend>
+                <label>Voice <select name="voice" id="voiceSelect"><option value="">Device default</option></select></label>
+                <label>Speed <input type="range" name="rate" min="0.6" max="1.4" step="0.1" /></label>
+                <label class="check"><input type="checkbox" name="speakOnTap" /> Say each word when tapped</label>
+                <button class="ghost-btn" type="button" id="testVoice">Test voice</button>
+              </fieldset>
+              <fieldset>
+                <legend>Motion</legend>
+                <label class="check"><input type="checkbox" name="stillness" /> Keep the screen still (no animation)</label>
+              </fieldset>
+            </form>
+            <div class="data-actions">
+              <button class="ghost-btn" type="button" id="exportBtn">Download my data</button>
+              <button class="ghost-btn danger" type="button" id="resetBtn">Erase history on this device</button>
+            </div>
+          </article>
+        </div>
+        <p class="credit">Pictograms: Sergio Palao, ARASAAC (arasaac.org), CC BY-NC-SA, Government of Aragón. Fallback pictures: OpenMoji (openmoji.org), CC BY-SA 4.0.</p>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="app.js"></script>
+  <script type="module" src="myvoice.js"></script>
+  <script type="module" src="access.js"></script>
+  <script src="vendor/motion.js" defer></script>
+  <script src="motion-lite.js" defer></script>
+  <script type="module" src="myvoice-p3.js"></script>
+  <script type="module" src="myvoice-p4.js"></script>
+  <script src="pwa.js" defer></script>
+</body>
+</html>

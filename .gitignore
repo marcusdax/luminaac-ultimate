@@ -1,0 +1,20 @@
+# Runtime data from the backend (accounts, sessions, outbox, family data)
+backend/data/
+backend/outbox*
+# Dependencies
+node_modules/
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+# Archives and build output
+*.zip
+native/www/
+# OS and editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log

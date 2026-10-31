@@ -1,0 +1,20 @@
+<!-- Merge into android/app/src/main/AndroidManifest.xml after `npx cap add android`. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+  <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+  <!-- Android 10+: needed to keep receiving location with the app in the background. -->
+  <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <!-- Android 14+: the foreground service type must be declared. -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <uses-permission android:name="android.permission.CAMERA" />
+  <uses-permission android:name="android.permission.RECORD_AUDIO" />
+  <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+  <uses-feature android:name="android.hardware.camera" android:required="false" />
+  <application>
+    <service android:name="com.equimaps.capacitor_background_geolocation.BackgroundGeolocationService"
+             android:enabled="true" android:exported="false" android:foregroundServiceType="location" />
+  </application>
+</manifest>

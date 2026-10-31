@@ -1,0 +1,140 @@
+/* LuminAAC design tokens — single source of truth.
+   Three themes share every token name: day (default), night, contrast.
+   Word-class colors follow the modified Fitzgerald Key used across AAC,
+   so a learner's color habits carry over from other boards. */
+
+:root {
+  /* Surfaces & ink — day */
+  --fog: #e9eeec;          /* app background: cool, low-glare, not white */
+  --paper: #f7f9f8;        /* tiles and sheets */
+  --paper-raised: #ffffff;
+  --ink: #1c2630;          /* primary text, 13.9:1 on paper */
+  --ink-soft: #4b5864;     /* secondary text, 7.0:1 on paper */
+  --line: #c9d2d0;         /* hairlines, inactive outlines */
+
+  /* Brand: the lit sentence strip */
+  --dusk: #22313d;         /* strip background */
+  --dusk-ink: #c8d3dc;     /* resting words on strip */
+  --lumen: #f2b33d;        /* lit word, focus ring, brand glow */
+  --lumen-soft: rgba(242, 179, 61, 0.22);
+
+  /* Word classes (band = strong edge, tint = tile fill) */
+  --wc-people: #c99a00;      --wc-people-tint: #fbf1cc;
+  --wc-action: #2f8a4c;      --wc-action-tint: #dcefe1;
+  --wc-describe: #2f6fb3;    --wc-describe-tint: #dbe7f5;
+  --wc-thing: #c7651c;       --wc-thing-tint: #fae3cf;
+  --wc-social: #b84a80;      --wc-social-tint: #f5dbe8;
+  --wc-question: #6e4fae;    --wc-question-tint: #e6ddf3;
+  --wc-negate: #b8372f;      --wc-negate-tint: #f6d9d6;
+  --wc-little: #7a858d;      --wc-little-tint: #eceff0;
+  --wc-folder: #22313d;      --wc-folder-tint: #dfe5ea;
+
+  /* Feedback */
+  --ok: #2f8a4c;
+  --alert: #b8372f;
+
+  /* Type: Atkinson Hyperlegible Next, built for low-vision legibility */
+  --font: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --fs-xs: 0.875rem;   /* 14 */
+  --fs-sm: 1rem;       /* 16 */
+  --fs-md: 1.25rem;    /* 20 */
+  --fs-lg: 1.5rem;     /* 24 */
+  --fs-xl: 2rem;       /* 32 */
+  --fs-xxl: 2.75rem;   /* 44 */
+  --lh-tight: 1.15;
+  --lh-body: 1.5;
+
+  /* Space: 4px base */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
+
+  /* Radius by hierarchy, not one size for everything */
+  --r-chip: 999px;
+  --r-tile: 14px;
+  --r-sheet: 22px;
+  --r-strip: 18px;
+
+  /* Touch: AAC targets are larger than WCAG's 24px minimum */
+  --tile-min: 104px;
+  --target-min: 56px;
+
+  /* Elevation: tiles sit on a band, not a shadow */
+  --band: 6px;
+  --lift: 0 1px 0 rgba(28, 38, 48, 0.08), 0 6px 18px rgba(28, 38, 48, 0.08);
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --t-press: 90ms;
+  --t-ui: 180ms;
+  --t-glow: 420ms;
+
+  color-scheme: light;
+}
+
+/* Night: dim, warm-leaning dark for evenings and light sensitivity */
+:root[data-theme="night"] {
+  --fog: #151c22;
+  --paper: #1e2830;
+  --paper-raised: #25313a;
+  --ink: #e6ecef;
+  --ink-soft: #a9b6bf;
+  --line: #34424d;
+  --dusk: #0e141a;
+  --dusk-ink: #8f9ea9;
+
+  --wc-people: #e8c13a;      --wc-people-tint: #2f2a17;
+  --wc-action: #5cc27e;      --wc-action-tint: #17291e;
+  --wc-describe: #6aa6e6;    --wc-describe-tint: #172535;
+  --wc-thing: #ec9550;       --wc-thing-tint: #33231a;
+  --wc-social: #e07fb0;      --wc-social-tint: #331d29;
+  --wc-question: #a68be0;    --wc-question-tint: #251f35;
+  --wc-negate: #ec6d64;      --wc-negate-tint: #351b1a;
+  --wc-little: #9aa6ae;      --wc-little-tint: #232c33;
+  --wc-folder: #c8d3dc;      --wc-folder-tint: #26323c;
+
+  --ok: #5cc27e;
+  --alert: #ec6d64;
+  --lift: 0 1px 0 rgba(0, 0, 0, 0.4), 0 8px 20px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --fog: #151c22; --paper: #1e2830; --paper-raised: #25313a;
+    --ink: #e6ecef; --ink-soft: #a9b6bf; --line: #34424d;
+    --dusk: #0e141a; --dusk-ink: #8f9ea9;
+    --wc-people: #e8c13a; --wc-people-tint: #2f2a17;
+    --wc-action: #5cc27e; --wc-action-tint: #17291e;
+    --wc-describe: #6aa6e6; --wc-describe-tint: #172535;
+    --wc-thing: #ec9550; --wc-thing-tint: #33231a;
+    --wc-social: #e07fb0; --wc-social-tint: #331d29;
+    --wc-question: #a68be0; --wc-question-tint: #251f35;
+    --wc-negate: #ec6d64; --wc-negate-tint: #351b1a;
+    --wc-little: #9aa6ae; --wc-little-tint: #232c33;
+    --wc-folder: #c8d3dc; --wc-folder-tint: #26323c;
+    --ok: #5cc27e; --alert: #ec6d64;
+    --lift: 0 1px 0 rgba(0, 0, 0, 0.4), 0 8px 20px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+
+/* Contrast: pure black and white, color kept only on the band */
+:root[data-theme="contrast"] {
+  --fog: #000000;
+  --paper: #000000;
+  --paper-raised: #000000;
+  --ink: #ffffff;
+  --ink-soft: #ffffff;
+  --line: #ffffff;
+  --dusk: #000000;
+  --dusk-ink: #ffffff;
+  --lumen: #ffd60a;
+  --wc-people-tint: #000; --wc-action-tint: #000; --wc-describe-tint: #000;
+  --wc-thing-tint: #000; --wc-social-tint: #000; --wc-question-tint: #000;
+  --wc-negate-tint: #000; --wc-little-tint: #000; --wc-folder-tint: #000;
+  --wc-people: #ffd60a; --wc-action: #4cff7a; --wc-describe: #5cb8ff;
+  --wc-thing: #ff9a3c; --wc-social: #ff7ac0; --wc-question: #c9a6ff;
+  --wc-negate: #ff5a50; --wc-little: #ffffff; --wc-folder: #ffffff;
+  --band: 10px;
+  --lift: none;
+  color-scheme: dark;
+}

@@ -1,0 +1,10 @@
+{
+  "appId": "org.luminaac.app",
+  "appName": "LuminAAC",
+  "webDir": "www",
+  "android": { "allowMixedContent": false },
+  "ios": { "contentInset": "always" },
+  "plugins": {
+    "LocalNotifications": { "smallIcon": "ic_stat_luminaac", "iconColor": "#22313d" }
+  }
+}

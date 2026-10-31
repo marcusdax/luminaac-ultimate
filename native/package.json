@@ -1,0 +1,20 @@
+{
+  "name": "luminaac-native",
+  "version": "0.6.0",
+  "private": true,
+  "description": "Capacitor shell for LuminAAC My Voice and the Bridge, with background location.",
+  "scripts": {
+    "copy-web": "node copy-web.mjs",
+    "sync": "npm run copy-web && npx cap sync",
+    "android": "npm run sync && npx cap open android",
+    "ios": "npm run sync && npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0",
+    "@capacitor/local-notifications": "^7.0.0",
+    "@capacitor-community/background-geolocation": "^1.2.0"
+  },
+  "devDependencies": { "@capacitor/cli": "^7.0.0" }
+}

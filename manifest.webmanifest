@@ -1,0 +1,20 @@
+{
+  "id": "./index.html",
+  "name": "LuminAAC My Voice",
+  "short_name": "My Voice",
+  "description": "A calm, fast talker for people who communicate with symbols.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fbf7f0",
+  "theme_color": "#22313d",
+  "lang": "en",
+  "categories": ["education", "medical", "utilities"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "luminaac-ultimate-backend",
+  "version": "0.4.0",
+  "private": true,
+  "description": "Zero-dependency LuminAAC backend: sync, sharing, alerts, and the /api/predictions contract from LuminAAC-Repository.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": { "start": "node server.js", "test": "node test.mjs" },
+  "engines": { "node": ">=18" },
+  "license": "MIT"
+}

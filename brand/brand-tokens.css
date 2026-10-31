@@ -1,0 +1,15 @@
+/* LuminAAC brand tokens. Extends tokens.css (product UI) for marketing,
+   the Bridge, and the logo set. Sky + ember come from the
+   "ENHANCED LUMINAAC NEW LOGOBRANDCOLORS.js" palette in OneDrive
+   (primary #64b5f6, accent #ff9800), tuned here for AA contrast. */
+:root {
+  --sky: #64b5f6;          /* brand primary (decorative / on dark) */
+  --sky-deep: #1f64a8;     /* sky for text on light, 6.1:1 on paper */
+  --sky-tint: #e3f0fc;
+  --ember: #ff9800;        /* brand accent (decorative / on dark) */
+  --ember-deep: #a35200;   /* ember for text on light, 5.2:1 on paper */
+  --ember-tint: #fff0db;
+  --night-sky: #0f1419;    /* brand background for dark marketing surfaces */
+  --mist: #90a4ae;         /* brand neutral */
+  --grow: #4caf50;         /* success from brand palette (decorative) */
+}
