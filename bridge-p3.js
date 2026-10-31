@@ -32,9 +32,9 @@ function renderSafety() {
   $("#btnGeoOff").hidden = !s.consent;
   const f = $("#formGeoPrefs"); f.sendLocation.checked = !!s.sendLocation; f.watch.checked = s.watch !== false;
   f.sendLocation.disabled = f.watch.disabled = !s.consent;
-  $("#zoneList").innerHTML = s.zones.map((z) => `<li><b>${esc(z.name)}</b> <span class="soft">${z.r} m · ${z.lat.toFixed(4)}, ${z.lng.toFixed(4)}</span> <button class="btn quiet small" type="button" data-delzone="${esc(z.id)}" aria-label="Remove ${esc(z.name)}">Remove</button></li>`).join("") || `<li class="soft">No zones yet. Tap the map or use the form.</li>`;
-  const ev = db().alerts.filter((a) => a.kind.startsWith("zone-")).slice(0, 8);
-  $("#geoEvents").innerHTML = ev.map((a) => `<li>${a.kind === "zone-enter" ? "Arrived at" : "Left"} <b>${esc(a.zone || "")}</b> <span class="soft">${B.fmtDay(a.t)} ${B.fmtTime(a.t)}</span>${a.loc ? ` <a href="${mapLink(a.loc)}" target="_blank" rel="noopener">Map</a>` : ""}</li>`).join("") || `<li class="soft">Nothing yet.</li>`;
+  $("#zoneList").innerHTML = s.zones.map((z) => `<li class="${z.type === "danger" ? "is-danger" : ""}"><b>${esc(z.name)}</b> <span class="soft">${z.type === "danger" ? "Danger area · " : ""}${z.shape === "poly" ? `drawn shape, ${z.pts.length} points` : `${z.r} m · ${z.lat.toFixed(4)}, ${z.lng.toFixed(4)}`}</span>${z.shape === "poly" ? ` <button class="btn quiet small" type="button" data-editzone="${esc(z.id)}" aria-label="Edit the shape of ${esc(z.name)}">Edit shape</button>` : ""} <button class="btn quiet small" type="button" data-delzone="${esc(z.id)}" aria-label="Remove ${esc(z.name)}">Remove</button></li>`).join("") || `<li class="soft">No zones yet. Tap the map or use the form.</li>`;
+  const ev = db().alerts.filter((a) => /^(zone|danger)-/.test(a.kind)).slice(0, 8);
+  $("#geoEvents").innerHTML = ev.map((a) => `<li>${{ "zone-enter": "Arrived at", "zone-leave": "Left", "danger-enter": "Urgent: near", "danger-leave": "Moved away from" }[a.kind]} <b>${esc(a.zone || "")}</b> <span class="soft">${B.fmtDay(a.t)} ${B.fmtTime(a.t)}</span>${a.loc ? ` <a href="${mapLink(a.loc)}" target="_blank" rel="noopener">Map</a>` : ""}</li>`).join("") || `<li class="soft">Nothing yet.</li>`;
   if (s.consent) drawMap();
 }
 function drawMap() {
@@ -42,17 +42,23 @@ function drawMap() {
   if (!L) { box.hidden = true; $("#mapNote").textContent = "The map isn't available. Add zones with the form: type a place's latitude and longitude, or use where you are now."; return; }
   const zones = db().safety.zones;
   if (!map) {
-    const c = zones[0] || { lat: 41.8781, lng: -87.6298 };
+    const z0 = zones[0], c = z0 ? (z0.shape === "poly" ? { lat: z0.pts[0][0], lng: z0.pts[0][1] } : z0) : { lat: 41.8781, lng: -87.6298 };
     map = L.map(box, { scrollWheelZoom: false }).setView([c.lat, c.lng], zones.length ? 15 : 12);
     const tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
     tiles.on("tileerror", () => { if (++tileErrors === 4) { $("#mapNote").textContent = "Map pictures can't load right now (offline?). Your zones still work. Use the form below to add one."; box.classList.add("offline"); } });
-    map.on("click", (e) => { const f = $("#formZone"); f.lat.value = e.latlng.lat.toFixed(5); f.lng.value = e.latlng.lng.toFixed(5); showPreview(); f.name.focus(); });
+    map.on("click", (e) => { if (B.drawing) return; const f = $("#formZone"); f.lat.value = e.latlng.lat.toFixed(5); f.lng.value = e.latlng.lng.toFixed(5); showPreview(); f.name.focus(); });
     mapLayer = L.layerGroup().addTo(map);
-    $("#mapNote").textContent = "Tap the map to place a zone, then name it below.";
+    B.safetyMap = map;
+    $("#mapNote").textContent = "Tap the map to place a round zone and name it below, or draw your own shape.";
   }
   setTimeout(() => map.invalidateSize(), 50);
   mapLayer.clearLayers();
-  zones.forEach((z) => L.circle([z.lat, z.lng], { radius: z.r, color: "#2f6f9f", weight: 2, fillOpacity: 0.15 }).bindTooltip(z.name, { permanent: true, direction: "center", className: "zone-label" }).addTo(mapLayer));
+  zones.forEach((z) => {
+    const style = z.type === "danger" ? { color: "#b8372f", weight: 3, fillOpacity: 0.18, dashArray: "8 4" } : { color: "#2f6f9f", weight: 2, fillOpacity: 0.15 };
+    const shape = z.shape === "poly" ? L.polygon(z.pts, style) : L.circle([z.lat, z.lng], { radius: z.r, ...style });
+    if (B.editingZone !== z.id) shape.bindTooltip(z.name, { permanent: true, direction: "center", className: "zone-label" + (z.type === "danger" ? " is-danger" : "") }).addTo(mapLayer);
+  });
+  document.dispatchEvent(new CustomEvent("safety:drawn", { detail: { map } }));
 }
 function showPreview() {
   const f = $("#formZone"), lat = parseFloat(f.lat.value), lng = parseFloat(f.lng.value), r = +f.r.value;
@@ -83,6 +89,7 @@ $("#formZone").addEventListener("submit", (e) => {
   B.save(`Added safe zone "${z.name}"`); f.reset(); $("#rOut").textContent = "150 m"; renderSafety();
   map?.setView([z.lat, z.lng], 15);
 });
+B.renderSafety = renderSafety;
 $("#zoneList").addEventListener("click", (e) => {
   const id = e.target.closest("[data-delzone]")?.dataset.delzone; if (!id) return;
   db().safety.zones = db().safety.zones.filter((z) => z.id !== id); B.save("Removed a safe zone"); renderSafety();

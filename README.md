@@ -31,6 +31,7 @@ A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as 
 | **Feeling estimates** | **Shared learning** |
 | <img src="screenshots/feelings-desktop.png" alt="Feeling estimates waiting for caregiver confirmation" width="420" /> | <img src="screenshots/fl-desktop.png" alt="Opt-in federated learning settings" width="420" /> |
 | **Caretaker guide** | **On a phone** |
+| <img src="screenshots/water-map-desktop.png" alt="Water danger zones near a safe zone on the map" width="420" /> | <img src="screenshots/draw-freehand-desktop.png" alt="Drawing a zone by hand" width="420" /> |
 | <img src="screenshots/guide-desktop.png" alt="Caretaker guide contents page" width="420" /> | <img src="screenshots/myvoice-mobile.png" alt="My Voice on a phone" width="200" /> |
 
 ## Feature map
@@ -42,6 +43,7 @@ A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as 
 | 3 | v0.5 | Safe zones with consent (Leaflet/OSM), device pairing by QR or code, accounts with scrypt and passkeys, roles and invites, on-device feeling estimates, opt-in federated learning with DP noise and secure aggregation, OpenMoji fallback pictures |
 | 4 | v0.6 | Speech-emotion model (transformers.js, WebGPU/WASM), Kokoro natural voices, email confirmation and password reset, dropout-tolerant secure aggregation (Shamir t-of-n), installable PWAs, quiet-device alert, Capacitor scaffold, vendored face estimate |
 | 5 | v0.7 | Caretaker guide (Markdown and printable web page with a quick-start one-pager), open-source repository files |
+| 6 | v0.8 | Water danger zones from OpenStreetMap (Overpass) with a tunable buffer and urgent alerts, freehand safe and danger zones drawn by finger or stylus (pressure, palm rejection, simplification), shape editing with keyboard support |
 
 ## Architecture
 
@@ -98,7 +100,9 @@ Then in the Bridge go to Privacy, then "Sync, alerts and share links", enter `ht
 
 ```bash
 cd backend
-node test.mjs       # 113 API tests: accounts, passkeys, pairing, mail, reset, alerts, federated learning with dropouts
+node test.mjs       # 117 API tests: accounts, passkeys, pairing, mail, reset, alerts, federated learning with dropouts
+cd ..
+node tests/geo-water.test.mjs   # 34 tests: Overpass parsing, clipping, polygon distance, danger alerts
 ```
 
 ## Project structure
@@ -113,6 +117,7 @@ node test.mjs       # 113 API tests: accounts, passkeys, pairing, mail, reset, a
 | `bridge-p3.js`, `phase3.css` | Bridge phase 3: Safety and Account tabs, feeling estimates, shared learning |
 | `myvoice-p3.js` | My Voice phase 3: safe-zone watching, pairing by QR or code, child-scoped pull |
 | `geo.js`, `emotion.js`, `fl-core.js` | Geofence maths, on-device prosody and face estimates, federated learning core (shared with the backend) |
+| `water.js`, `bridge-p6.js`, `phase6.css`, `vendor/simplify.js` | Phase 6: water lookup and clipping, freehand drawing and shape editing, Water card |
 | `motion-lite.js` | Restrained motion wrapper around Motion that respects reduced motion |
 | `vendor/` | Leaflet, qrcode-generator, jsQR, Motion and OpenMoji (see `THIRD-PARTY.md`) |
 | `ai.js`, `ai-worker.js` | Phase 4: transformers.js speech-emotion model and Kokoro voices in a Web Worker (lazy, cached, WebGPU or WASM) |

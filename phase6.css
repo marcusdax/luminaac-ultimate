@@ -1,0 +1,25 @@
+/* Phase 6: hand-drawn zones and water danger zones. Uses the same tokens. */
+.draw-bar { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s2); }
+.draw-bar .btn[aria-pressed="true"] { background: var(--dusk); color: #fff; border-color: var(--dusk); }
+.zone-map-wrap { position: relative; }
+.zone-map.is-drawing { cursor: crosshair; touch-action: none; outline: 3px solid var(--lumen); outline-offset: 2px; }
+.crosshair { position: absolute; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; z-index: 500; pointer-events: none; }
+.crosshair::before, .crosshair::after { content: ""; position: absolute; background: var(--dusk); box-shadow: 0 0 0 2px #fff; }
+.crosshair::before { left: 17px; top: 0; width: 2px; height: 36px; }
+.crosshair::after { top: 17px; left: 0; height: 2px; width: 36px; }
+.shape-form { margin-top: var(--s3); padding: var(--s3); border-radius: var(--r-tile); background: var(--paper-raised); border: 2px dashed var(--lumen); }
+.kind-pick { border: 0; margin: 0; padding: 0; display: grid; gap: var(--s1); }
+.kind-pick legend { font-weight: 600; margin-bottom: var(--s1); padding: 0; }
+.mini-list li.is-danger b { color: var(--alert); }
+.leaflet-tooltip.zone-label.is-danger { border-color: var(--alert); color: #8a231d; }
+.vertex-handle { width: 22px !important; height: 22px !important; margin: -11px 0 0 -11px !important; border-radius: 50%; background: #fff; border: 3px solid var(--dusk); box-sizing: border-box; }
+.vertex-handle:focus-visible { outline: 4px solid var(--lumen); outline-offset: 2px; }
+.water-row { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; }
+.water-row.is-ignored { opacity: .65; }
+.water-row .soft { flex: 1; }
+#waterBuf, #waterRad { width: 100%; accent-color: var(--sky-deep, #2f6f9f); min-height: 44px; }
+/* Urgent alerts in the alert bar */
+.alert-item.is-urgent { background: #fbe4e1; border-color: var(--alert); color: #4a0f0b; box-shadow: 0 0 0 4px rgba(184, 55, 47, .2); }
+.alert-item.is-urgent .soft { color: #6b1a14; }
+@media (prefers-reduced-motion: no-preference) { .alert-item.is-urgent { animation: urgent-pulse 1.6s ease-in-out 3; } }
+@keyframes urgent-pulse { 50% { box-shadow: 0 0 0 10px rgba(184, 55, 47, .08); } }

@@ -1,7 +1,7 @@
 // My Voice, Phase 3: safe-zone watching (only after parent consent), device
 // pairing by QR or code, and pulling the child-scoped settings from the server.
 import { load, persist, raiseAlert, api } from "./shared.js";
-import { watch } from "./geo.js";
+import { watch, allZones, eventText } from "./geo.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const note = (msg) => { const t = $("#toast"); if (!t) return; t.textContent = msg; t.hidden = false; setTimeout(() => (t.hidden = true), 3500); };
@@ -15,12 +15,12 @@ function geoChip(text, on) {
 }
 function syncWatch() {
   const s = load().safety;
-  const want = s?.consent && s.watch !== false && s.zones?.length && "geolocation" in navigator;
+  const want = s?.consent && s.watch !== false && allZones(s).length && "geolocation" in navigator;
   if (want && !watcher) {
-    watcher = watch(() => load().safety?.zones || [], (ev, pos) => {
-      const d = load();
-      const msg = ev.kind === "zone-enter" ? `Arrived at ${ev.zone.name}` : `Left ${ev.zone.name}`;
-      raiseAlert(ev.kind, msg, { zone: ev.zone.name, ...(d.safety.sendLocation && { loc: pos }) });
+    watcher = watch(() => allZones(load().safety), (ev, pos) => {
+      const d = load(), danger = ev.kind.startsWith("danger");
+      // Danger alerts always carry the location: finding a child near water fast matters more than the setting.
+      raiseAlert(ev.kind, eventText(ev), { zone: ev.zone.name, ...(ev.water && { water: true }), ...((d.safety.sendLocation || danger) && { loc: pos }) });
     }, (pos, err) => (pos && (lastPos = pos), geoChip(err ? "📍 Safe zones are on, but this device can't find its location." : "📍 Safe zones on. Your grown-ups get a note when you arrive or leave.", !err)));
     heartbeat();
     geoChip("📍 Safe zones on. Your grown-ups get a note when you arrive or leave.", true);

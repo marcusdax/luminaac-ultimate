@@ -128,6 +128,36 @@ Honourable mentions:
 | [FedML-AI/FedML](https://github.com/FedML-AI/FedML) | 4.1k | Apache-2.0 | Last push 2025-10, slowing. Platform-oriented. |
 | [OpenMined/PySyft](https://github.com/OpenMined/PySyft) | 10.0k | Apache-2.0 | Remote data science. Not a fit for on-device AAC. |
 
+## Water danger zones and freehand drawing (phase 6, October 2026)
+
+We searched GitHub (via `gh api`) and the web for code that can find bodies of water and for Leaflet freehand drawing. Stars and last push are from October 31, 2026.
+
+### Finding water
+| Project | Stars | Licence | Fit |
+|---|---|---|---|
+| [drolbr/Overpass-API](https://github.com/drolbr/Overpass-API) | 938 | AGPL-3.0 | The server behind overpass-api.de. We only call the public service; we don't ship its code. |
+| [tyrasd/osmtogeojson](https://github.com/tyrasd/osmtogeojson) | 751 | MIT | Solid OSM to GeoJSON, active (2026-04). About 60 KB with deps, so we wrote a small converter for `out geom` instead. |
+| [tibetty/osm2geojson-lite](https://github.com/tibetty/osm2geojson-lite) | 28 | MIT | Lighter alternative. Small community. |
+| [tyrasd/overpass-turbo](https://github.com/tyrasd/overpass-turbo) | 1.3k | none asserted | Great for testing queries by hand. Don't copy code. |
+| [osmdata.openstreetmap.de water polygons](https://osmdata.openstreetmap.de/data/water-polygons.html) | – | ODbL | Coastline and sea polygons; too big for a phone. Useful later for a server-side tile. |
+| [nvkelso/natural-earth-vector](https://github.com/nvkelso/natural-earth-vector) | 2.3k | Public domain | Lakes and rivers at country scale only. Too coarse for a garden pond. |
+| [Turfjs/turf](https://github.com/Turfjs/turf) | 10.5k | MIT | Buffers, point-in-polygon, distance. Active. We only need three functions, so we wrote them (`geo.js`). |
+| [mfogel/polygon-clipping](https://github.com/mfogel/polygon-clipping), [w8r/martinez](https://github.com/w8r/martinez) | 642 / 777 | MIT | Full boolean ops. We only clip to a box (Sutherland–Hodgman, 30 lines). |
+| [mourner/flatbush](https://github.com/mourner/flatbush), [mapbox/cheap-ruler](https://github.com/mapbox/cheap-ruler) | 1.6k / 433 | ISC | Good options if zone counts grow past a few hundred. |
+
+### Freehand drawing on Leaflet
+| Project | Stars | Licence | Fit |
+|---|---|---|---|
+| [geoman-io/leaflet-geoman](https://github.com/geoman-io/leaflet-geoman) | 2.4k | MIT | Best maintained (push 2026-10-22). Draw, edit, drag. No freehand or pressure; about 200 KB. First pick if we ever need full editing. |
+| [Leaflet/Leaflet.draw](https://github.com/Leaflet/Leaflet.draw) | 2.1k | MIT | Classic, but little activity since 2024. |
+| [Wildhoney/Leaflet.FreeDraw](https://github.com/Wildhoney/Leaflet.FreeDraw) | 576 | MIT | True freehand polygons. Pulls in D3 and ClipperLib; mouse/touch, no pen pressure. |
+| [Wildhoney/L.Pather](https://github.com/Wildhoney/L.Pather) | 69 | MIT | Freehand lines. Old. |
+| [bozdoz/leaflet-freehandshapes](https://github.com/bozdoz/leaflet-freehandshapes) | 17 | none asserted, archived | Avoid. |
+| [steveruizok/perfect-freehand](https://github.com/steveruizok/perfect-freehand) | 5.8k | MIT | Beautiful pressure strokes for ink; shapes are outlines, not zones. Idea borrowed for pressure-weighted width. |
+| [mourner/simplify-js](https://github.com/mourner/simplify-js) | 2.4k | BSD-2-Clause | **Vendored** (`vendor/simplify.js`). Ramer–Douglas–Peucker; turns a stroke into a few dozen corners. |
+
+**Decision:** call Overpass directly, convert and clip in `water.js`, and draw with pointer events in `bridge-p6.js` (pen pressure, palm rejection, keyboard alternative). Only simplify-js is vendored. Everything stays build-free.
+
 ## Licence flags (don't vendor these)
 - **GPL-3.0:** Cboard, piper1-gpl.
 - **AGPL-3.0:** AsTeRICS Grid, old CoughDrop.

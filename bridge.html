@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="bridge.css" />
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
   <link rel="stylesheet" href="phase3.css" />
+  <link rel="stylesheet" href="phase6.css" />
   <link rel="stylesheet" href="phase4.css" />
 </head>
 <body>
@@ -172,7 +173,7 @@
             <h2 id="h-story">Write a story or routine</h2>
             <form id="formStory" class="form">
               <label>Title <input name="title" required maxlength="60" placeholder="Haircut day" /></label>
-              <fieldset class="seg"><legend class="sr-only">Kind</legend>
+              <fieldset class="kind-pick"><legend class="sr-only">Kind</legend>
                 <label><input type="radio" name="kind" value="story" checked /> Story</label>
                 <label><input type="radio" name="kind" value="routine" /> Routine (first, then)</label>
               </fieldset>
@@ -262,8 +263,30 @@
               <button class="btn" type="button" id="btnGeoConsent">Set up safe zones</button>
             </div>
             <div id="geoOn" hidden>
-              <div id="zoneMap" class="zone-map" role="region" aria-label="Map of safe zones. You can also add zones with the form below."></div>
+              <div class="draw-bar" role="toolbar" aria-label="Draw a zone" id="drawBar">
+                <button class="btn quiet small" type="button" id="btnDrawFree" aria-pressed="false">Draw by hand</button>
+                <button class="btn quiet small" type="button" id="btnDrawPoints" aria-pressed="false">Add points</button>
+                <button class="btn quiet small" type="button" id="btnDrawHere" hidden>Add point at the centre</button>
+                <button class="btn quiet small" type="button" id="btnDrawUndo" hidden>Undo</button>
+                <button class="btn small" type="button" id="btnDrawDone" hidden>Finish shape</button>
+                <button class="btn quiet small" type="button" id="btnDrawCancel" hidden>Cancel</button>
+              </div>
+              <div class="zone-map-wrap">
+                <div id="zoneMap" class="zone-map" role="region" tabindex="0" aria-label="Map of safe zones. Use the arrow keys to move the map. You can also add zones with the form below."></div>
+                <div class="crosshair" id="drawCross" aria-hidden="true" hidden></div>
+              </div>
               <p class="soft small" id="mapNote"></p>
+              <p class="soft small" id="drawStatus" role="status" aria-live="polite"></p>
+              <form id="formShape" class="form shape-form" hidden>
+                <h3>Save this shape</h3>
+                <label>Name <input name="name" required maxlength="40" placeholder="Back garden" /></label>
+                <fieldset class="kind-pick">
+                  <legend>What kind of place is it?</legend>
+                  <label class="check"><input type="radio" name="type" value="safe" checked /> Safe place: a note when they arrive or leave</label>
+                  <label class="check"><input type="radio" name="type" value="danger" /> Danger area: an urgent alert when they go in</label>
+                </fieldset>
+                <div class="row gap"><button class="btn quiet" type="button" id="btnShapeDiscard">Discard</button><button class="btn" type="submit">Save shape</button></div>
+              </form>
               <form id="formZone" class="form">
                 <h3>Add a zone</h3>
                 <label>Name <input name="name" required maxlength="40" placeholder="School" /></label>
@@ -281,6 +304,26 @@
               </form>
               <ul class="mini-list" id="zoneList"></ul>
             </div>
+          </section>
+          <section class="card" aria-labelledby="h-water" id="waterCard">
+            <div class="card-head"><h2 id="h-water">Water danger zones</h2><span class="pill" id="waterState">Off</span></div>
+            <p class="soft">Many children who wander are drawn to water. LuminAAC can find mapped ponds, pools, rivers and lakes near your safe zones and send an urgent alert if your child gets close.</p>
+            <p class="soft small" id="waterNeedsConsent">Turn on safe zones first.</p>
+            <form id="formWater" class="form" hidden>
+              <label class="check"><input type="checkbox" name="on" /> Send an urgent alert near water</label>
+              <div class="range-head"><label for="waterBuf">Alert when closer than</label> <output id="waterBufOut" for="waterBuf">30 m</output></div>
+              <input id="waterBuf" name="buffer" type="range" min="10" max="200" step="5" value="30" aria-describedby="waterBufHelp" />
+              <p class="soft small" id="waterBufHelp">Phone locations can be 10 to 30 m out. A bigger distance gives earlier warnings and more false alarms.</p>
+              <div class="range-head"><label for="waterRad">Look for water within</label> <output id="waterRadOut" for="waterRad">1.5 km</output></div>
+              <input id="waterRad" name="radius" type="range" min="500" max="3000" step="250" value="1500" />
+              <div class="row gap wrap">
+                <button class="btn" type="button" id="btnWaterZones">Find water near my zones</button>
+                <button class="btn quiet" type="button" id="btnWaterHere">Find water near me</button>
+              </div>
+              <p class="soft small" id="waterStatus" role="status" aria-live="polite"></p>
+              <ul class="mini-list" id="waterList"></ul>
+              <p class="soft small">Water comes from OpenStreetMap (© OpenStreetMap contributors) and is saved on your devices, so checks work offline. Maps can miss garden pools and new ponds: draw those yourself as a danger area. This adds to supervision; it never replaces it.</p>
+            </form>
           </section>
           <section class="card" aria-labelledby="h-geopriv">
             <h2 id="h-geopriv">Location privacy</h2>
@@ -526,6 +569,8 @@
   <script type="module" src="bridge-plus.js"></script>
   <script type="module" src="bridge-p3.js"></script>
   <script type="module" src="bridge-p4.js"></script>
+  <script src="vendor/simplify.js" defer></script>
+  <script type="module" src="bridge-p6.js"></script>
   <dialog id="dlgReset" aria-labelledby="dlgResetT">
     <form id="formReset" class="form" method="dialog">
       <h2 id="dlgResetT">Choose a new password</h2>

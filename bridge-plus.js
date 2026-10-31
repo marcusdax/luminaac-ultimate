@@ -9,14 +9,15 @@ const esc = B.esc;
 const db = () => B.db;
 
 // ---------- Alerts ----------
-const KIND = { help: { e: "🙋", t: "needs help" }, home: { e: "🏠", t: "wants to go home" }, custom: { e: "🔔", t: "sent an alert" }, "zone-enter": { e: "📍", t: "arrived at" }, "zone-leave": { e: "🚶", t: "left" }, silent: { e: "📵", t: "'s device stopped checking in" }, back: { e: "📶", t: "'s device is checking in again" } };
+const KIND = { help: { e: "🙋", t: "needs help" }, home: { e: "🏠", t: "wants to go home" }, custom: { e: "🔔", t: "sent an alert" }, "zone-enter": { e: "📍", t: "arrived at" }, "zone-leave": { e: "🚶", t: "left" }, "danger-enter": { e: "⚠️", t: "is in a danger area:" }, "danger-leave": { e: "✅", t: "has left the danger area" }, silent: { e: "📵", t: "'s device stopped checking in" }, back: { e: "📶", t: "'s device is checking in again" } };
 const where = (a) => (a.loc ? ` <a class="soft" href="https://www.openstreetmap.org/?mlat=${a.loc.lat}&amp;mlon=${a.loc.lng}#map=17/${a.loc.lat}/${a.loc.lng}" target="_blank" rel="noopener">See where (within ${a.loc.acc || "?"} m)</a>` : "");
 function renderAlerts() {
   const open = db().alerts.filter((a) => !a.ack);
   const bar = $("#alertBar");
   bar.hidden = !open.length;
-  bar.innerHTML = open.slice(0, 3).map((a) => `<div class="alert-item"><span class="alert-e" aria-hidden="true">${KIND[a.kind]?.e || "🔔"}</span>
-    <p><b>${esc(db().profile.child || a.from || "Your child")}${(KIND[a.kind]?.t || "").startsWith("'") ? "" : " "}${KIND[a.kind]?.t || "sent an alert"}${a.zone ? " " + esc(a.zone) : ""}</b> <span class="soft">at ${B.fmtTime(a.t)}${a.message && !a.zone ? ` · "${esc(a.message)}"` : ""}</span>${where(a)}</p>
+  open.sort((x, y) => (y.kind === "danger-enter") - (x.kind === "danger-enter"));
+  bar.innerHTML = open.slice(0, 3).map((a) => `<div class="alert-item${a.kind === "danger-enter" ? " is-urgent" : ""}"><span class="alert-e" aria-hidden="true">${KIND[a.kind]?.e || "🔔"}</span>
+    <p><b>${esc(db().profile.child || a.from || "Your child")}${(KIND[a.kind]?.t || "").startsWith("'") ? "" : " "}${a.water && a.kind === "danger-enter" ? "is near water:" : a.water && a.kind === "danger-leave" ? "has moved away from" : KIND[a.kind]?.t || "sent an alert"}${a.zone ? " " + esc(a.zone) : ""}</b> <span class="soft">at ${B.fmtTime(a.t)}${a.message && !a.zone ? ` · "${esc(a.message)}"` : ""}</span>${where(a)}</p>
     <button class="btn" type="button" data-ack="${esc(a.id)}">I'm on my way</button></div>`).join("");
 }
 $("#alertBar").addEventListener("click", (e) => {
@@ -30,7 +31,7 @@ function chime() {
   try { const c = new AudioContext(), o = c.createOscillator(), g = c.createGain(); o.frequency.value = 660; g.gain.setValueAtTime(0.0001, c.currentTime); g.gain.exponentialRampToValueAtTime(0.2, c.currentTime + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.9); o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + 1); } catch {}
 }
 let lastAlertCount = db().alerts.filter((a) => !a.ack).length;
-function onAlertsChanged() { const n = db().alerts.filter((a) => !a.ack).length; const more = n > lastAlertCount; if (more) chime(); lastAlertCount = n; renderAlerts(); if (more) window.LuminMotion?.arrive($("#alertBar .alert-item")); }
+function onAlertsChanged() { const n = db().alerts.filter((a) => !a.ack).length; const more = n > lastAlertCount; if (more) { chime(); if (db().alerts.find((a) => !a.ack)?.kind === "danger-enter") { setTimeout(chime, 1100); setTimeout(chime, 2200); navigator.vibrate?.([300, 150, 300, 150, 300]); } } lastAlertCount = n; renderAlerts(); if (more) window.LuminMotion?.arrive($("#alertBar .alert-item")); }
 
 // ---------- Stories, routines, sound practice ----------
 function parseSteps(text) {

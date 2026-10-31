@@ -10,12 +10,14 @@ These files are vendored in `vendor/` and served from the app itself. There is n
 | Motion | 11.18.2 | MIT | © Framer B.V. / Matt Perry | `vendor/motion.js`, `vendor/motion.LICENSE.md` |
 | OpenMoji (126 colour SVGs) | 15.1.0 | CC BY-SA 4.0 | © OpenMoji, HfG Schwäbisch Gmünd | `vendor/openmoji/*.svg`, `vendor/openmoji.LICENSE.txt` |
 | Human (face detection and expression) | 3.3.6 | MIT | © Vladimir Mandic | `vendor/human/human.esm.js`, `vendor/human/models/` (BlazeFace, emotion), `vendor/human/LICENSE` |
+| simplify-js | 1.2.4 | BSD-2-Clause | © 2017 Vladimir Agafonkin | `vendor/simplify.js`, `vendor/simplify.LICENSE` |
 | Sample faces for tests | from Human 3.3.6 `samples/` | MIT | © Vladimir Mandic | `tests/faces/*.jpg` (test-only, not shipped to users) |
 
 **OpenMoji credit, shown in the app:** "Fallback pictures: OpenMoji (openmoji.org), CC BY-SA 4.0." The SVGs are unmodified and named by Unicode code point. If you modify them, the changes must stay CC BY-SA 4.0.
 
 ## Used at runtime from the network (optional)
 - **OpenStreetMap tiles** (`tile.openstreetmap.org`). Map data © OpenStreetMap contributors, ODbL. Attribution is shown on the map. Production deployments should use their own tile server or a provider, per the OSMF tile usage policy.
+- **Overpass API** (`overpass-api.de`, with `overpass.private.coffee` and `overpass.kumi.systems` as fallbacks). Only when a caregiver taps "Find water". Results are OpenStreetMap data © OpenStreetMap contributors, ODbL; the credit is shown in the Water card. Keep requests rare: public servers rate-limit (HTTP 429).
 - **ARASAAC pictograms** (`api.arasaac.org`, `static.arasaac.org`). Author Sergio Palao; owner Government of Aragón (Spain); CC BY-NC-SA 4.0. Off unless turned on. The non-commercial clause matters for paid plans.
 - **transformers.js** 3.7.5 (Apache-2.0, Hugging Face), from jsDelivr, only when the speech model or a natural voice is turned on. The service worker caches it for offline use.
 - **kokoro-js** 1.2.1 (Apache-2.0, hexgrad / Xenova), from jsDelivr, only for natural voices.
@@ -28,6 +30,8 @@ These files are vendored in `vendor/` and served from the app itself. There is n
 - `backend/webauthn.js`: CBOR and passkey verification, following the WebAuthn Level 2 spec.
 - `fl-core.js`: logistic regression, differential-privacy clipping and noise, Bonawitz-style secure aggregation (ECDH masks, self-masks, Shamir sharing over GF(2^521−1)) and zCDP accounting.
 - `backend/mailer.js`: a minimal SMTP client (STARTTLS, AUTH PLAIN/LOGIN) on node:net and node:tls.
+- `water.js`: Overpass query, `out geom` to shapes, box clipping. `geo.js`: distance to polygons and lines, point-in-polygon.
+- `bridge-p6.js`: pointer-event freehand drawing with pressure and palm rejection.
 - `emotion.js`: autocorrelation pitch detection, after the public-domain technique in cwilso/PitchDetect (MIT).
 
 ## Licence conflicts to know about

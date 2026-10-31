@@ -13,16 +13,17 @@ A friendly guide for parents, grandparents, carers, teachers and therapists. You
 7. [Stories, routines and speech practice](#stories-routines-and-speech-practice)
 8. [Help and "Take me home" alerts](#help-alerts)
 9. [Safe zones and consent](#safe-zones-and-consent)
-10. [Pairing devices](#pairing-devices)
-11. [Accounts, email checks and password reset](#accounts)
-12. [Inviting your team and roles](#inviting-your-team)
-13. [Feeling estimates](#feeling-estimates)
-14. [Shared learning and privacy](#shared-learning)
-15. [Installing it as an app](#installing-it-as-an-app)
-16. [Access modes: large, switch and dwell](#access-modes)
-17. [Privacy, export and delete](#privacy-export-and-delete)
-18. [Troubleshooting and questions](#troubleshooting-and-questions)
-19. [Quick start one-pager](#quick-start)
+10. [Drawing zones by hand and water danger zones](#drawing-and-water)
+11. [Pairing devices](#pairing-devices)
+12. [Accounts, email checks and password reset](#accounts)
+13. [Inviting your team and roles](#inviting-your-team)
+14. [Feeling estimates](#feeling-estimates)
+15. [Shared learning and privacy](#shared-learning)
+16. [Installing it as an app](#installing-it-as-an-app)
+17. [Access modes: large, switch and dwell](#access-modes)
+18. [Privacy, export and delete](#privacy-export-and-delete)
+19. [Troubleshooting and questions](#troubleshooting-and-questions)
+20. [Quick start one-pager](#quick-start)
 
 <a id="what-luminaac-is"></a>
 ## 1. What LuminAAC is
@@ -148,7 +149,7 @@ You'll also see **"stopped checking in"** if a connected device goes quiet for a
 On the **Safety** page you can set places such as home and school.
 
 1. Read the consent note and agree. Only a parent or guardian should do this.
-2. Draw a circle on the map, or type an address position and a size if you're offline. 150 metres suits most homes and schools. Bigger zones mean fewer false alarms.
+2. Tap the map for a circle, draw your own shape (see section 10), or type an address position and a size if you're offline. 150 metres suits most homes and schools. Bigger zones mean fewer false alarms.
 3. Name the zone and save it.
 
 My Voice then tells you when it **arrives at** or **leaves** a zone, while My Voice is open on the screen.
@@ -158,8 +159,36 @@ My Voice then tells you when it **arrives at** or **leaves** a zone, while My Vo
 ![Safe zones](../screenshots/safety-desktop.png)
 ![Background location, explained honestly](../screenshots/background-honest-desktop.png)
 
+<a id="drawing-and-water"></a>
+## 10. Drawing zones by hand and water danger zones
+
+### Draw a zone with your finger, a stylus or a mouse
+1. On the **Safety** page, tap **Draw by hand**.
+2. Trace around the place on the map. A stylus works best; once you use one, a resting palm is ignored.
+3. Lift to finish, or tap **Finish**. Tap **Undo** to remove the last part, or **Cancel** (or press Escape) to stop.
+4. Choose **Safe place** (alert when your child leaves) or **Danger area** (urgent alert when your child comes close), name it and save.
+
+Prefer tapping? Choose **Add points** and tap each corner instead.
+
+**To change a shape,** tap **Edit shape** in the zone list and drag the round handles. With a keyboard, Tab to a handle, move it with the arrow keys (hold Shift for bigger steps) and press Delete to remove it. **To delete a zone,** use **Remove** in the list.
+
+### Water danger zones
+Many children who wander are drawn to water. In the **Water danger zones** card:
+1. Turn on **Send an urgent alert near water**.
+2. Set **Alert when closer than**. 50 metres suits most families. Phone locations can be 10 to 30 metres out.
+3. Tap **Find water near my zones** (or **near me**). LuminAAC looks up mapped ponds, pools, rivers and lakes from OpenStreetMap and saves them on your devices, so checks work offline.
+4. Water shows on the map in blue with a red halo. Tap **Ignore** for water that isn't a risk, such as a fenced fountain.
+
+If your child gets close, you get an **urgent** alert with a triple chime and their location, at the top of your alerts.
+
+**Honest limits:** maps miss garden pools, new ponds and seasonal water, so draw those yourself as a danger area. Finding water needs internet and the free map service can be busy; try again in a minute. This adds to supervision; it never replaces it.
+
+![Drawing a zone by hand](../screenshots/draw-freehand-desktop.png)
+![Water near a safe zone](../screenshots/water-map-desktop.png)
+![An urgent water alert](../screenshots/water-alert-desktop.png)
+
 <a id="pairing-devices"></a>
-## 10. Pairing devices
+## 11. Pairing devices
 
 Pairing links your child's tablet to your Bridge so alerts, words and rules stay in step.
 
@@ -173,7 +202,7 @@ Your child's device only receives what it needs (their words, rules and plans), 
 ![The device list](../screenshots/devices-desktop.png)
 
 <a id="accounts"></a>
-## 11. Accounts, email checks and password reset
+## 12. Accounts, email checks and password reset
 
 You don't need an account to use LuminAAC on one device. An account helps when several people or devices are involved.
 
@@ -185,7 +214,7 @@ You don't need an account to use LuminAAC on one device. An account helps when s
 ![Choosing a new password](../screenshots/reset-dialog-desktop.png)
 
 <a id="inviting-your-team"></a>
-## 12. Inviting your team and roles
+## 13. Inviting your team and roles
 
 On the **Team** page you can bring in the people in your child's circle.
 
@@ -202,7 +231,7 @@ On the **Team** page you can bring in the people in your child's circle.
 Use **See it as** to check exactly what someone else sees. Anyone can add a note to the shared log so the whole team stays in the loop.
 
 <a id="feeling-estimates"></a>
-## 13. Feeling estimates
+## 14. Feeling estimates
 
 LuminAAC can **estimate** how your child might be feeling from their voice (pitch, loudness and pace), and from their face in a video if you allow it.
 
@@ -216,7 +245,7 @@ LuminAAC can **estimate** how your child might be feeling from their voice (pitc
 ![Trying the face estimate](../screenshots/face-try-desktop.png)
 
 <a id="shared-learning"></a>
-## 14. Shared learning and privacy
+## 15. Shared learning and privacy
 
 Under **Privacy → Help improve suggestions for everyone** you can join shared learning. It's **off unless you turn it on**.
 
@@ -228,7 +257,7 @@ Under **Privacy → Help improve suggestions for everyone** you can join shared 
 ![Shared learning](../screenshots/fl-desktop.png)
 
 <a id="installing-it-as-an-app"></a>
-## 15. Installing it as an app
+## 16. Installing it as an app
 
 You can add LuminAAC to your home screen so it opens like an app and works offline.
 
@@ -238,7 +267,7 @@ You can add LuminAAC to your home screen so it opens like an app and works offli
 Installed or not, the background location limits in [Safe zones](#safe-zones-and-consent) still apply.
 
 <a id="access-modes"></a>
-## 16. Access modes: large, switch and dwell
+## 17. Access modes: large, switch and dwell
 
 Under **Vocabulary → How My Voice responds**, choose what suits your child's body and attention.
 
@@ -249,7 +278,7 @@ Under **Vocabulary → How My Voice responds**, choose what suits your child's b
 Ask your child's speech and language therapist or occupational therapist which mode to start with.
 
 <a id="privacy-export-and-delete"></a>
-## 17. Privacy, export and delete
+## 18. Privacy, export and delete
 
 The **Privacy** page puts you in control.
 
@@ -262,7 +291,7 @@ The **Privacy** page puts you in control.
 ![Privacy controls](../screenshots/sync-desktop.png)
 
 <a id="troubleshooting-and-questions"></a>
-## 18. Troubleshooting and questions
+## 19. Troubleshooting and questions
 
 **My Voice doesn't speak.** Check the volume and that the device isn't on silent. In Settings → Voice, try another voice or *Device default*.
 
@@ -287,7 +316,7 @@ The **Privacy** page puts you in control.
 **Who can I ask for help?** Your child's speech and language therapist is a great partner. For app problems, see the project page.
 
 <a id="quick-start"></a>
-## 19. Quick start one-pager
+## 20. Quick start one-pager
 
 <div class="one-pager">
 

@@ -85,7 +85,7 @@ const can = (w, perm) => (w.role === "child" ? w.scopes || PERMS.child : PERMS[w
 function childView(doc) {
   if (!doc) return null;
   const { profile = {}, signals = [], stories = [], practice, access, safety } = doc;
-  return { version: 2, scope: "child", profile: { child: profile.child, place: profile.place }, signals: signals.map(({ id, name, phrase, cues, contexts, confirmations, rejections, moods }) => ({ id, name, phrase, cues, contexts, confirmations, rejections, moods })), stories, practice, access, safety: safety && { consent: safety.consent, zones: safety.zones, sendLocation: safety.sendLocation } };
+  return { version: 2, scope: "child", profile: { child: profile.child, place: profile.place }, signals: signals.map(({ id, name, phrase, cues, contexts, confirmations, rejections, moods }) => ({ id, name, phrase, cues, contexts, confirmations, rejections, moods })), stories, practice, access, safety: safety && { consent: safety.consent, zones: safety.zones, sendLocation: safety.sendLocation, water: safety.water } };
 }
 const failedLogins = new Map(); // email -> [timestamps]
 const claimTries = new Map(); // ip -> [timestamps]
@@ -454,10 +454,10 @@ async function route(req, res, url) {
   }
   if (p === "/api/alerts" && M === "POST") {
     const b = await body(req);
-    if (!["help", "home", "custom", "zone-enter", "zone-leave"].includes(b.kind)) return fail(res, 400, "Validation failed", "kind must be help, home, custom, zone-enter or zone-leave");
+    if (!["help", "home", "custom", "zone-enter", "zone-leave", "danger-enter", "danger-leave"].includes(b.kind)) return fail(res, 400, "Validation failed", "kind must be help, home, custom, zone-enter, zone-leave, danger-enter or danger-leave");
     const loc = b.loc ? LOC(b.loc) : null;
     if (b.loc && !loc) return fail(res, 400, "Validation failed", "loc must be { lat, lng, acc }");
-    const a = { id: String(b.id || randomUUID()).slice(0, 64), kind: b.kind, message: String(b.message || "").slice(0, 200), t: Number(b.t) || Date.now(), ack: null, from: String(b.from || w.device?.name || "My Voice").slice(0, 60), ...(loc && { loc }), ...(b.zone && { zone: String(b.zone).slice(0, 60) }) };
+    const a = { id: String(b.id || randomUUID()).slice(0, 64), kind: b.kind, message: String(b.message || "").slice(0, 200), t: Number(b.t) || Date.now(), ack: null, from: String(b.from || w.device?.name || "My Voice").slice(0, 60), ...(loc && { loc }), ...(b.zone && { zone: String(b.zone).slice(0, 60) }), ...(b.water === true && { water: true }), ...(b.kind === "danger-enter" && { urgent: true }) };
     const dup = store.update(key, (d) => { if (d.alerts.some((x) => x.id === a.id)) return true; d.alerts = [a, ...d.alerts].slice(0, 500); audit(d, `Alert: ${a.kind}`); return false; });
     if (!dup) broadcast(key, "alert", a);
     return ok(res, a);
