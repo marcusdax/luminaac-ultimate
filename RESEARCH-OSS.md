@@ -164,3 +164,40 @@ We searched GitHub (via `gh api`) and the web for code that can find bodies of w
 - **Non-commercial:** ARASAAC pictograms (CC BY-NC-SA), openSMILE, Coqui XTTS weights.
 - **No licence:** pitchfinder.
 - **Share-alike:** OpenMoji and Mulberry graphics (CC BY-SA). Fine for pictures we ship with credit. Changes to the SVGs must stay CC BY-SA.
+
+## Round 2: roadmap gaps (October 31, 2026, evening)
+
+Searched with `gh api` against the "Next" and "Later" roadmap items that round 1 didn't cover. Stars, last push and licence are from that day. Where GitHub couldn't classify a licence, we read the licence file itself.
+
+### Top picks
+
+| # | Project | Stars | Last push | Licence | Roadmap item it unlocks | How to use it |
+|---|---|---|---|---|---|---|
+| 1 | [google-ai-edge/mediapipe](https://github.com/google-ai-edge/mediapipe) (Face Landmarker) | 37.5k | active | Apache-2.0 | **Head pointer**: hands-free access for children who can't tap | Nose-tip landmark drives a cursor; `access.js` dwell already does the selecting. WASM from CDN, opt-in, camera stays on the device. |
+| 2 | [chrisguttandin/extendable-media-recorder](https://github.com/chrisguttandin/extendable-media-recorder) | 355 | 2026-09 | MIT | **Recorded caregiver voice for buttons** that plays back the same on iPad Safari and Android | Records WAV everywhere, so it avoids Safari's MediaRecorder codec gaps. Save the clips in the existing `luminaac-media` IndexedDB store. |
+| 3 | [fengyuanchen/cropperjs](https://github.com/fengyuanchen/cropperjs) | 13.9k | 2026-10 | MIT | **Photo symbols** (camera → button) | Square crop with a large touch target, then save a 300px WebP next to the button. |
+| 4 | [yjs/yjs](https://github.com/yjs/yjs) | 23.0k | 2026-10 | MIT (licence file; GitHub shows NOASSERTION) | **Conflict-free sync** when two caregivers edit the vocabulary offline | Model the synced family document as a Y.Doc. The server stores opaque updates, which fits with item 5. [automerge/automerge](https://github.com/automerge/automerge) (MIT, 6.7k) is the alternative. |
+| 5 | [paulmillr/noble-ciphers](https://github.com/paulmillr/noble-ciphers) | 432 | 2026-09 | MIT, audited | **End-to-end encryption of the synced document** | XChaCha20-Poly1305 with a family key the server never sees. One small file, no build. [jedisct1/libsodium.js](https://github.com/jedisct1/libsodium.js) (ISC) is heavier but complete. |
+| 6 | [k2-fsa/sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) | 15.6k | 2026-10 | Apache-2.0 | **Offline natural voices** (Piper/VITS voices) without the GPL piper1 code | WASM TTS build, run in `ai-worker.js` next to Kokoro. It also does voice activity detection, which can trim recorded moments. |
+| 7 | [moonshine-ai/moonshine](https://github.com/moonshine-ai/moonshine) | 11.3k | 2026-10 | MIT (code **and** models, per licence file) | **Partner speech to text**: show what the adult said as symbols or words (aided language modelling) | Small, fast on-device speech recognition. Use it via ONNX in the worker. Whisper through transformers.js is the fallback. |
+| 8 | [jakearchibald/idb](https://github.com/jakearchibald/idb) | 7.4k | 2026-10 | ISC | Simpler, safer storage code in `shared.js` | A 1 KB promise wrapper over IndexedDB. Move to [dexie/Dexie.js](https://github.com/dexie/Dexie.js) (Apache-2.0, 14.7k) only if queries grow. |
+| 9 | [web-push-libs/web-push](https://github.com/web-push-libs/web-push) | 3.6k | 2026-10 | MPL-2.0 ⚠️ (file-level; fine used unmodified on the server) | **Web Push alerts** for "help" and safe-zone events when the Bridge is closed | Server only. To keep the backend zero-dependency, copy the VAPID/aes128gcm approach by hand instead. iOS 16.4+ supports push only for installed (home-screen) web apps. |
+| 10 | [ngxson/wllama](https://github.com/ngxson/wllama) | 1.4k | 2026-10 | MIT | **"LLM help" (v1)**: turn a caregiver's note into short button phrases | llama.cpp in WASM with a tiny model (0.5–1B, about 400 MB). Caregiver side only, opt-in. [mlc-ai/web-llm](https://github.com/mlc-ai/web-llm) (Apache-2.0, 19.3k) is faster on WebGPU but too heavy for an older iPad. |
+
+### Also useful
+| Project | Stars | Licence | Notes |
+|---|---|---|---|
+| [Turfjs/turf](https://github.com/Turfjs/turf) | 10.5k | MIT | Still the pick for polygon zones if the hand-written `geo.js` maths grows. |
+| [i18next/i18next](https://github.com/i18next/i18next) | 8.7k | MIT | When we add Spanish or other board languages. |
+| [GoogleChrome/workbox](https://github.com/GoogleChrome/workbox) | 13.0k | MIT | Not needed yet; the hand-written `sw.js` is small and clear. Revisit if caching rules multiply. |
+| [dequelabs/axe-core-npm](https://github.com/dequelabs/axe-core-npm) (`@axe-core/playwright`) | 730 | MPL-2.0 ⚠️ dev-only | Still recommended for automated WCAG checks in tests. |
+| [shayc/open-board-format](https://github.com/shayc/open-board-format) | 0 | MIT | New OBF/OBZ parser and validator (Oct 2026). Too young to vendor; read it alongside the spec when we build board import/export. |
+| [Cooperation-org/chipperly](https://github.com/Cooperation-org/chipperly) | 0 | MIT | New visual-supports app (schedule, timer, first-then). Ideas for a visual timer in Plans. |
+| [LE-VAI/access-input](https://github.com/LE-VAI/access-input) | 0 | MIT | New input layer (adaptive dwell, switch scanning). Read for adaptive dwell timing ideas only. |
+
+### Looked at and passed over
+- **[brownhci/WebGazer](https://github.com/brownhci/WebGazer)** (3.9k): **GPL-3.0** ⚠️ (licence file). Webcam gaze is also too jittery for AAC targets. Use the MediaPipe head pointer (top pick 1) instead.
+- **[imgly/background-removal-js](https://github.com/imgly/background-removal-js)** (7.4k): **AGPL-3.0** ⚠️. For photo-symbol cut-outs, use MediaPipe Image Segmenter (Apache-2.0) instead.
+- **[xenova/whisper-web](https://github.com/xenova/whisper-web)** (3.3k) and **[Mintplex-Labs/piper-tts-web](https://github.com/Mintplex-Labs/piper-tts-web)**: no licence ⚠️. Use transformers.js and sherpa-onnx directly.
+- **Word prediction:** nothing usable on GitHub. The repos are toys, Presage is GPL-2.0 and stale, and there's no maintained KenLM WASM build. Keep the learned bigram model in `shared.js`, and add a tiny on-device language model later if needed.
+- **[peteragility/open-aac-board](https://github.com/peteragility/open-aac-board)**: **GPL-3.0** ⚠️. Ideas only (multilingual boards, personal recordings).
