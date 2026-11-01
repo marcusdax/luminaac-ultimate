@@ -68,6 +68,9 @@ export function seed() {
     device: null, // { id, name, kind } when this device was paired with a code
     emoBase: { n: 0 }, // this child's prosody baseline, from confirmed moments only
     fl: { optIn: false, version: 0, global: null, local: null, sent: [] },
+    // Phase 7. Videos a caregiver picked, and gentle sound games. History stays on the device.
+    videos: { on: true, thumbs: false, list: [], sessions: [], talk: [] },
+    games: { settings: { mic: false, volume: 0.7, quiet: false, calm: false, choices: 3, reward: "stickers" }, goals: [], plays: [] },
     audit: [{ t: now, what: "Sample data loaded" }],
   };
 }

@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="phase3.css" />
   <link rel="stylesheet" href="phase6.css" />
   <link rel="stylesheet" href="phase4.css" />
+  <link rel="stylesheet" href="phase7.css" />
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -40,6 +41,7 @@
       <button type="button" class="tab" data-tab="signals">Signals</button>
       <button type="button" class="tab" data-tab="vocab">Vocabulary</button>
       <button type="button" class="tab" data-tab="routines">Stories</button>
+      <button type="button" class="tab" data-tab="play">Videos and games</button>
       <button type="button" class="tab" data-tab="insights">Insights</button>
       <button type="button" class="tab" data-tab="team">Team</button>
       <button type="button" class="tab" data-tab="safety">Safety</button>
@@ -217,6 +219,78 @@
           <section class="card" aria-labelledby="h-intent"><h2 id="h-intent">What the moments were about</h2><div id="intentStats"></div></section>
           <section class="card" aria-labelledby="h-feel"><h2 id="h-feel">Feelings, as estimated and checked by you</h2><div id="feelStats"></div></section>
           <section class="card" aria-labelledby="h-ms"><h2 id="h-ms">Milestones</h2><ul class="mini-list" id="milestoneList"></ul></section>
+        </div>
+        <h2 class="section-h" id="h-hist">Interests and history</h2>
+        <p class="soft">Worked out on this device from what <span class="child-name">your child</span> chose, said and played. It shows patterns, never a diagnosis.</p>
+        <div class="split">
+          <section class="card" aria-labelledby="h-int"><h2 id="h-int">Interest map</h2><div id="interestMap"></div></section>
+          <section class="card" aria-labelledby="h-words"><h2 id="h-words">Most used words</h2><div id="topWordsChart"></div></section>
+        </div>
+        <div class="split">
+          <section class="card" aria-labelledby="h-growth"><h2 id="h-growth">Growth, last 8 weeks</h2><div id="growthChart"></div></section>
+          <section class="card" aria-labelledby="h-try"><h2 id="h-try">Words to try next</h2><div id="tryWords"></div></section>
+        </div>
+        <div class="split">
+          <section class="card" aria-labelledby="h-vids"><h2 id="h-vids">Favourite videos</h2><div id="videoStats"></div></section>
+          <section class="card" aria-labelledby="h-moodint"><h2 id="h-moodint">Feelings and interests</h2><div id="moodLinks"></div></section>
+        </div>
+        <div class="split">
+          <section class="card" aria-labelledby="h-gprog"><h2 id="h-gprog">Sound games</h2><div id="gameProgress"></div></section>
+          <section class="card" aria-labelledby="h-digest"><div class="card-head"><h2 id="h-digest">This week</h2><button class="btn" type="button" id="btnReport">Print a summary for a therapist</button></div><ul class="digest" id="digestList"></ul></section>
+        </div>
+      </section>
+
+      <!-- VIDEOS AND GAMES (phase 7) -->
+      <section class="panel" id="tab-play" aria-labelledby="h-play" hidden>
+        <h1 id="h-play">Videos and sound games</h1>
+        <p class="lede">Pick videos <span class="child-name">your child</span> loves and the words that go with them. Watching becomes a reason to talk, and what they choose helps you see their interests.</p>
+        <div class="split">
+          <section class="card" aria-labelledby="h-vadd">
+            <h2 id="h-vadd">Add a video</h2>
+            <form id="formVideo" class="form" novalidate>
+              <label>YouTube link <input name="url" inputmode="url" autocomplete="off" required placeholder="https://www.youtube.com/watch?v=..." aria-describedby="vUrlHint vUrlErr" /></label>
+              <p class="soft small" id="vUrlHint">Paste a link from the YouTube app or website. Only videos you add here can be played.</p>
+              <p class="form-error" id="vUrlErr" role="alert" hidden></p>
+              <label>Name for the button <input name="title" required maxlength="40" placeholder="Choo choo train song" /></label>
+              <label>Picture for the button <input name="e" maxlength="4" placeholder="🚂" /></label>
+              <fieldset class="topic-pick"><legend>What is it about?</legend><div id="topicPick"></div></fieldset>
+              <label>Words to talk about it <input name="words" placeholder="train, fast, go, stop" aria-describedby="vWordsHint" /></label>
+              <p class="soft small" id="vWordsHint">Separate words with commas. We add words from the topics too.</p>
+              <button class="btn" type="submit">Add video</button>
+            </form>
+          </section>
+          <section class="card" aria-labelledby="h-vlist">
+            <div class="card-head"><h2 id="h-vlist">Video board</h2><span class="pill" id="vCount"></span></div>
+            <label class="check"><input type="checkbox" id="vOn" /> Show "My videos" in My Voice</label>
+            <label class="check"><input type="checkbox" id="vThumbs" aria-describedby="vThumbHint" /> Show video pictures</label>
+            <p class="soft small" id="vThumbHint">Pictures load from YouTube. Leave this off to use your emoji instead.</p>
+            <ul class="mini-list" id="videoList"></ul>
+            <p class="soft small">Videos play in YouTube's privacy-enhanced mode with no autoplay, no comments and no suggested videos at the end. Your child never needs a Google account.</p>
+          </section>
+        </div>
+        <div class="split">
+          <section class="card" aria-labelledby="h-gset">
+            <h2 id="h-gset">Sound game settings</h2>
+            <form class="form" id="formGameSet">
+              <label class="check"><input type="checkbox" name="mic" aria-describedby="micHint" /> Let games listen with the microphone</label>
+              <p class="soft small" id="micHint">Sound is checked on the device and never recorded or sent. Without the microphone, your child or you tap "I did it".</p>
+              <label>Game volume <input type="range" name="volume" min="0" max="1" step="0.1" /></label>
+              <label class="check"><input type="checkbox" name="quiet" /> Quiet mode: no chimes, only a calm voice</label>
+              <label class="check"><input type="checkbox" name="calm" /> Calm visuals: no bouncing or confetti</label>
+              <label>Pictures to choose from <select name="choices"><option value="2">2 (easier)</option><option value="3">3</option><option value="4">4</option></select></label>
+              <label>Reward <select name="reward"><option value="stickers">Stickers</option><option value="stars">Stars</option><option value="quiet">A quiet tick</option></select></label>
+            </form>
+          </section>
+          <section class="card" aria-labelledby="h-goals">
+            <h2 id="h-goals">Weekly goals</h2>
+            <form id="formGoal" class="form inline-form">
+              <label>Game <select name="game"><option value="any">Any sound game</option><option value="echo">Copy my sound</option><option value="match">Sound and picture</option><option value="first">First sounds</option><option value="turns">My turn, your turn</option></select></label>
+              <label>Turns a week <input name="perWeek" type="number" min="1" max="100" value="10" required /></label>
+              <button class="btn" type="submit">Add goal</button>
+            </form>
+            <ul class="mini-list" id="goalList"></ul>
+            <p class="soft small">Goals are for you, not your child. Games never show a fail or take anything away.</p>
+          </section>
         </div>
       </section>
 
@@ -571,6 +645,7 @@
   <script type="module" src="bridge-p4.js"></script>
   <script src="vendor/simplify.js" defer></script>
   <script type="module" src="bridge-p6.js"></script>
+  <script type="module" src="bridge-p7.js"></script>
   <dialog id="dlgReset" aria-labelledby="dlgResetT">
     <form id="formReset" class="form" method="dialog">
       <h2 id="dlgResetT">Choose a new password</h2>
@@ -581,5 +656,9 @@
     </form>
   </dialog>
   <script src="pwa.js" defer></script>
+  <dialog class="report-dlg" id="reportDlg" aria-labelledby="reportTitle">
+    <div class="report-bar"><h2 id="reportTitle">Summary for a therapist</h2><button class="btn" type="button" id="btnPrint">Print or save as PDF</button><button class="btn quiet" type="button" id="btnReportClose">Close</button></div>
+    <div id="reportBody"></div>
+  </dialog>
 </body>
 </html>

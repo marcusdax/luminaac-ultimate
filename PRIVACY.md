@@ -49,3 +49,9 @@ LuminAAC is used by children who can't easily tell us what they're comfortable w
 - **Email.** The server stores your email to send confirmation and reset links. Link tokens are stored as hashes and work once. In dev mode, mail is written to a local outbox file on the server.
 - **Quiet-device alert.** While location sharing is on, the child's device checks in every few minutes. The server keeps the last check-in time and, for up to 24 hours, the last location, so it can say where the device was last seen.
 - **Shared learning.** Each device has a lifetime privacy budget (ε, default 50 with δ = 1e-5). When it's spent, the device stops sending updates. Dropout recovery means the server can unmask only the sum, never one family's update.
+
+## Videos and sound games (v0.9)
+- Only videos a caregiver adds can play. They play through YouTube's privacy-enhanced player (youtube-nocookie.com) with no autoplay, suggested videos or comments. When a video plays, YouTube receives the request and may store data in the browser under its own policy. Thumbnails load from YouTube only if turned on.
+- Watch time, replays, "Talk about it" taps and game turns are kept on the device where they happened. They aren't synced to the server or shared with YouTube. Export and delete cover them.
+- The microphone is off unless a caregiver turns it on for games. Sound is measured in memory for loudness and pitch, then dropped. It is never recorded, stored or sent.
+- Insights and the therapist summary describe what happened. They don't diagnose or assess.

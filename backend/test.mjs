@@ -125,7 +125,7 @@ const login = await call("POST", "/api/auth/login", { email: "mom@example.com", 
 t("login", login.json.data.token && login.json.data.role === "parent");
 t("me", (await call("GET", "/api/auth/me", null, TOK)).json.data.user.email === "mom@example.com");
 t("password stored as scrypt hash", (() => { const raw = JSON.stringify(JSON.parse(readFileSync(join(process.env.LUMINAAC_DATA, "_accounts.json"), "utf8"))); return !raw.includes("correct horse") && !raw.includes(TOK); })());
-t("parent pushes doc", (await call("PUT", "/api/sync", { doc: { ...doc, notes: [{ t: 1, text: "private note" }], safety: { consent: true, zones: [{ id: "z1", name: "Home", lat: 41.88, lng: -87.63, r: 150 }, { id: "z2", name: "Creek path", type: "danger", shape: "poly", pts: [[41.881, -87.631], [41.881, -87.629], [41.879, -87.629]], buffer: 0 }], water: { on: true, buffer: 30, radius: 1500, features: [{ id: "w1", name: "Pond", kind: "poly", rings: [[[41.885, -87.635], [41.885, -87.633], [41.884, -87.633]]] }] } } }, baseVersion: 0 }, TOK)).json.data.version === 1);
+t("parent pushes doc", (await call("PUT", "/api/sync", { doc: { ...doc, notes: [{ t: 1, text: "private note" }], safety: { consent: true, zones: [{ id: "z1", name: "Home", lat: 41.88, lng: -87.63, r: 150 }, { id: "z2", name: "Creek path", type: "danger", shape: "poly", pts: [[41.881, -87.631], [41.881, -87.629], [41.879, -87.629]], buffer: 0 }], water: { on: true, buffer: 30, radius: 1500, features: [{ id: "w1", name: "Pond", kind: "poly", rings: [[[41.885, -87.635], [41.885, -87.633], [41.884, -87.633]]] }] } }, videos: { on: true, thumbs: false, list: [{ id: "v1", yt: "dQw4w9WgXcQ", title: "Trains", e: "🚂", topics: ["vehicles"], words: ["go"], secret: "x" }], sessions: [{ t: 1, v: "v1", w: 30 }], talk: [{ t: 1, v: "v1", word: "go" }] }, games: { settings: { mic: true, volume: 0.5 }, goals: [{ id: "g1", game: "echo", perWeek: 5 }], plays: [{ t: 1, game: "echo" }] } }, baseVersion: 0 }, TOK)).json.data.version === 1);
 const inv = await call("POST", "/api/family/invites", { role: "teacher" }, TOK);
 t("invite created", inv.json.data.code.length > 8);
 const teach = await call("POST", "/api/auth/register", { email: "teacher@school.org", password: "a long teacher password", invite: inv.json.data.code }, null);
@@ -187,6 +187,8 @@ const DK = cl.deviceKey;
 const cv = (await call("GET", "/api/sync", null, DK)).json.data;
 t("device sync is child-scoped", cv.role === "child" && cv.doc.safety.zones.length === 2 && !cv.doc.notes);
 t("device gets drawn shapes and water", cv.doc.safety.zones[1].shape === "poly" && cv.doc.safety.zones[1].pts.length === 3 && cv.doc.safety.water.on && cv.doc.safety.water.features[0].name === "Pond");
+t("device gets the video list and game settings", cv.doc.videos.list[0].yt === "dQw4w9WgXcQ" && !("secret" in cv.doc.videos.list[0]) && cv.doc.games.settings.mic === true && cv.doc.games.goals.length === 1);
+t("device does not get watch history or game turns", !cv.doc.videos.sessions && !cv.doc.videos.talk && !cv.doc.games.plays);
 t("device cannot push doc", (await call("PUT", "/api/sync", { doc, baseVersion: 1 }, DK)).status === 403);
 t("device cannot list alerts", (await call("GET", "/api/alerts", null, DK)).status === 403);
 const za = await call("POST", "/api/alerts", { kind: "zone-leave", zone: "Home", message: "Left Home", loc: { lat: 41.889123456, lng: -87.6301, acc: 12 } }, DK);

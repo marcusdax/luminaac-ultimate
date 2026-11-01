@@ -37,6 +37,8 @@ A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as 
 | <img src="screenshots/feelings-desktop.png" alt="Feeling estimates waiting for caregiver confirmation" width="420" /> | <img src="screenshots/fl-desktop.png" alt="Opt-in federated learning settings" width="420" /> |
 | **Caretaker guide** | **On a phone** |
 | <img src="screenshots/water-map-desktop.png" alt="Water danger zones near a safe zone on the map" width="420" /> | <img src="screenshots/draw-freehand-desktop.png" alt="Drawing a zone by hand" width="420" /> |
+| **Videos and talk** | **Interests and history** |
+| <img src="screenshots/talk-about-mobile.png" alt="Talk about it board after a video" width="200" /> | <img src="screenshots/insights-interests-desktop.png" alt="Interest map, top words and growth chart" width="420" /> |
 | <img src="screenshots/guide-desktop.png" alt="Caretaker guide contents page" width="420" /> | <img src="screenshots/myvoice-mobile.png" alt="My Voice on a phone" width="200" /> |
 
 ## Feature map
@@ -49,6 +51,7 @@ A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as 
 | 4 | v0.6 | Speech-emotion model (transformers.js, WebGPU/WASM), Kokoro natural voices, email confirmation and password reset, dropout-tolerant secure aggregation (Shamir t-of-n), installable PWAs, quiet-device alert, Capacitor scaffold, vendored face estimate |
 | 5 | v0.7 | Caretaker guide (Markdown and printable web page with a quick-start one-pager), open-source repository files |
 | 6 | v0.8 | Water danger zones from OpenStreetMap (Overpass) with a tunable buffer and urgent alerts, freehand safe and danger zones drawn by finger or stylus (pressure, palm rejection, simplification), shape editing with keyboard support |
+| 7 | v0.9 | Caregiver-chosen video board with a locked-down privacy-enhanced YouTube player and a "Talk about it" board, four gentle sound games (copy my sound with an on-device loudness and pitch meter, sound-to-picture, first sounds, turn-taking) with stickers, streaks, sensory settings and weekly goals, Interests and history insights (interest map, word growth, words to try, mood links) and a printable therapist summary. See [the concept](docs/CONCEPT-INTERESTS-INSIGHTS.md) |
 
 ## Architecture
 
@@ -105,9 +108,10 @@ Then in the Bridge go to Privacy, then "Sync, alerts and share links", enter `ht
 
 ```bash
 cd backend
-node test.mjs       # 117 API tests: accounts, passkeys, pairing, mail, reset, alerts, federated learning with dropouts
+node test.mjs       # 119 API tests: accounts, passkeys, pairing, mail, reset, alerts, federated learning with dropouts
 cd ..
 node tests/geo-water.test.mjs   # 34 tests: Overpass parsing, clipping, polygon distance, danger alerts
+node tests/interests-games.test.mjs   # 44 tests: YouTube links, embed lock-down, interest scoring, growth, digest, report, pitch, games
 ```
 
 ## Project structure
@@ -123,6 +127,7 @@ node tests/geo-water.test.mjs   # 34 tests: Overpass parsing, clipping, polygon 
 | `myvoice-p3.js` | My Voice phase 3: safe-zone watching, pairing by QR or code, child-scoped pull |
 | `geo.js`, `emotion.js`, `fl-core.js` | Geofence maths, on-device prosody and face estimates, federated learning core (shared with the backend) |
 | `water.js`, `bridge-p6.js`, `phase6.css`, `vendor/simplify.js` | Phase 6: water lookup and clipping, freehand drawing and shape editing, Water card |
+| `interests.js`, `games.js`, `bridge-p7.js`, `myvoice-p7.js`, `phase7.css` | Phase 7: interest and history maths, sound games and pitch, Videos and games tab and Insights section, My videos and Sound games |
 | `motion-lite.js` | Restrained motion wrapper around Motion that respects reduced motion |
 | `vendor/` | Leaflet, qrcode-generator, jsQR, Motion and OpenMoji (see `THIRD-PARTY.md`) |
 | `ai.js`, `ai-worker.js` | Phase 4: transformers.js speech-emotion model and Kokoro voices in a Web Worker (lazy, cached, WebGPU or WASM) |

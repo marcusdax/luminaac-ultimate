@@ -123,6 +123,9 @@ async function pull() {
     if (!r?.doc) return;
     const x = load();
     for (const k of ["signals", "stories", "practice", "safety"]) if (r.doc[k]) x[k] = r.doc[k];
+    // Phase 7: take the caregiver's video list and game settings; keep this device's own history.
+    if (r.doc.videos) x.videos = { ...x.videos, on: r.doc.videos.on, thumbs: r.doc.videos.thumbs, list: r.doc.videos.list || [] };
+    if (r.doc.games) x.games = { ...x.games, settings: { ...x.games?.settings, ...r.doc.games.settings }, goals: r.doc.games.goals || [] };
     if (r.doc.access) x.access = { ...x.access, ...r.doc.access };
     if (r.doc.profile?.child) x.profile.child = r.doc.profile.child;
     x.sync.version = r.version; x.sync.last = Date.now(); persist(x); syncWatch();

@@ -84,8 +84,11 @@ const can = (w, perm) => (w.role === "child" ? w.scopes || PERMS.child : PERMS[w
 // What a paired My Voice device may read: only what it needs to run (no notes, team, audit, alerts).
 function childView(doc) {
   if (!doc) return null;
-  const { profile = {}, signals = [], stories = [], practice, access, safety } = doc;
-  return { version: 2, scope: "child", profile: { child: profile.child, place: profile.place }, signals: signals.map(({ id, name, phrase, cues, contexts, confirmations, rejections, moods }) => ({ id, name, phrase, cues, contexts, confirmations, rejections, moods })), stories, practice, access, safety: safety && { consent: safety.consent, zones: safety.zones, sendLocation: safety.sendLocation, water: safety.water } };
+  const { profile = {}, signals = [], stories = [], practice, access, safety, videos, games } = doc;
+  return { version: 2, scope: "child", profile: { child: profile.child, place: profile.place }, signals: signals.map(({ id, name, phrase, cues, contexts, confirmations, rejections, moods }) => ({ id, name, phrase, cues, contexts, confirmations, rejections, moods })), stories, practice, access, safety: safety && { consent: safety.consent, zones: safety.zones, sendLocation: safety.sendLocation, water: safety.water },
+    // Phase 7: the video list and game settings only. Watch history and game turns stay on each device.
+    videos: videos && { on: videos.on, thumbs: videos.thumbs, list: (videos.list || []).map(({ id, yt, start, title, e, topics, words }) => ({ id, yt, start, title, e, topics, words })) },
+    games: games && { settings: games.settings, goals: games.goals } };
 }
 const failedLogins = new Map(); // email -> [timestamps]
 const claimTries = new Map(); // ip -> [timestamps]

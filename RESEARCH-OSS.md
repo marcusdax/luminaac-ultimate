@@ -201,3 +201,62 @@ Searched with `gh api` against the "Next" and "Later" roadmap items that round 1
 - **[xenova/whisper-web](https://github.com/xenova/whisper-web)** (3.3k) and **[Mintplex-Labs/piper-tts-web](https://github.com/Mintplex-Labs/piper-tts-web)**: no licence ⚠️. Use transformers.js and sherpa-onnx directly.
 - **Word prediction:** nothing usable on GitHub. The repos are toys, Presage is GPL-2.0 and stale, and there's no maintained KenLM WASM build. Keep the learned bigram model in `shared.js`, and add a tiny on-device language model later if needed.
 - **[peteragility/open-aac-board](https://github.com/peteragility/open-aac-board)**: **GPL-3.0** ⚠️. Ideas only (multilingual boards, personal recordings).
+
+## Round 3: interests, history and sound play
+
+Checked October 31, 2026 with the GitHub API (stars, licence, last push). Fit: **Use** = good candidate, **Idea** = borrow the approach, **Avoid** = licence or maintenance problem.
+
+### Pitch, loudness and audio features
+| Repo | Stars | Licence | Fit |
+|---|---|---|---|
+| [ianprime0509/pitchy](https://github.com/ianprime0509/pitchy) | 139 | 0BSD | **Use** if our autocorrelation isn't enough: McLeod pitch method, tiny, active (Oct 2026). |
+| [cwilso/PitchDetect](https://github.com/cwilso/PitchDetect) | 1.4k | MIT | **Idea.** The approach our `games.js` pitch follows. |
+| [meyda/meyda](https://github.com/meyda/meyda) | 1.7k | MIT | **Use** for richer features (MFCC, spectral flatness) to tell voice from claps or noise. Last push 2024. |
+| [peterkhayes/pitchfinder](https://github.com/peterkhayes/pitchfinder) | 504 | none | **Avoid**: no licence. |
+| [ml5js/ml5-next-gen](https://github.com/ml5js/ml5-next-gen) | 188 | ml5 licence (non-OSI, ethical-use) | **Avoid** for shipping; the custom licence adds terms. |
+
+### Speech recognition on the device
+| Repo | Stars | Licence | Fit |
+|---|---|---|---|
+| [ccoreilly/vosk-browser](https://github.com/ccoreilly/vosk-browser) / [alphacep/vosk-api](https://github.com/alphacep/vosk-api) | 531 / 15.2k | Apache-2.0 | **Use** for a small-vocabulary "did they try *ball*" game (grammar-limited, WASM, ~40 MB model). |
+| [huggingface/transformers.js](https://github.com/huggingface/transformers.js) | 16.4k | Apache-2.0 | **Use.** Already used; Whisper/Moonshine for later word games. |
+| [ggml-org/whisper.cpp](https://github.com/ggml-org/whisper.cpp) | 54.8k | MIT | **Idea** for native builds. |
+| [tensorflow/tfjs-models](https://github.com/tensorflow/tfjs-models) speech-commands, [teachablemachine-community](https://github.com/googlecreativelab/teachablemachine-community) | 14.8k / 1.7k | Apache-2.0 | **Use** for caregiver-trained sound classes ("our dog's name", the child's own word approximations). |
+| [cmusphinx/pocketsphinx](https://github.com/cmusphinx/pocketsphinx) | 4.4k | BSD-style | **Idea**; the JS port [syl22-00/pocketsphinx.js](https://github.com/syl22-00/pocketsphinx.js) has no licence and is stale (**Avoid**). |
+| [coqui-ai/STT](https://github.com/coqui-ai/STT), [mozilla/DeepSpeech](https://github.com/mozilla/DeepSpeech) | 2.6k / archived | MPL-2.0 | **Avoid**: unmaintained. |
+| [speechbrain/speechbrain](https://github.com/speechbrain/speechbrain) | 11.9k | Apache-2.0 | **Idea** for server-side research only. |
+
+### Audio and rewards
+| Repo | Stars | Licence | Fit |
+|---|---|---|---|
+| [Tonejs/Tone.js](https://github.com/Tonejs/Tone.js) | 14.9k | MIT | **Idea** for music games; plain WebAudio is enough today. |
+| [goldfire/howler.js](https://github.com/goldfire/howler.js) | 25.4k | MIT | **Use** if we add recorded sound effects (iOS unlock handling). |
+| [catdad/canvas-confetti](https://github.com/catdad/canvas-confetti), [loonywizard/js-confetti](https://github.com/loonywizard/js-confetti) | 12.8k / 1.3k | ISC / MIT | **Use** for an optional celebration; must respect calm visuals. |
+
+### Charts for Insights
+| Repo | Stars | Licence | Fit |
+|---|---|---|---|
+| [leeoniya/uPlot](https://github.com/leeoniya/uPlot) | 10.6k | MIT | **Use** if charts grow (tiny, fast). |
+| [chartjs/Chart.js](https://github.com/chartjs/Chart.js), [frappe/charts](https://github.com/frappe/charts) | 67.8k / 15.1k | MIT | **Idea**; heavier than our hand-made SVG and weaker on screen-reader tables. |
+
+### YouTube embedding
+| Repo | Stars | Licence | Fit |
+|---|---|---|---|
+| [paulirish/lite-youtube-embed](https://github.com/paulirish/lite-youtube-embed) | 6.4k | Apache-2.0 | **Idea**: loads nothing from YouTube until tapped. Our tiles already do this. |
+| [justinribeiro/lite-youtube](https://github.com/justinribeiro/lite-youtube) | 1.4k | MIT | **Use** candidate as a web component with nocookie support. |
+| [gajus/youtube-player](https://github.com/gajus/youtube-player) | 387 | unclear (NOASSERTION) | **Avoid**: licence unclear, last push 2023. |
+| [sampotts/plyr](https://github.com/sampotts/plyr), [cookpete/react-player](https://github.com/cookpete/react-player) | 30k / 10.3k | MIT | **Avoid** for now: overlays on YouTube need ToS care, and React isn't used. |
+| [LonelyCpp/react-native-youtube-iframe](https://github.com/LonelyCpp/react-native-youtube-iframe) | 704 | MIT | **Idea** if the native app moves to React Native. |
+| [youtube/api-samples](https://github.com/youtube/api-samples) | archived | none | Reference only. |
+
+### AAC, autism and caregiver tools
+| Repo | Stars | Licence | Fit |
+|---|---|---|---|
+| [cboard-org/cboard](https://github.com/cboard-org/cboard) | 766 | GPL-3.0 | **Idea** (board formats, OBF). Don't copy code into MIT. |
+| [asterics/Asterics-AAC](https://github.com/asterics/Asterics-AAC), [willwade/AACProcessors](https://github.com/willwade/AACProcessors) | 129 / – | AGPL-3.0 | **Idea**; AGPL. AACProcessors is useful as a separate tool for importing other AAC formats. |
+| [mulberrysymbols/mulberry-symbols](https://github.com/mulberrysymbols/mulberry-symbols) | 62 | CC BY-SA | **Use** for topic fringe pictures (commercial-friendly). |
+| [Chuea81/freevoice-aac](https://github.com/Chuea81/freevoice-aac) | 14 | MIT | **Idea**: small, recent. |
+| [quangshuynh/carebridge](https://github.com/quangshuynh/carebridge), [Chimbay/SocialCueWebapp](https://github.com/Chimbay/SocialCueWebapp), [zdvman/therapoetry](https://github.com/zdvman/therapoetry) | tiny | Apache-2.0 / MIT / MIT | **Idea** only. |
+| Visual schedule, social story and articulation-game repos | tiny | mostly unlicensed | **Avoid**; ours are already richer. |
+
+**Takeaway:** nothing needed to be vendored for v0.9. Next candidates: Vosk-browser or transformers.js Moonshine for word-level games, Meyda for voice-vs-noise, Mulberry for topic pictures and lite-youtube for lighter tiles.
