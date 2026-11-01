@@ -6,12 +6,12 @@
 //  • Model weights from the Hugging Face hub are cached by Transformers.js itself
 //    ("transformers-cache"); Human's models are vendored locally under vendor/human.
 //  • The backend API (/api/…) and map tiles are never cached here.
-const VERSION = "luminaac-v0.11.0";
+const VERSION = "luminaac-v0.11.1";
 const SHELL = `${VERSION}-shell`, CDN = `${VERSION}-cdn`;
 const FILES = [
   "./", "index.html", "bridge.html", "guide.html", "guide.css", "manifest.webmanifest", "bridge.webmanifest", "favicon.svg",
-  "tokens.css", "app.css", "myvoice.css", "bridge.css", "phase3.css", "phase4.css", "phase6.css", "phase7.css", "potty.css", "sound.css", "brand/brand-tokens.css",
-  "app.js", "myvoice.js", "access.js", "shared.js", "vocab.js", "myvoice-p3.js", "myvoice-p4.js", "myvoice-p7.js", "potty.js", "potty-core.js", "potty-store.js", "potty-icons.js", "sound-core.js", "sound-store.js", "myvoice-sound.js", "bridge-sound.js",
+  "tokens.css", "app.css", "myvoice.css", "bridge.css", "phase3.css", "phase4.css", "phase6.css", "phase7.css", "potty.css", "sound.css", "redesign.css", "brand/brand-tokens.css",
+  "app.js", "myvoice.js", "access.js", "shared.js", "vocab.js", "myvoice-p3.js", "myvoice-p4.js", "myvoice-p7.js", "potty.js", "potty-core.js", "potty-store.js", "potty-icons.js", "sound-core.js", "sound-store.js", "myvoice-sound.js", "bridge-sound.js", "nav-core.js", "myvoice-redesign.js", "bridge-hubs.js",
   "bridge.js", "bridge-plus.js", "bridge-p3.js", "bridge-p4.js", "bridge-p6.js", "bridge-p7.js", "bridge-potty.js", "interests.js", "games.js", "water.js", "emotion.js", "geo.js", "fl-core.js", "motion-lite.js",
   "ai.js", "ai-worker.js", "pwa.js",
   "vendor/motion.js", "vendor/qrcode.js", "vendor/simplify.js", "vendor/jsQR.js", "vendor/leaflet/leaflet.js", "vendor/leaflet/leaflet.css",

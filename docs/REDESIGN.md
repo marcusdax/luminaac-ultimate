@@ -1,6 +1,10 @@
 # LuminAAC redesign: layout, flow and look (v0.12 proposal)
 
-Status: proposal, 1 November 2026. Nothing here is built yet. Prototype canvas (six screens; role switch and program list are clickable): https://claude.ai/artifact/EJMHnmfKz9azR1JppTWVHH
+Status: R1 built behind a switch (v0.11.1, 1 November 2026). R2–R5 are proposals.
+
+**Try R1:** open `bridge.html?redesign=1` or `index.html?redesign=1` once on a device. The choice is remembered on that device; `?redesign=0` turns it off again. With it off, nothing looks or works differently. Code: `nav-core.js` (hub map, old-link aliases, Now/Next; tested in `tests/nav.test.mjs`), `bridge-hubs.js`, `myvoice-redesign.js`, `redesign.css`.
+
+**R1 as built, and how it differs from the plan below:** the Log button, role views and Find are R2 and later, so the phone bar has the four hubs only. "I need the toilet" stays on Talk because telling is talking; only the "My world" book moves to Play. "My things" also stays on Talk. Prototype canvas (six screens; role switch and program list are clickable): https://claude.ai/artifact/EJMHnmfKz9azR1JppTWVHH
 
 ## Why change anything
 

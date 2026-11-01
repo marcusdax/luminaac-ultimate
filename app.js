@@ -442,6 +442,7 @@ function renderPlans() {
     });
     list.append(li);
   });
+  dispatchEvent(new CustomEvent("mv:plans"));
 }
 
 // ---------- Caregiver ----------
@@ -601,7 +602,10 @@ function show(view) {
   if (view === "care") renderCare();
   if (view === "plans") renderPlans();
   $("#main").focus({ preventScroll: true });
+  dispatchEvent(new CustomEvent("mv:show", { detail: view }));
 }
+// For the redesign shell (myvoice-redesign.js): switch views and know the open plan.
+window.__myvoice = { show, get view() { return state.view; }, get plan() { return state.plan; } };
 
 function applySettings() {
   const root = document.documentElement;

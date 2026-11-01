@@ -1,5 +1,8 @@
 # Roadmap
 
+## v0.11.1: Redesign R1, behind a switch
+Four Bridge hubs (Home, Programs, Progress, Circle) instead of 12 tabs, with a bottom bar on phones and old links still working. My Voice gets Talk · Calm · My day · Play, a Now/Next line while a plan is under way, and the Bridge link moves inside the Caregiver door. Off unless `?redesign=1` is opened once on a device. Next: R2 (Log button, role views, handoff card). See `docs/REDESIGN.md`.
+
 ## v0.11: Sound Path and Potty Path mechanics (phase 9)
 Sound Path increment A from `docs/SOUND-PATH.md` (ladder, practice engine, Sing and Tap, Word Train, Sound World, Say it with me, judge bar, inventory, SLP sheet) and Potty Path M1–M7 from `docs/POTTY-PATH-MECHANICS.md`, both behind feature flags that are off by default. Next: Sound Path increment B (family video models, Mouth Mirror with on-device face landmarks), then Safety Links (tracker cards, "if found" page, webhook alerts for door and pool sensors).
 
