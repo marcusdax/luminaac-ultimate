@@ -43,6 +43,15 @@ export function redesignOn() {
   return on;
 }
 
+// "Back to My Voice" from the Bridge reopens the Caregiver area, not Talk. The
+// Bridge leaves a time stamp in sessionStorage (this tab only); My Voice honours
+// it once, within a few minutes, and only with #care in the address.
+export const BACK = "luminaac:back-to-care";
+export function backToCare(hash, stamp, now = Date.now(), within = 5 * 60e3) {
+  const t = Number(stamp);
+  return hash === "#care" && t > 0 && now - t >= 0 && now - t < within;
+}
+
 // Now/Next: the plan that's under way (some steps done, not all). The plan the
 // child last opened wins; with none under way the ribbon stays hidden.
 export function nowNext(plans, done = {}, prefer = null) {

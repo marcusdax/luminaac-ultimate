@@ -88,6 +88,36 @@ let err = ""; try { await fetchWater([{ lat: 41.9, lng: -87.6 }], 1000, { endpoi
 t("offline gives a plain message", /offline/.test(err));
 err = ""; try { await fetchWater([], 1000); } catch (e) { err = e.message; }
 t("no centres asks for a zone first", /safe zone/.test(err));
+const hang = async (u, o) => new Promise((_, no) => o.signal.addEventListener("abort", () => no(Object.assign(new Error("aborted"), { name: "AbortError" }))));
+err = ""; let t0 = Date.now(); try { await fetchWater([{ lat: 41.9, lng: -87.6 }], 1000, { endpoints: ["a", "b", "c"], timeoutMs: 50, fetchImpl: hang }); } catch (e) { err = e.message; }
+t("servers asked together: three hung servers give up once, after the time limit", /slow/.test(err) && Date.now() - t0 < 1000);
+let slowStopped = false;
+const fast = await fetchWater([{ lat: 41.9, lng: -87.6 }], 1000, { simplify, endpoints: ["slow", "fast"], fetchImpl: async (u, o) => (u === "fast" ? res(200, json) : hang(u, o).catch((e) => { slowStopped = true; throw e; })) });
+await new Promise((r) => setTimeout(r, 0));
+t("first good answer wins and the slower request is stopped", fast.length === 4 && slowStopped);
+
+// ---- water from map pictures (water-tiles.js) ----
+const T = await import("../water-tiles.js");
+t("map water colour matches, park green and road white don't", T.isWater(170, 211, 223) && T.isWater(176, 205, 230) && !T.isWater(200, 250, 200) && !T.isWater(255, 255, 255));
+const px = T.toPixel(41.88, -87.63, 15), back = T.toLatLng(px.x, px.y, 15);
+t("pixel <-> lat/lng round trip", near(back[0], 41.88, 1e-9) && near(back[1], -87.63, 1e-9));
+const plan = T.tilePlan({ lat: 41.88, lng: -87.63 }, 1500), plan2 = T.tilePlan({ lat: 41.88, lng: -87.63 }, 300);
+t("tile plan stays under the tile limit and zooms in for small searches", (plan.x1 - plan.x0 + 1) * (plan.y1 - plan.y0 + 1) <= T.MAX_TILES && plan2.z > plan.z);
+// A 30x12 picture: a 9x9 pond on the left, a 6x3 pool on the right, a stray blue pixel (label) in between.
+const W = 30, H = 12, rgba = new Uint8ClampedArray(W * H * 4).fill(255);
+const paint = (x0, y0, x1, y1) => { for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) rgba.set([170, 211, 223, 255], (y * W + x) * 4); };
+paint(0, 0, 9, 9); paint(21, 3, 27, 6); paint(15, 10, 16, 11);
+const cg = T.cellGrid(rgba, W, H, 3);
+t("cells: pond is 3x3 cells, a lone blue pixel is not water", cg.cols === 10 && cg.rows === 4 && cg.grid[0] && cg.grid[2 * 10 + 2] && !cg.grid[3 * 10 + 5]);
+const ps = T.patches(cg, (i, j) => [i, j]);
+t("two separate patches found", ps.length === 2 && ps.map((p) => p.cells).sort().join() === "2,9");
+const pond = ps.find((p) => p.cells === 9);
+t("pond outline is a closed square of the right size", pond.ring.length === 12 && Math.max(...pond.ring.map((p) => p[0])) === 3 && Math.max(...pond.ring.map((p) => p[1])) === 3);
+const Lshape = T.patches({ grid: Uint8Array.from([1, 0, 1, 0, 1, 1]), cols: 2, rows: 3 }, (i, j) => [j, i]);
+t("an L-shaped patch is one shape", Lshape.length === 1 && Lshape[0].cells === 4);
+const geoRing = T.patches(cg, (i, j) => [41.88 - j * 1e-4, -87.63 + i * 1e-4])[0].ring;
+t("a found patch works as a danger shape (inside = 0 m)", distToShape({ lat: 41.88 - 1.5e-4, lng: -87.63 + 1.5e-4 }, "poly", [geoRing]) === 0);
+t("names by size", T.nameFor(1, 10) === "Pool or small water" && T.nameFor(9000, 10) === "Lake, river or sea");
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

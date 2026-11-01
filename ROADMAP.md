@@ -1,5 +1,13 @@
 # Roadmap
 
+## v0.11.2: Redesign fixes and fast water search
+- **Lock-ups:** the Bridge no longer uses View Transitions, which snapshot the whole page and could freeze taps on iPad Safari. It uses a 140 ms CSS fade instead.
+- **Stale files:** the service worker now installs with `cache: "reload"`, so a new version can't pick up an old copy of a file from the browser cache.
+- **Bridge round trip:** the Caregiver area (after the long press) has a clear "Open the Bridge" button. The Bridge's "Back to My Voice" link now returns to the Caregiver area instead of Talk, once and within five minutes.
+- **Water search:**
+  - A first pass reads the water colour from the OpenStreetMap map tiles (`water-tiles.js`). It takes about a second, saves the shapes and turns alerts on.
+  - The named Overpass search then asks all three servers at once rather than one after another. If it answers, its named places replace the tile shapes; if it times out, the tile shapes stay.
+
 ## v0.11.1: Redesign R1, behind a switch
 Four Bridge hubs (Home, Programs, Progress, Circle) instead of 12 tabs, with a bottom bar on phones and old links still working. My Voice gets Talk · Calm · My day · Play, a Now/Next line while a plan is under way, and the Bridge link moves inside the Caregiver door. Off unless `?redesign=1` is opened once on a device. Next: R2 (Log button, role views, handoff card). See `docs/REDESIGN.md`.
 

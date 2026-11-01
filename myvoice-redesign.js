@@ -6,7 +6,7 @@
 // - Now/Next ribbon on Talk while a plan is under way.
 // The board, strip, colours and tile positions don't change.
 import { PLANS } from "./vocab.js";
-import { nowNext, redesignOn } from "./nav-core.js";
+import { nowNext, redesignOn, backToCare, BACK } from "./nav-core.js";
 
 const MV = window.__myvoice;
 if (MV && redesignOn()) init();
@@ -26,12 +26,18 @@ function init() {
   plansBtn.after(playBtn);
   playBtn.addEventListener("click", () => MV.show("play"));
 
+  // After the long press, the Caregiver area leads straight to the Bridge, and
+  // the Bridge's "Back to My Voice" lands here again rather than on Talk.
   const bridge = $(".nav-bridge");
   if (bridge) {
-    bridge.className = "ghost-btn rd-bridge";
-    bridge.innerHTML = "Open the Bridge";
+    bridge.className = "rd-bridge";
+    bridge.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17c3-6 6-8 9-8s6 2 9 8M3 17h18M7 17v-4M12 17V9M17 17v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Open the Bridge`;
     $("#lockBtn").before(bridge);
   }
+  let stamp = null;
+  try { stamp = sessionStorage.getItem(BACK); sessionStorage.removeItem(BACK); } catch {}
+  if (backToCare(location.hash, stamp)) MV.openCare?.();
+  if (location.hash === "#care") history.replaceState(null, "", location.pathname + location.search);
 
   // ---------- Play ----------
   const play = document.createElement("section");

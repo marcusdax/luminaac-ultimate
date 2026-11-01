@@ -605,7 +605,7 @@ function show(view) {
   dispatchEvent(new CustomEvent("mv:show", { detail: view }));
 }
 // For the redesign shell (myvoice-redesign.js): switch views and know the open plan.
-window.__myvoice = { show, get view() { return state.view; }, get plan() { return state.plan; } };
+window.__myvoice = { show, openCare() { state.unlocked = true; show("care"); }, get view() { return state.view; }, get plan() { return state.plan; } };
 
 function applySettings() {
   const root = document.documentElement;

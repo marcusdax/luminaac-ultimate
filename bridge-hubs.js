@@ -1,7 +1,7 @@
 // Redesign R1: four hubs (Home, Programs, Progress, Circle) over the twelve old
 // tabs. Only runs with the dev switch on (?redesign=1). It drives the existing
 // tabs through B.show(), so every panel, hash link and render works unchanged.
-import { HUBS, hubOf, resolveHash, tabForHub, redesignOn } from "./nav-core.js";
+import { HUBS, hubOf, resolveHash, tabForHub, redesignOn, BACK } from "./nav-core.js";
 
 const ICON = {
   home: "M4 11l8-7 8 7v9h-5v-6H9v6H4z",
@@ -18,12 +18,16 @@ function init() {
   const oldTab = (id) => document.querySelector(`button.tab[data-tab="${id}"]`);
   const isShown = (id) => { const b = oldTab(id); return !!b && !b.hidden; };
   const last = {};
-  const still = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.body.classList.contains("still");
-  const go = (tab) => {
-    if (!document.startViewTransition || still()) return B.show(tab);
-    const vt = document.startViewTransition(() => B.show(tab));
-    vt.ready.catch(() => {}); // a quick second tap skips the first transition; that's fine
-  };
+  // No View Transitions: on iPad Safari a whole-page snapshot could freeze taps
+  // for seconds. The new panel fades in with plain CSS instead (redesign.css).
+  const go = (tab) => B.show(tab);
+
+  // "Back to My Voice" reopens the Caregiver area (see backToCare in nav-core.js).
+  document.querySelectorAll('a[href="index.html"]').forEach((a) => {
+    a.href = "index.html#care";
+    if (a.classList.contains("pill-link")) a.textContent = "Back to My Voice";
+    a.addEventListener("click", () => { try { sessionStorage.setItem(BACK, String(Date.now())); } catch {} });
+  });
 
   const bar = document.createElement("nav");
   bar.className = "rd-hubs";

@@ -2,6 +2,7 @@
 // Shapes are saved with the other zones (db.safety.zones) so they sync to My Voice
 // and the native app, which check them on the device. Same document as bridge.js.
 import { fetchWater } from "./water.js";
+import { scanWaterTiles } from "./water-tiles.js";
 import { currentPosition, distToShape } from "./geo.js";
 
 const B = window.__bridge;
@@ -186,7 +187,7 @@ function drawWater() {
   const layers = [];
   for (const f of w.features) {
     if (f.ignored) continue;
-    const ll = f.kind === "poly" ? f.rings : f.rings[0];
+    const ll = f.kind === "poly" ? f.rings.map((r) => [r]) : f.rings[0]; // every ring is an outer edge (holes were dropped), so draw them as separate shapes
     if (w.on) layers.push(f.kind === "point" ? L.circle(ll[0], { radius: w.buffer, color: "#b8372f", weight: 2, dashArray: "4 4", fillOpacity: 0.12, interactive: false }) : (f.kind === "poly" ? L.polygon : L.polyline)(ll, { color: "#b8372f", opacity: 0.22, weight: halo, fill: false, interactive: false, lineJoin: "round" }));
     layers.push(f.kind === "point" ? L.circleMarker(ll[0], { radius: 6, color: "#1d5f8f", fillColor: "#5aa9d6", fillOpacity: 0.9, weight: 2 }).bindTooltip(esc(f.name)) : (f.kind === "poly" ? L.polygon : L.polyline)(ll, { color: "#1d5f8f", weight: f.kind === "line" ? 4 : 2, fillColor: "#5aa9d6", fillOpacity: 0.45 }).bindTooltip(esc(f.name)));
   }
@@ -214,20 +215,36 @@ $("#formWater").addEventListener("input", (e) => {
   renderWater(); clearTimeout(saveT);
   saveT = setTimeout(() => B.save(t.name === "on" ? `${w.on ? "Turned on" : "Turned off"} water alerts` : `Water alert setting: ${t.name} ${t.value} m`), t.name === "on" ? 0 : 600);
 });
+// Two passes. First the blue on the map pictures (water-tiles.js, a few
+// seconds), saved and alerting straight away. Then the slower named search
+// (Overpass), which replaces it when it answers; if it times out, the map
+// shapes stay.
 async function find(centers, where) {
   const st = $("#waterStatus"); st.dataset.busy = "1";
-  st.textContent = `Looking for water near ${where}… this can take up to a minute.`;
-  for (const b of ["#btnWaterZones", "#btnWaterHere"]) $(b).disabled = true;
-  try {
+  const many = (n, s) => `${n} ${s}${n === 1 ? "" : s.endsWith("h") ? "es" : "s"}`;
+  const keep = (found, src) => {
     const w = water(), ignored = new Set(w.features.filter((x) => x.ignored).map((x) => x.id));
-    const found = await fetchWater(centers, w.radius, { simplify: window.simplify });
-    Object.assign(w, { features: found.map((x) => ({ ...x, ...(ignored.has(x.id) && { ignored: true }) })), fetchedAt: Date.now(), centers: centers.map((c) => ({ lat: r5(c.lat), lng: r5(c.lng) })), from: where === "you" ? "where you were" : safety().zones[0]?.name || "your zone", on: found.length ? true : w.on });
-    delete st.dataset.busy;
-    B.save(`Found ${found.length} places with water near ${where}`); renderWater();
-    st.textContent = found.length ? `Found ${found.length} place${found.length === 1 ? "" : "s"} with water. Water alerts are on and will sync to My Voice.` : "No mapped water found nearby. You can still draw a danger area by hand.";
+    Object.assign(w, { features: found.map((x) => ({ ...x, ...(ignored.has(x.id) && { ignored: true }) })), fetchedAt: Date.now(), src, centers: centers.map((c) => ({ lat: r5(c.lat), lng: r5(c.lng) })), from: where === "you" ? "where you were" : safety().zones[0]?.name || "your zone", on: found.length ? true : w.on });
+    B.save(`Found ${many(found.length, "place")} with water near ${where} (${src === "map" ? "map picture" : "OpenStreetMap search"})`); renderWater();
     if (found.length && map()) map().setView([centers[0].lat, centers[0].lng], 15);
-  } catch (err) { delete st.dataset.busy; st.textContent = err.message + (water().features.length ? " Your saved water is still being watched." : ""); }
-  finally { for (const b of ["#btnWaterZones", "#btnWaterHere"]) $(b).disabled = false; }
+  };
+  st.textContent = `Looking at the map near ${where}…`;
+  for (const b of ["#btnWaterZones", "#btnWaterHere"]) $(b).disabled = true;
+  let quick = [];
+  try {
+    quick = await scanWaterTiles(centers, water().radius, { simplify: window.simplify });
+    if (quick.length) keep(quick, "map");
+    st.textContent = quick.length ? `Found ${many(quick.length, "patch")} of water on the map. Alerts are on. Looking up their names…` : "No water seen on the map. Double-checking with the map search…";
+  } catch { st.textContent = `Looking for water near ${where}… this can take up to a minute.`; }
+  try {
+    const named = await fetchWater(centers, water().radius, { simplify: window.simplify });
+    if (named.length || !quick.length) keep(named, "osm");
+    delete st.dataset.busy;
+    st.textContent = named.length ? `Found ${many(named.length, "place")} with water. Water alerts are on and will sync to My Voice.` : quick.length ? `Found ${many(quick.length, "patch")} of water on the map. Water alerts are on and will sync to My Voice.` : "No mapped water found nearby. You can still draw a danger area by hand.";
+  } catch (err) {
+    delete st.dataset.busy;
+    st.textContent = quick.length ? `Found ${many(quick.length, "patch")} of water on the map. Alerts are on. (Names couldn't be looked up: ${err.message.toLowerCase()})` : err.message + (water().features.length ? " Your saved water is still being watched." : "");
+  } finally { for (const b of ["#btnWaterZones", "#btnWaterHere"]) $(b).disabled = false; }
 }
 $("#btnWaterZones").addEventListener("click", () => { const c = centres(); if (!c.length) return ($("#waterStatus").textContent = "Add a safe zone first, or choose Find water near me."); find(c, "your zones"); });
 $("#btnWaterHere").addEventListener("click", async () => {

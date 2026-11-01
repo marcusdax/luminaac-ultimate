@@ -6,13 +6,13 @@
 //  • Model weights from the Hugging Face hub are cached by Transformers.js itself
 //    ("transformers-cache"); Human's models are vendored locally under vendor/human.
 //  • The backend API (/api/…) and map tiles are never cached here.
-const VERSION = "luminaac-v0.11.1";
+const VERSION = "luminaac-v0.11.2";
 const SHELL = `${VERSION}-shell`, CDN = `${VERSION}-cdn`;
 const FILES = [
   "./", "index.html", "bridge.html", "guide.html", "guide.css", "manifest.webmanifest", "bridge.webmanifest", "favicon.svg",
   "tokens.css", "app.css", "myvoice.css", "bridge.css", "phase3.css", "phase4.css", "phase6.css", "phase7.css", "potty.css", "sound.css", "redesign.css", "brand/brand-tokens.css",
   "app.js", "myvoice.js", "access.js", "shared.js", "vocab.js", "myvoice-p3.js", "myvoice-p4.js", "myvoice-p7.js", "potty.js", "potty-core.js", "potty-store.js", "potty-icons.js", "sound-core.js", "sound-store.js", "myvoice-sound.js", "bridge-sound.js", "nav-core.js", "myvoice-redesign.js", "bridge-hubs.js",
-  "bridge.js", "bridge-plus.js", "bridge-p3.js", "bridge-p4.js", "bridge-p6.js", "bridge-p7.js", "bridge-potty.js", "interests.js", "games.js", "water.js", "emotion.js", "geo.js", "fl-core.js", "motion-lite.js",
+  "bridge.js", "bridge-plus.js", "bridge-p3.js", "bridge-p4.js", "bridge-p6.js", "bridge-p7.js", "bridge-potty.js", "interests.js", "games.js", "water.js", "water-tiles.js", "emotion.js", "geo.js", "fl-core.js", "motion-lite.js",
   "ai.js", "ai-worker.js", "pwa.js",
   "vendor/motion.js", "vendor/qrcode.js", "vendor/simplify.js", "vendor/jsQR.js", "vendor/leaflet/leaflet.js", "vendor/leaflet/leaflet.css",
   "vendor/leaflet/images/marker-icon.png", "vendor/leaflet/images/marker-icon-2x.png", "vendor/leaflet/images/marker-shadow.png",
@@ -21,7 +21,7 @@ const FILES = [
 const CDN_HOSTS = ["cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(SHELL).then((c) => Promise.all(FILES.map((f) => c.add(f).catch(() => {})))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(SHELL).then((c) => Promise.all(FILES.map((f) => c.add(new Request(f, { cache: "reload" })).catch(() => {})) /* reload: never copy a stale browser-cached file into a new version */)).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k.startsWith("luminaac-") && !k.startsWith(VERSION)).map((k) => caches.delete(k)))).then(() => self.clients.claim()));

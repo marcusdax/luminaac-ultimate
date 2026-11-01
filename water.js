@@ -118,18 +118,28 @@ export function toFeatures(json, { simplify, tolerance = 3, centers = [], radius
   return out;
 }
 
-export async function fetchWater(centers, radius, { simplify, fetchImpl = fetch, endpoints = ENDPOINTS, signal, headers = {}, timeoutMs = 40000 } = {}) {
+// Asks every server at once and takes the first good answer: one at a time,
+// three slow servers could keep a parent waiting two minutes.
+export async function fetchWater(centers, radius, { simplify, fetchImpl = fetch, endpoints = ENDPOINTS, signal, headers = {}, timeoutMs = 45000 } = {}) {
   if (!centers.length) throw new Error("Add a safe zone or use your location first.");
   const q = buildQuery(centers, radius);
-  let last;
-  for (const url of endpoints) {
-    try {
-      const r = await fetchImpl(url, { method: "POST", body: "data=" + encodeURIComponent(q), headers: { "Content-Type": "application/x-www-form-urlencoded", ...headers }, signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]) : AbortSignal.timeout(timeoutMs) });
-      if (r.status === 429 || r.status === 504) { last = new Error("The map service is busy. Try again in a minute."); continue; }
-      if (!r.ok) { last = new Error(`The map service said ${r.status}.`); continue; }
-      const json = await r.json();
-      return toFeatures(json, { simplify, centers, radius });
-    } catch (e) { if (e.name === "AbortError") throw e; if (e.name === "TimeoutError") { last = new Error("The map service is slow right now. Try again in a minute."); continue; } last = /fetch|network/i.test(e.message) ? new Error("Can't reach the map service (offline?). Saved water still works.") : e; }
-  }
-  throw last || new Error("Couldn't load water.");
+  const ctl = new AbortController(); let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; ctl.abort(); }, timeoutMs);
+  const quit = () => ctl.abort(); signal?.addEventListener("abort", quit);
+  const one = async (url) => {
+    let r;
+    try { r = await fetchImpl(url, { method: "POST", body: "data=" + encodeURIComponent(q), headers: { "Content-Type": "application/x-www-form-urlencoded", ...headers }, signal: ctl.signal }); }
+    catch (e) {
+      if (timedOut) throw new Error("The map service is slow right now. Try again in a minute.");
+      throw e.name === "AbortError" ? e : /fetch|network/i.test(e.message) ? new Error("Can't reach the map service (offline?). Saved water still works.") : e;
+    }
+    if (r.status === 429 || r.status === 504) throw new Error("The map service is busy. Try again in a minute.");
+    if (!r.ok) throw new Error(`The map service said ${r.status}.`);
+    return toFeatures(await r.json(), { simplify, centers, radius });
+  };
+  try { return await Promise.any(endpoints.map(one)); }
+  catch (e) {
+    if (signal?.aborted) throw Object.assign(new Error("Stopped."), { name: "AbortError" });
+    throw e.errors?.find((x) => x.name !== "AbortError") || new Error("Couldn't load water.");
+  } finally { clearTimeout(timer); ctl.abort(); signal?.removeEventListener("abort", quit); }
 }

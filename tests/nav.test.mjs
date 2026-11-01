@@ -33,5 +33,11 @@ t("now/next: last step has no next", N.nowNext(P, { a: [0, 1] }).next === null);
 t("now/next: the plan opened last wins", N.nowNext(P, { a: [0], b: [0] }, "b").plan.id === "b");
 t("now/next: steps done out of order", N.nowNext(P, { a: [1] }).now.t === "A1");
 
+const now = 1_000_000_000;
+t("back to care: fresh stamp with #care opens Caregiver", N.backToCare("#care", String(now - 1000), now));
+t("back to care: no stamp stays on Talk", !N.backToCare("#care", null, now));
+t("back to care: old stamp stays on Talk", !N.backToCare("#care", String(now - 10 * 60e3), now));
+t("back to care: stamp without #care stays on Talk", !N.backToCare("", String(now), now));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
