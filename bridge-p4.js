@@ -30,6 +30,7 @@ async function stopCam() { stream?.getTracks().forEach((t) => t.stop()); stream 
 $("#btnFaceTry").addEventListener("click", async () => {
   if (stream) return stopCam();
   const out = $("#faceOut"); $("#faceTry").hidden = false;
+  if (window.__pottyBusy?.()) { out.textContent = "The camera stays off during a toilet try."; return; }
   if (!navigator.mediaDevices?.getUserMedia) { out.textContent = "This browser can't use a camera here. Face estimates still work on recorded videos."; return; }
   try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 640 }, audio: false }); }
   catch (e) { out.textContent = e.name === "NotFoundError" || e.name === "OverconstrainedError" ? "No camera found on this device. Face estimates still work on recorded videos." : "Camera permission wasn't given, so nothing was checked. You can allow it in the browser's site settings."; $("#faceTry").hidden = false; return; }

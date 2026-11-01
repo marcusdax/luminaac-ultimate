@@ -2,7 +2,7 @@
 
 ### A toilet-learning and communication module for LuminAAC
 
-> **Status:** concept, not built. This expands the founder's v1 blueprint with reviews from five specialist panels: clinical (speech and language, autism, CBT and de-escalation), game design, software architecture, visual and interface design, and business and go-to-market. Where the panels disagreed, section 13 records the decision taken.
+> **Status:** built in v0.10 (all three increments, behind `access.potty`, off by default). Next step: the pilot in §12.2. The concept text below is unchanged. This expands the founder's v1 blueprint with reviews from five specialist panels: clinical (speech and language, autism, CBT and de-escalation), game design, software architecture, visual and interface design, and business and go-to-market. Where the panels disagreed, section 13 records the decision taken.
 >
 > **This is not medical advice.** All thresholds below are defaults that a clinician can change. Have an SLP, a BCBA and a paediatric GI or continence nurse review this, along with a paid advisory panel of autistic adults that includes non-speaking AAC users, before anything ships.
 

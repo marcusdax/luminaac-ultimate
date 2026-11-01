@@ -1,5 +1,5 @@
 import markdown,re
-md=open('docs/CARETAKER-GUIDE.md').read().replace('../screenshots/','screenshots/')
+md=open('docs/CARETAKER-GUIDE.md',encoding='utf-8').read().replace('../screenshots/','screenshots/')
 md=md.replace('<div class="one-pager">','<div class="one-pager" markdown="1">')
 body=markdown.markdown(md,extensions=['md_in_html','sane_lists'])
 body=re.sub(r'<h1>.*?</h1>','',body,count=1)
@@ -42,4 +42,4 @@ html=f'''<!doctype html>
 </body>
 </html>
 '''
-open('guide.html','w').write(html)
+open('guide.html','w',encoding='utf-8').write(html)

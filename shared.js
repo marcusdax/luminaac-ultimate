@@ -47,7 +47,7 @@ export function seed() {
     // Phase 2 (folded in from LuminAAC-Repository, luminaac, LuminAAC-Advanced and the spec doc)
     alerts: [],
     feedback: [],
-    access: { mode: "standard", size: 100, dwell: 0, scan: false, scanMs: 1500, safety: true },
+    access: { mode: "standard", size: 100, dwell: 0, scan: false, scanMs: 1500, safety: true, potty: false },
     stories: [
       { id: "st1", title: "Going to the dentist", kind: "story", steps: [
         { e: "🚗", text: "We drive to the dentist." },
@@ -55,7 +55,7 @@ export function seed() {
         { e: "🦷", text: "The dentist counts my teeth. I can hold my fish toy." },
         { e: "⭐", text: "All done. Then we go to the park." } ] },
       { id: "st2", title: "Morning routine", kind: "routine", steps: [
-        { e: "🚽", text: "Bathroom" }, { e: "🪥", text: "Brush teeth" }, { e: "👕", text: "Get dressed" }, { e: "🥣", text: "Breakfast" } ] },
+        { e: "🚽", text: "Bathroom", link: "potty" }, { e: "🪥", text: "Brush teeth" }, { e: "👕", text: "Get dressed" }, { e: "🥣", text: "Breakfast" } ] },
     ],
     practice: { reward: "stars", targets: [
       { id: "pr1", sound: "m", word: "more", e: "➕", tries: [] },
@@ -71,6 +71,8 @@ export function seed() {
     // Phase 7. Videos a caregiver picked, and gentle sound games. History stays on the device.
     videos: { on: true, thumbs: false, list: [], sessions: [], talk: [] },
     games: { settings: { mic: false, volume: 0.7, quiet: false, calm: false, choices: 3, reward: "stickers" }, goals: [], plays: [] },
+    // Potty Path plan only (the toilet log itself lives in luminaac:potty, see potty-store.js).
+    potty: null,
     audit: [{ t: now, what: "Sample data loaded" }],
   };
 }

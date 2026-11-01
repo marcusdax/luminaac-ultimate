@@ -43,6 +43,14 @@ LuminAAC is used by children who can't easily tell us what they're comfortable w
 - Run the server over HTTPS.
 - End-to-end encryption of the synced document is on the roadmap.
 
+## Potty Path toilet data (v0.10)
+- Toilet logs are health data, so they're kept apart from everything else: their own storage key (`luminaac:potty`) and their own photo database, on the device where they were logged. Logs are kept for 90 days by default (28 to 365, your choice).
+- A parent or guardian must agree before anything is logged. The medical check and the sensory answers never leave the device. Only the plan (sit times, steps, look and sound) and whether it is paused travel with the rest of the Bridge, and never the reason for a pause.
+- Toilet data is never in share links, Bridge backups, team views, the therapist summary or federated learning.
+- Sending the log to your own LuminAAC server is a separate switch, off by default. With **Lock it** on (recommended), each entry is encrypted on the device with AES-GCM using a key the server never sees. The server can relay and de-duplicate entries but can't read them. Moving between devices can also be done with QR codes and no network at all.
+- Photos are of objects only (your toilet, tap, a reward). The app says not to photograph your child, and recording, the camera and the face check stay off during a toilet try.
+- Delete removes the log, the photos and any server copy in one step. Export gives you a separate file.
+
 ## Phase 4
 - **Speech feelings model and natural voices.** These are opt-in. They're downloaded from Hugging Face and jsDelivr once; those servers see a normal download request (your IP address), never audio or text. Recordings and typed messages are processed on the device.
 - **Face estimate.** The models ship with the app, so nothing is fetched. The camera check records nothing and stops when you press Stop.

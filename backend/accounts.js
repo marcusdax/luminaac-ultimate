@@ -79,8 +79,8 @@ export function takeInvite(code) {
 // code plus the server address). The device gets its own key; it is shown
 // once, stored as a hash, scoped to that device, and can be revoked.
 export const DEVICE_SCOPES = {
-  myvoice: ["sync:child", "alerts:write", "location:write", "fl:write"],
-  bridge: ["sync:read", "sync:write", "alerts:read", "alerts:write", "share", "devices", "fl:write"],
+  myvoice: ["sync:child", "alerts:write", "location:write", "fl:write", "potty:read", "potty:write"],
+  bridge: ["sync:read", "sync:write", "alerts:read", "alerts:write", "share", "devices", "fl:write", "potty:read", "potty:write"],
 };
 export function openPairing(family, kind, by) {
   const d = load();

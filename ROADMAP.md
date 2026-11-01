@@ -1,5 +1,8 @@
 # Roadmap
 
+## v0.10: Potty Path (phase 8)
+A toilet-learning and communication module built from the expert-reviewed blueprint in `docs/POTTY-PATH.md`, with all three increments shipped behind `access.potty` (off by default). It covers the one-device core, then assessment and hints, then two devices (QR and end-to-end encrypted server sync). Next: a 5-family pilot with a paid autistic-adult advisory panel and an SLP/BCBA safety review before the guide promotes it. Sensors and prediction stay deferred.
+
 ## Now (this build, v0.6, phase 4)
 Phase 4 adds:
 - an opt-in speech-emotion model (transformers.js, WebGPU with WASM fallback) fused with prosody, still confirmed by a caregiver

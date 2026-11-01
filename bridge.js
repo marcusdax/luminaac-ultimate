@@ -71,6 +71,7 @@ function startSlot(i) {
 }
 
 async function startListening() {
+  if (window.__pottyBusy?.()) { toast("Recording stays off during a toilet try."); return; }
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { toast("This browser can't record. Try a practice moment instead."); return; }
   cap.mode = $("input[name=cmode]:checked").value;
   try {

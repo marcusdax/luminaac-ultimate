@@ -149,6 +149,7 @@ function playStory(id) {
     const row = P("mvPlayerRow"); row.textContent = "";
     if (i > 0) row.append(btn("Back", () => { i--; draw(); }, "quiet"));
     row.append(btn("Say it again", () => speak(P("mvStepText").textContent), "quiet"));
+    if (step.link === "potty" && window.__pottyStart?.()) row.append(btn("Toilet steps", () => { P("mvPlayer").close(); window.__pottyStart(true); }));
     row.append(i < st.steps.length - 1 ? btn("Next", () => { i++; draw(); }) : btn("All done", () => { P("mvReward").textContent = "All done. Well done."; speak("All done. Well done."); P("mvPlayer").close(); }));
   };
   draw(); P("mvPlayer").showModal();

@@ -9,7 +9,7 @@ const esc = B.esc;
 const db = () => B.db;
 
 // ---------- Alerts ----------
-const KIND = { help: { e: "🙋", t: "needs help" }, home: { e: "🏠", t: "wants to go home" }, custom: { e: "🔔", t: "sent an alert" }, "zone-enter": { e: "📍", t: "arrived at" }, "zone-leave": { e: "🚶", t: "left" }, "danger-enter": { e: "⚠️", t: "is in a danger area:" }, "danger-leave": { e: "✅", t: "has left the danger area" }, silent: { e: "📵", t: "'s device stopped checking in" }, back: { e: "📶", t: "'s device is checking in again" } };
+const KIND = { help: { e: "🙋", t: "needs help" }, home: { e: "🏠", t: "wants to go home" }, custom: { e: "🔔", t: "sent an alert" }, "zone-enter": { e: "📍", t: "arrived at" }, "zone-leave": { e: "🚶", t: "left" }, "danger-enter": { e: "⚠️", t: "is in a danger area:" }, "danger-leave": { e: "✅", t: "has left the danger area" }, silent: { e: "📵", t: "'s device stopped checking in" }, back: { e: "📶", t: "'s device is checking in again" }, potty: { e: "🚽", t: "needs the toilet" } };
 const where = (a) => (a.loc ? ` <a class="soft" href="https://www.openstreetmap.org/?mlat=${a.loc.lat}&amp;mlon=${a.loc.lng}#map=17/${a.loc.lat}/${a.loc.lng}" target="_blank" rel="noopener">See where (within ${a.loc.acc || "?"} m)</a>` : "");
 function renderAlerts() {
   const open = db().alerts.filter((a) => !a.ack);
@@ -184,6 +184,7 @@ async function connectStream() {
         const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
         const ev = /event: (\w+)/.exec(chunk)?.[1], data = /data: (.*)/.exec(chunk)?.[1];
         if (!ev || !data) continue;
+        if (ev === "potty") { window.dispatchEvent(new CustomEvent("potty:remote")); continue; } // new toilet events: bridge-potty.js pulls them
         const a = JSON.parse(data), list = db().alerts, have = list.find((x) => x.id === a.id);
         if (have) Object.assign(have, a); else list.unshift(a);
         B.save(); onAlertsChanged();

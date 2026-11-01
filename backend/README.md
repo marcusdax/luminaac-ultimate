@@ -61,3 +61,14 @@ The full contract is in `../TECH-DESIGN.md`.
 **Quiet-device (dead-man) alert.** While a My Voice device shares location, it posts a heartbeat. If the device then goes silent for longer than its window, the server raises one "silent" alert with the last location (if under 24 hours old). When the device checks in again, it raises a "back" alert. This works with the app closed, because it's the server that notices.
 
 **Federated rounds.** Phases run joining → sharing → masking → unmasking, each with a timeout. A round that falls below quorum is abandoned and nothing is applied. Only one reveal can finish a round. The unmasked sum is range-checked before FedAvg. Joining is refused (403) once a principal's ε would exceed the cap.
+
+## Potty Path (v0.10)
+Toilet events are kept apart from the synced document, in `d.potty = { seq, events }` (`potty.js`). They are de-duplicated by id and capped at 20,000. They never appear in share views or the child view; only the plan (`doc.potty.protocol`, `paused`) is in `childView`.
+
+| Route | Auth | What it does |
+|---|---|---|
+| `POST /api/potty/events` `{events, sealed?}` | `potty:write` (parent, Bridge and My Voice devices) | Adds up to 500 events; idempotent by id; broadcasts SSE `event: potty` |
+| `GET /api/potty/events?since=n` | `potty:read` | Events after server sequence n, plus the new cursor |
+| `DELETE /api/potty/events` | `sync:write` (parent) | Deletes the family's toilet log |
+
+Sealed (end-to-end encrypted) events are stored as `{id, dev, seq, c}` only. Alerts accept `kind: "potty"`.

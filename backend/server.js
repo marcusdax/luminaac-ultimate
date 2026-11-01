@@ -18,6 +18,7 @@ import * as acc from "./accounts.js";
 import { verifyRegistration, verifyAssertion } from "./webauthn.js";
 import * as fl from "./flserver.js";
 import * as mailer from "./mailer.js";
+import * as potty from "./potty.js";
 
 const PORT = Number(process.env.PORT || 3001);
 const ORIGINS = (process.env.ALLOWED_ORIGINS || "*").split(",").map((s) => s.trim());
@@ -74,21 +75,23 @@ function who(req) {
 }
 // Permissions per role. Share scopes (SCOPES below) decide what a read-only role sees.
 const PERMS = {
-  parent: ["sync:read", "sync:write", "alerts:read", "alerts:write", "share", "devices", "family", "fl:write", "predict"],
+  parent: ["sync:read", "sync:write", "alerts:read", "alerts:write", "share", "devices", "family", "fl:write", "predict", "potty:read", "potty:write"],
   teacher: ["sync:scoped", "alerts:read", "alerts:write", "fl:write"],
   therapist: ["sync:scoped", "fl:write", "predict"],
   family: ["sync:scoped", "alerts:read", "alerts:write", "fl:write"],
-  child: ["sync:child", "alerts:write", "location:write", "fl:write"],
+  child: ["sync:child", "alerts:write", "location:write", "fl:write", "potty:read", "potty:write"],
 };
 const can = (w, perm) => (w.role === "child" ? w.scopes || PERMS.child : PERMS[w.role] || []).includes(perm);
 // What a paired My Voice device may read: only what it needs to run (no notes, team, audit, alerts).
 function childView(doc) {
   if (!doc) return null;
-  const { profile = {}, signals = [], stories = [], practice, access, safety, videos, games } = doc;
+  const { profile = {}, signals = [], stories = [], practice, access, safety, videos, games, potty: pp } = doc;
   return { version: 2, scope: "child", profile: { child: profile.child, place: profile.place }, signals: signals.map(({ id, name, phrase, cues, contexts, confirmations, rejections, moods }) => ({ id, name, phrase, cues, contexts, confirmations, rejections, moods })), stories, practice, access, safety: safety && { consent: safety.consent, zones: safety.zones, sendLocation: safety.sendLocation, water: safety.water },
     // Phase 7: the video list and game settings only. Watch history and game turns stay on each device.
     videos: videos && { on: videos.on, thumbs: videos.thumbs, list: (videos.list || []).map(({ id, yt, start, title, e, topics, words }) => ({ id, yt, start, title, e, topics, words })) },
-    games: games && { settings: games.settings, goals: games.goals } };
+    games: games && { settings: games.settings, goals: games.goals },
+    // Potty Path: the plan and whether it is paused. Never the toilet log, screening or reasons.
+    potty: pp && { protocol: pp.protocol, paused: !!pp.paused } };
 }
 const failedLogins = new Map(); // email -> [timestamps]
 const claimTries = new Map(); // ip -> [timestamps]
@@ -403,6 +406,20 @@ async function route(req, res, url) {
     return ok(res, undefined, "All server data for this family was deleted, and its paired devices were signed out");
   }
 
+  // ---- Potty Path events (opt-in, separate from the document; may be end-to-end encrypted) ----
+  if (p === "/api/potty/events") {
+    if (M === "POST") {
+      if (!can(w, "potty:write")) return deny();
+      const b = await body(req);
+      const out = store.update(key, (d) => { const r = potty.post(d, b); if (r.added) audit(d, "Updated toilet log"); return r; });
+      if (out.error) return fail(res, 400, "Validation failed", out.error);
+      if (out.added) broadcast(key, "potty", { cursor: out.cursor });
+      return ok(res, out);
+    }
+    if (M === "GET") { if (!can(w, "potty:read")) return deny(); return ok(res, potty.since(store.read(key), url.searchParams.get("since"))); }
+    if (M === "DELETE") { if (!can(w, "sync:write")) return deny(); const n = store.update(key, (d) => { const x = potty.wipe(d); audit(d, "Deleted toilet log"); return x; }); return ok(res, { deleted: n }, "Toilet log deleted from the server"); }
+  }
+
   // ---- Sharing ----
   if (p === "/api/share" && M === "GET") { const d = store.read(key); return ok(res, d.shares.map(({ token, role, name, created, expires, revoked }) => ({ token, role, name, created, expires, revoked }))); }
   if (p === "/api/share" && M === "POST") {
@@ -457,7 +474,7 @@ async function route(req, res, url) {
   }
   if (p === "/api/alerts" && M === "POST") {
     const b = await body(req);
-    if (!["help", "home", "custom", "zone-enter", "zone-leave", "danger-enter", "danger-leave"].includes(b.kind)) return fail(res, 400, "Validation failed", "kind must be help, home, custom, zone-enter, zone-leave, danger-enter or danger-leave");
+    if (!["help", "home", "custom", "zone-enter", "zone-leave", "danger-enter", "danger-leave", "potty"].includes(b.kind)) return fail(res, 400, "Validation failed", "kind must be help, home, custom, potty, zone-enter, zone-leave, danger-enter or danger-leave");
     const loc = b.loc ? LOC(b.loc) : null;
     if (b.loc && !loc) return fail(res, 400, "Validation failed", "loc must be { lat, lng, acc }");
     const a = { id: String(b.id || randomUUID()).slice(0, 64), kind: b.kind, message: String(b.message || "").slice(0, 200), t: Number(b.t) || Date.now(), ack: null, from: String(b.from || w.device?.name || "My Voice").slice(0, 60), ...(loc && { loc }), ...(b.zone && { zone: String(b.zone).slice(0, 60) }), ...(b.water === true && { water: true }), ...(b.kind === "danger-enter" && { urgent: true }) };

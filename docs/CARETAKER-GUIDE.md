@@ -17,16 +17,17 @@ A friendly guide for parents, grandparents, carers, teachers and therapists. You
 9. [Safe zones and consent](#safe-zones-and-consent)
 10. [Drawing zones by hand and water danger zones](#drawing-and-water)
 11. [Videos, sound games and what they tell you](#videos-games-insights)
-12. [Pairing devices](#pairing-devices)
-13. [Accounts, email checks and password reset](#accounts)
-14. [Inviting your team and roles](#inviting-your-team)
-15. [Feeling estimates](#feeling-estimates)
-16. [Shared learning and privacy](#shared-learning)
-17. [Installing it as an app](#installing-it-as-an-app)
-18. [Access modes: large, switch and dwell](#access-modes)
-19. [Privacy, export and delete](#privacy-export-and-delete)
-20. [Troubleshooting and questions](#troubleshooting-and-questions)
-21. [Quick start one-pager](#quick-start)
+12. [Potty Path: toilet learning and asking to go](#potty-path)
+13. [Pairing devices](#pairing-devices)
+14. [Accounts, email checks and password reset](#accounts)
+15. [Inviting your team and roles](#inviting-your-team)
+16. [Feeling estimates](#feeling-estimates)
+17. [Shared learning and privacy](#shared-learning)
+18. [Installing it as an app](#installing-it-as-an-app)
+19. [Access modes: large, switch and dwell](#access-modes)
+20. [Privacy, export and delete](#privacy-export-and-delete)
+21. [Troubleshooting and questions](#troubleshooting-and-questions)
+22. [Quick start one-pager](#quick-start)
 
 <a id="what-luminaac-is"></a>
 ## 1. What LuminAAC is
@@ -38,7 +39,7 @@ LuminAAC is a talker (an AAC app, short for augmentative and alternative communi
 
 You are your child's best translator. LuminAAC helps you share what you already know with the device and with the people around your child.
 
-**What's new in 0.9:** a video board you choose, four gentle sound games, and an **Interests and history** section on Insights with a printable therapist summary (see [section 11](#videos-games-insights)). Version 0.8 added hand-drawn zones and water danger zones (see [section 10](#drawing-and-water)).
+**What's new in 0.10:** Potty Path, a calm toilet routine that teaches your child a way to say "I need to go" (see [section 12](#potty-path)). **New in 0.9:** a video board you choose, four gentle sound games, and an **Interests and history** section on Insights with a printable therapist summary (see [section 11](#videos-games-insights)). Version 0.8 added hand-drawn zones and water danger zones (see [section 10](#drawing-and-water)).
 
 Everything works on your own device. You don't need an account, and nothing leaves the device unless you choose to connect it.
 
@@ -237,8 +238,84 @@ Tap **Print a summary for a therapist** for a one-page report you can print or s
 ![The printable therapist summary](../screenshots/therapist-report-desktop.png)
 ![My videos and Sound games on a phone](../screenshots/myvideos-mobile.png)
 
+<a id="potty-path"></a>
+## 12. Potty Path: toilet learning and asking to go
+
+Potty Path is a calm toilet routine for children who are learning to use the toilet, often over months or years. Its main goal is to give your child a way to say "I need to go". Asking always counts most, more than a pee in the toilet. It's a support tool, not medical advice. Talk to your child's doctor first, because constipation is very common in autistic children and needs treating before anything else.
+
+### Turning it on
+
+1. In the Bridge, open **Potty Path**.
+2. Type your name, tick that you're the parent or guardian, and choose **Turn on Potty Path**.
+3. Work through **Getting ready**:
+    - **Medical check:** any tick pauses planned sits and suggests seeing a doctor.
+    - **What bothers your child:** each "yes" adds a fix to your setup list. For example, a "yes" to flush noise takes Flush out of the steps.
+    - **How your child already asks:** every way counts.
+    - **Rewards that live in the bathroom:** add photos of the objects only.
+
+The toilet log stays **on this device only**. It is never part of share links, Bridge backups or learning that leaves the device.
+
+### What your child sees
+
+- **An "I need the toilet" button** on the Talk page. It always speaks, and it always works, even when the plan is paused. Tapping it starts a toilet try and tells every open Bridge.
+- **A calm path of steps:** the step to do now, a dimmer step for next, and small dots for the whole path.
+- **Sit mode:** quiet colours, nothing moving except a slow timer (a filling circle, a water jar, five dots or a walk home), and no numbers or ticking. A companion (train, dinosaur, blob, cat or none) sits on its own little potty and breathes slowly.
+- **A body check** when the timer ends: "Anything coming?" Then **All done** or **More time**. Nothing moves on by itself, except that a sit always ends at 5 minutes (10 for a poo).
+- **Break, Help and Stop** are always on screen. Stop is respected every time.
+- **Tokens that only go up.** When the board is full, the screen shows the reward's picture and you give the real thing within a few seconds. Then there's a **World** (a train line, garden, aquarium or city) that grows a little after every try and never shrinks. Your child can browse it any time from **My train** (or garden, and so on).
+
+### What you do
+
+- **Right now** has big one-tap buttons:
+    - Start a try
+    - Poo sit
+    - Asked ★
+    - Pee / Poo in toilet
+    - Dry check
+    - Wet / missed
+    - Drink, Meal
+    - Not now
+    - Pause (distress)
+    - End: hard moment
+    - Reward given ✓
+    - Undo
+- **What to say** shows a short script for the moment you're in.
+- On the bathroom tablet itself, **press and hold "Grown-up"** to log without leaving your child's screen.
+- **The plan** sets:
+    - the phase;
+    - sit times;
+    - sit length;
+    - which steps show;
+    - tokens per reward;
+    - the World;
+    - the timer, companion and sound (silent is the default);
+    - limits.
+    It also has **Graduated**, which retires Potty Path but keeps the TOILET button forever.
+
+### Safety rules it follows for you
+
+- **Two "not now"s, or one hard moment, means no more planned sits that day.**
+- At least 20 minutes between sits, and at most 8 a day.
+- **No poo for 3 days pauses the plan.** So do hard poos, or anything you ticked in the medical check. The app suggests a doctor and offers a printable summary. Days with very little logging are treated as gaps, not as a problem.
+- Recording and the camera stay off during a toilet try.
+- There is nothing about extra drinks, holding a child on the seat, punishments or streaks. **When it's hard** lists what never to do, and help for withholding, regression, fear of the flush and school.
+
+### Hints, print-outs and reminders
+
+- **What the log shows** suggests usual pee times and how long after a drink a pee tends to come. It only does this after about a week of fairly full days, and it always says how many days each hint is based on.
+- **Print and reminders:**
+    - a wall schedule (strip and grid);
+    - a school handoff sheet;
+    - a doctor summary;
+    - a calendar file with a daily reminder at each sit time. iPhones can't wake you from a web app, so this file is how reminders work there.
+
+### Two devices
+
+- **QR codes:** with no internet, show your log as QR codes on one device and scan them with **Scan a code** on the other.
+- **Your LuminAAC server:** turn on **Send the toilet log to our server** in Potty Path. Leave **Lock it so the server can't read it** on. Then pass the lock key to the other device with **Scan a code**.
+
 <a id="pairing-devices"></a>
-## 12. Pairing devices
+## 13. Pairing devices
 
 Pairing links your child's tablet to your Bridge so alerts, words and rules stay in step.
 
@@ -252,7 +329,7 @@ Your child's device only receives what it needs (their words, rules and plans), 
 ![The device list](../screenshots/devices-desktop.png)
 
 <a id="accounts"></a>
-## 13. Accounts, email checks and password reset
+## 14. Accounts, email checks and password reset
 
 You don't need an account to use LuminAAC on one device. An account helps when several people or devices are involved.
 
@@ -264,7 +341,7 @@ You don't need an account to use LuminAAC on one device. An account helps when s
 ![Choosing a new password](../screenshots/reset-dialog-desktop.png)
 
 <a id="inviting-your-team"></a>
-## 14. Inviting your team and roles
+## 15. Inviting your team and roles
 
 On the **Team** page you can bring in the people in your child's circle.
 
@@ -281,7 +358,7 @@ On the **Team** page you can bring in the people in your child's circle.
 Use **See it as** to check exactly what someone else sees. Anyone can add a note to the shared log so the whole team stays in the loop.
 
 <a id="feeling-estimates"></a>
-## 15. Feeling estimates
+## 16. Feeling estimates
 
 LuminAAC can **estimate** how your child might be feeling from their voice (pitch, loudness and pace), and from their face in a video if you allow it.
 
@@ -295,7 +372,7 @@ LuminAAC can **estimate** how your child might be feeling from their voice (pitc
 ![Trying the face estimate](../screenshots/face-try-desktop.png)
 
 <a id="shared-learning"></a>
-## 16. Shared learning and privacy
+## 17. Shared learning and privacy
 
 Under **Privacy → Help improve suggestions for everyone** you can join shared learning. It's **off unless you turn it on**.
 
@@ -307,7 +384,7 @@ Under **Privacy → Help improve suggestions for everyone** you can join shared 
 ![Shared learning](../screenshots/fl-desktop.png)
 
 <a id="installing-it-as-an-app"></a>
-## 17. Installing it as an app
+## 18. Installing it as an app
 
 You can add LuminAAC to your home screen so it opens like an app and works offline.
 
@@ -323,7 +400,7 @@ Open [luminaac-web.vercel.app](https://luminaac-web.vercel.app) (My Voice) or [t
 Installed or not, the background location limits in [Safe zones](#safe-zones-and-consent) still apply.
 
 <a id="access-modes"></a>
-## 18. Access modes: large, switch and dwell
+## 19. Access modes: large, switch and dwell
 
 Under **Vocabulary → How My Voice responds**, choose what suits your child's body and attention.
 
@@ -334,7 +411,7 @@ Under **Vocabulary → How My Voice responds**, choose what suits your child's b
 Ask your child's speech and language therapist or occupational therapist which mode to start with.
 
 <a id="privacy-export-and-delete"></a>
-## 19. Privacy, export and delete
+## 20. Privacy, export and delete
 
 The **Privacy** page puts you in control.
 
@@ -350,7 +427,7 @@ The **Privacy** page puts you in control.
 ![Privacy controls](../screenshots/sync-desktop.png)
 
 <a id="troubleshooting-and-questions"></a>
-## 20. Troubleshooting and questions
+## 21. Troubleshooting and questions
 
 **My Voice doesn't speak.** Check the volume and that the device isn't on silent. In Settings → Voice, try another voice or *Device default*.
 
@@ -383,7 +460,7 @@ The **Privacy** page puts you in control.
 **Who can I ask for help?** Your child's speech and language therapist is a great partner. For app problems, see the project page.
 
 <a id="quick-start"></a>
-## 21. Quick start one-pager
+## 22. Quick start one-pager
 
 <div class="one-pager">
 

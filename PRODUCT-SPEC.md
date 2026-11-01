@@ -83,6 +83,22 @@ Source: Google Doc "LuminAAC: The Empathic Guardian". This maps every feature th
 - Installable apps that work offline; a quiet-device alert; a native app scaffold for true background zones.
 - The face estimate is vendored and tested.
 
+## Phase 8: Potty Path (v0.10)
+| Feature | Status | Where |
+|---|---|---|
+| "I need the toilet" button: always speaks, always works (even when paused), alerts every Bridge | ✅ | My Voice Talk page; board words *toilet/bathroom/potty* also count as asking |
+| Now/Next step path, companion (train, dino, blob, cat, none), Approach and Sit modes | ✅ | Potty Path screen |
+| Silent sit timer (circle, jar, dots, walk), body check, All done / More time, hard caps | ✅ | Sit mode |
+| Break, Help and Stop always on screen; refusals respected | ✅ | Potty Path screen |
+| Add-only tokens, reward photo, a World that only grows, World book | ✅ | Done screen, "My train" |
+| Caregiver console, coaching scripts, prompt levels without physical AAC prompts | ✅ | Bridge → Potty Path; grown-up hold bar on the tablet |
+| Medical screening, sensory grid, known signals, reward inventory, step photos | ✅ | Bridge → Potty Path → Getting ready |
+| Red-flag pause, doctor summary, regression and constipation rules | ✅ | Bridge → Potty Path |
+| Explainable hints (pee times, drink→pee, time of day, suggestions) | ✅ | What the log shows |
+| Wall schedule, school handoff, calendar reminders | ✅ | Print and reminders |
+| QR handoff, opt-in server sync with end-to-end encryption | ✅ | Two devices |
+| Wetness sensors, predictive ML | 🔭 | Deferred: would move toward regulated medical software |
+
 ## AI / platform (from technical sections)
 | Doc feature | Status |
 |---|---|

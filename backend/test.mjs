@@ -213,6 +213,29 @@ await call("POST", "/api/devices/heartbeat", { sharing: true }, DK);
 t("back online alert", (await call("GET", "/api/alerts", null, TOK)).json.data.some((a) => a.kind === "back"));
 await call("POST", "/api/devices/heartbeat", { sharing: false }, DK);
 t("no dead-man alert when sharing is off", checkDeadman(Date.now() + 60 * 60e3).length === 0);
+// ---- Potty Path events ----
+{
+  const pe = (id, kind = "void", extra = {}) => ({ id, dev: "tab", seq: 1, t: Date.now(), tz: 0, by: "caregiver", v: 1, kind, data: { type: "urine" }, ...extra });
+  const p1 = await call("POST", "/api/potty/events", { events: [pe("pe1"), pe("pe2", "signal", { by: "child", data: { modality: "aac_button" } })] }, DK);
+  t("potty: tablet can post events", p1.json?.data?.added === 2);
+  const again = await call("POST", "/api/potty/events", { events: [pe("pe1"), pe("pe2")] }, DK);
+  t("potty: same batch twice adds nothing (idempotent by id)", again.json.data.added === 0 && again.json.data.cursor === p1.json.data.cursor);
+  const g = (await call("GET", "/api/potty/events?since=0", null, TOK)).json.data;
+  t("potty: parent reads events with a cursor", g.events.length === 2 && g.cursor === 2);
+  t("potty: since pages", (await call("GET", "/api/potty/events?since=1", null, TOK)).json.data.events.length === 1);
+  t("potty: rejects unknown kinds", (await call("POST", "/api/potty/events", { events: [pe("bad", "punish")] }, TOK)).json.data.added === 0);
+  t("potty: rejects non-arrays", (await call("POST", "/api/potty/events", { events: "x" }, TOK)).status === 400);
+  const sealed = await call("POST", "/api/potty/events", { sealed: true, events: [{ id: "pe3", dev: "tab", seq: 2, c: "QUJD" }] }, DK);
+  const g2 = (await call("GET", "/api/potty/events?since=2", null, TOK)).json.data.events[0];
+  t("potty: sealed events are stored as ciphertext only", sealed.json.data.added === 1 && g2.c === "QUJD" && !("kind" in g2) && !("t" in g2));
+  t("potty: teacher can't read toilet events", (await call("GET", "/api/potty/events", null, TT)).status === 403);
+  t("potty: teacher can't write toilet events", (await call("POST", "/api/potty/events", { events: [pe("pe9")] }, TT)).status === 403);
+  const shp = (await call("POST", "/api/share", { role: "therapist" }, TOK)).json.data;
+  t("potty: share links never include toilet data", !JSON.stringify((await call("GET", shp.path, null, null)).json.data).includes("pe1"));
+  t("potty: toilet alert kind accepted", (await call("POST", "/api/alerts", { kind: "potty", message: "needs the toilet" }, DK)).json.success);
+  t("potty: tablet can't delete the log", (await call("DELETE", "/api/potty/events", null, DK)).status === 403);
+  t("potty: parent deletes the log", (await call("DELETE", "/api/potty/events", null, TOK)).json.data.deleted === 3 && (await call("GET", "/api/potty/events?since=0", null, TOK)).json.data.events.length === 0);
+}
 t("revoke device", (await call("DELETE", `/api/devices/${cl.deviceId}`, null, TOK)).json.success);
 t("revoked key stops working", (await call("GET", "/api/sync", null, DK)).status === 401);
 
