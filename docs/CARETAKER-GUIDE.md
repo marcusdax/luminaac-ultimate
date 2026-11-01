@@ -2,6 +2,8 @@
 
 A friendly guide for parents, grandparents, carers, teachers and therapists. You don't need to be technical. Read the [quick start](#quick-start) if you only have five minutes, and come back to the rest when you need it.
 
+*This guide covers LuminAAC version 0.9 (October 2026). Open the app at [luminaac-web.vercel.app](https://luminaac-web.vercel.app): My Voice for your child, [the Bridge](https://luminaac-web.vercel.app/bridge.html) for you.*
+
 ## Contents
 
 1. [What LuminAAC is](#what-luminaac-is)
@@ -36,6 +38,8 @@ LuminAAC is a talker (an AAC app, short for augmentative and alternative communi
 
 You are your child's best translator. LuminAAC helps you share what you already know with the device and with the people around your child.
 
+**What's new in 0.9:** a video board you choose, four gentle sound games, and an **Interests and history** section on Insights with a printable therapist summary (see [section 11](#videos-games-insights)). Version 0.8 added hand-drawn zones and water danger zones (see [section 10](#drawing-and-water)).
+
 Everything works on your own device. You don't need an account, and nothing leaves the device unless you choose to connect it.
 
 ![My Voice, the child's talker](../screenshots/myvoice-desktop.png)
@@ -43,7 +47,7 @@ Everything works on your own device. You don't need an account, and nothing leav
 <a id="first-setup"></a>
 ## 2. First setup
 
-1. Open LuminAAC in your browser (Chrome, Edge or Safari) and choose **The Bridge**.
+1. Open [luminaac-web.vercel.app/bridge.html](https://luminaac-web.vercel.app/bridge.html) in your browser (Chrome, Edge or Safari). On your child's device, open [luminaac-web.vercel.app](https://luminaac-web.vercel.app) for My Voice.
 2. A short welcome appears: "You know your child better than anyone." Type your child's name.
 3. Type what we should call you, and choose your role (parent, teacher, therapist or family member).
 4. Read the three-step idea (catch it, say what it meant, watch them be heard), then finish. You'll see the **Today** page. **Skip for now** is fine too.
@@ -64,6 +68,7 @@ The first time, LuminAAC loads some sample moments so the pages aren't empty. Yo
 - **Calm.** A feelings scale and a slow breathing guide, plus short notes for the person helping.
 - **Plans.** Picture steps for the day, such as getting ready for school.
 - **My things.** Your child's own buttons. A button can even play back a recorded moment.
+- **My videos and Sound games.** Further down the Talk page. **My videos** shows only the videos you added. **Sound games** has four short games. See [section 11](#videos-games-insights).
 - **Caregiver area.** Press and hold **Caregiver** for two seconds to open it. Children can't open it by accident. Choose **Lock and return to Talk** when you're done.
 
 Words stay in the same place on the board. That's on purpose: it lets your child build muscle memory, so please don't worry if the board looks "busy" at first.
@@ -164,6 +169,7 @@ My Voice then tells you when it **arrives at** or **leaves** a zone, while My Vo
 ## 10. Drawing zones by hand and water danger zones
 
 ### Draw a zone with your finger, a stylus or a mouse
+
 1. On the **Safety** page, tap **Draw by hand**.
 2. Trace around the place on the map. A stylus works best; once you use one, a resting palm is ignored.
 3. Lift to finish, or tap **Finish**. Tap **Undo** to remove the last part, or **Cancel** (or press Escape) to stop.
@@ -175,6 +181,7 @@ Prefer tapping? Choose **Add points** and tap each corner instead.
 
 ### Water danger zones
 Many children who wander are drawn to water. In the **Water danger zones** card:
+
 1. Turn on **Send an urgent alert near water**.
 2. Set **Alert when closer than**. 50 metres suits most families. Phone locations can be 10 to 30 metres out.
 3. Tap **Find water near my zones** (or **near me**). LuminAAC looks up mapped ponds, pools, rivers and lakes from OpenStreetMap and saves them on your devices, so checks work offline.
@@ -193,30 +200,33 @@ If your child gets close, you get an **urgent** alert with a triple chime and th
 
 ### A video board you choose
 Your child sees **only** the videos you add. There is no search, no autoplay, no suggested videos and no comments.
+
 1. In the Bridge, open **Videos and games**.
 2. Paste a YouTube link, give it a short name and an emoji, and tick what it's about (for example *Trains and cars*). Add a few words to talk about, such as "choo choo, whistle".
 3. On your child's device the videos appear under **My videos**. Your child presses **Play** when ready. At the end the screen is covered, so YouTube's "watch next" pictures never show, and a **Talk about it** board appears with words from the video.
 
-Videos play through YouTube's privacy-enhanced player (youtube-nocookie.com). Your child doesn't need, and shouldn't use, a Google account. Video pictures (thumbnails) are off by default because they load from YouTube; you can turn them on.
+Videos play through YouTube's privacy-enhanced player (youtube-nocookie.com). Your child doesn't need, and shouldn't use, a Google account. Video pictures (thumbnails) are off by default because they load from YouTube; tick **Show video pictures** to turn them on.
 
 ### Sound games
 Under **Sound games** your child can play:
+
 - **Copy my sound:** hear "sssss" or "mmm", then copy it. With the microphone on, a bar grows with their voice and a dot moves with their pitch.
 - **Who says that?:** hear "moo" and pick the cow.
 - **First sounds:** which picture starts with "buh"? Uses your speech-practice sounds when you have set them.
 - **My turn, your turn:** the drum plays, then your child taps the drum or makes a sound. This practises turn-taking.
 
-Nobody fails. A quiet try gets "Let's do it together", and every try earns a sticker. In **Game settings** you can turn the microphone on, lower the volume, choose **Quiet sounds** (no chimes), **Calm visuals** (no bounce), 2 to 4 choices, and stickers, stars or just a tick. The microphone is off until you turn it on. Sound is checked on the device and never recorded or sent.
+Nobody fails. A quiet try gets "Let's do it together", and every try earns a sticker. In **Sound game settings** you can tick **Let games listen with the microphone**, lower the **Game volume**, choose **Quiet mode** (no chimes) or **Calm visuals** (no bouncing), set 2 to 4 **Pictures to choose from**, and pick stickers, stars or a quiet tick as the **Reward**. The microphone is off until you turn it on. Sound is checked on the device and never recorded or sent.
 
-Set a **weekly goal**, such as 5 turns of *Copy my sound*, and watch the bar fill on the Insights page.
+Under **Weekly goals**, set one, such as 5 turns of *Copy my sound*, and watch the bar fill on the Insights page.
 
 ### What it tells you
 On **Insights**, the **Interests and history** section shows:
+
 - an **interest map** (Loves, Likes, Sometimes) from what your child replays, finishes and talks about;
 - **most used words**, **growth** over 8 weeks and **words to try next** from their favourite topics;
 - **video favourites**, **feelings near video time** (a pattern to notice, not a cause), **game progress** and a short **weekly summary**.
 
-Tap **Therapist summary** for a one-page report you can print or save as PDF for a speech therapist or teacher. It is a record of what happened, never an assessment or diagnosis.
+Tap **Print a summary for a therapist** for a one-page report you can print or save as PDF for a speech therapist or teacher. It is a record of what happened, never an assessment or diagnosis.
 
 **Honest limits:** watch history and game turns stay on the device where they happened, so open Insights on a device that has them. Videos need the internet. The microphone hears loudness and pitch, not words, and background noise can count as a try.
 
@@ -224,6 +234,8 @@ Tap **Therapist summary** for a one-page report you can print or save as PDF for
 ![Talk about it after a video](../screenshots/talk-about-mobile.png)
 ![Copy my sound with the microphone](../screenshots/game-echo-desktop.png)
 ![Interests and history on Insights](../screenshots/insights-interests-desktop.png)
+![The printable therapist summary](../screenshots/therapist-report-desktop.png)
+![My videos and Sound games on a phone](../screenshots/myvideos-mobile.png)
 
 <a id="pairing-devices"></a>
 ## 12. Pairing devices
@@ -299,8 +311,14 @@ Under **Privacy → Help improve suggestions for everyone** you can join shared 
 
 You can add LuminAAC to your home screen so it opens like an app and works offline.
 
+Open [luminaac-web.vercel.app](https://luminaac-web.vercel.app) (My Voice) or [the Bridge](https://luminaac-web.vercel.app/bridge.html) first.
+
 - **Chrome or Edge (Android, Windows, Mac):** choose **Install app** in the Bridge header, or the install icon in the address bar.
 - **iPhone or iPad (Safari):** tap Share, then **Add to Home Screen**.
+
+**Updates.** The app updates itself the next time it's opened online. If a page looks out of date, close every LuminAAC tab and open it again.
+
+**Running your own copy.** The public app is a static website hosted on Vercel. Schools or families who want their own copy can host the same files on any web host (see the project README). Sync, alerts and share links need the separate LuminAAC server, which isn't part of the hosted website.
 
 Installed or not, the background location limits in [Safe zones](#safe-zones-and-consent) still apply.
 
@@ -323,8 +341,11 @@ The **Privacy** page puts you in control.
 - **Keep recordings for** 7, 30 or 90 days, or forever.
 - **Export** saves everything to a file you keep. Use it as a backup or to move to a new device.
 - **Restore** loads a file you exported earlier.
-- **Delete all moments and signals** wipes them from this device. It can't be undone, so export first if you're unsure.
+- **Video and game history** (watch time, replays, **Talk about it** taps and game turns) stays on the device where it happened. It is never synced and never sent to YouTube. The server only carries your video list and game settings.
+- **Delete all moments, signals and history** wipes moments, signals, and video and game history from this device. It can't be undone, so export first if you're unsure.
 - **Sync, alerts and share links** is optional. It connects to a LuminAAC server your family or school runs. Recordings never leave the device.
+- **Microphone.** Moments and sound games only use it when you turn them on. Sound games measure loudness and pitch in memory and never record.
+- **Videos.** Play through YouTube's privacy-enhanced player. When a video plays, YouTube receives the request and may store data in the browser under its own policy. Your child doesn't need a Google account.
 
 ![Privacy controls](../screenshots/sync-desktop.png)
 
@@ -345,7 +366,15 @@ The **Privacy** page puts you in control.
 
 **A feeling estimate is wrong.** That's fine. Change it. Only your confirmed answers count.
 
-**Does it work offline?** Yes, once it has been opened online once. Downloaded voices and models also work offline.
+**A video won't play.** Videos need the internet, even when the rest of LuminAAC works offline. If it says the video can't play here, its owner doesn't allow embedding; pick another one. Your child can still use **Talk about it**.
+
+**The video list on my child's device is empty.** Check **Show "My videos" in My Voice** is on in **Videos and games**, and that both devices are paired and synced. On a single device, make sure you're using the same browser.
+
+**Do the sound games need the microphone?** No. The microphone is off until you turn it on in **Sound game settings**. Without it, your child taps **I did it** or the drum. Background noise can count as a try, and that's fine: every try is celebrated.
+
+**Insights show no videos or games.** Watch history and game turns stay on the device where they happened. Open the Bridge in the same browser on your child's device to see them, or wait for a future version with opt-in summaries.
+
+**Does it work offline?** Yes, once it has been opened online once, including this guide. Downloaded voices and models also work offline. Videos, maps, finding water and sync need the internet.
 
 **Is my child's data sold or shared?** No. It stays on your device unless you connect it, and even then recordings stay on the device.
 
@@ -368,11 +397,13 @@ The **Privacy** page puts you in control.
 
 **5. Confirm signals.** On **Signals**, say yes or no to what LuminAAC noticed. Your answer always wins.
 
-**6. Stay safe (optional).** Turn on the help buttons, pair your phone, and add safe zones with consent. Zones only work while My Voice is open.
+**6. Stay safe (optional).** Turn on the help buttons, pair your phone, and add safe zones with consent. Draw a zone by hand, and turn on water danger zones. Zones only work while My Voice is open.
 
 **7. Bring in your team (optional).** On **Team**, invite a teacher, therapist or family member with the right role.
 
 **8. Stay in control.** On **Privacy**, choose how long to keep recordings, export a backup, or delete everything.
+
+**9. Videos and games (optional).** In **Videos and games**, paste a few favourite YouTube links and add words to talk about. Try a sound game together. See what it shows on **Insights**, and tap **Print a summary for a therapist** before appointments.
 
 *Remember: feeling guesses are only estimates, and you are the expert on your child.*
 

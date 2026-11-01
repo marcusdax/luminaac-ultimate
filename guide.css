@@ -39,6 +39,7 @@ a[id] { scroll-margin-top: 88px; }
   figure { break-inside: avoid; border: 0; padding: 0; }
   figure img { max-height: 9cm; width: auto; }
   a { color: #000; }
-  #quick-start + h2, .one-pager { break-before: page; }
+  h2:has(+ .one-pager), p:has(#quick-start) + h2 { break-before: page; }
+  .one-pager { break-before: avoid; break-inside: avoid; }
   .one-pager { border: 2px solid #000; }
 }

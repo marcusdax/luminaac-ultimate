@@ -413,8 +413,10 @@ $("#importFile").addEventListener("change", async (e) => {
   catch { toast("That file doesn't look like a LuminAAC backup."); }
 });
 $("#btnWipe").addEventListener("click", async () => {
-  if (!confirm("Delete every moment, recording, and learned signal on this device? This can't be undone.")) return;
+  if (!confirm("Delete every moment, recording, learned signal, and video and game history on this device? This can't be undone.")) return;
   db.moments = []; db.signals = []; db.questions = []; db.exploration = []; db.notes = [];
+  if (db.videos) { db.videos.sessions = []; db.videos.talk = []; }
+  if (db.games) db.games.plays = [];
   await clearMedia().catch(() => {}); save("Deleted all moments and signals"); renderPrivacy(); toast("Deleted.");
 });
 $("#btnRedo").addEventListener("click", () => onboard(true));

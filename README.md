@@ -5,7 +5,7 @@
 <h3 align="center">An AAC app for nonverbal children that learns the child's own language from the people who love them.</h3>
 
 <p align="center">
-  Vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
+  Version 0.9 &middot; vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
 </p>
 
 <p align="center">
@@ -21,25 +21,26 @@ Many nonverbal children already communicate: a hum that means "more", a hand fla
 
 Two connected experiences:
 
-- **My Voice** (`index.html`): the child's talker. A motor-stable core-word board with speech, quick phrases, prediction, proactive suggestions from learned signals, and help buttons.
-- **The Bridge** (`bridge.html`): the caregiver portal. Catch a 15-second moment, say what it meant, and watch My Voice start offering the right words. Includes a signal library, vocabulary rules, stories, insights, sharing, safety and privacy controls.
+- **My Voice** (`index.html`): the child's talker. A motor-stable core-word board with speech, quick phrases, prediction, proactive suggestions from learned signals, help buttons, **My videos** (only caregiver-chosen videos, then a "Talk about it" board) and four gentle **Sound games**.
+- **The Bridge** (`bridge.html`): the caregiver portal. Catch a 15-second moment, say what it meant, and watch My Voice start offering the right words. Includes a signal library, vocabulary rules, stories, a **Videos and games** tab, insights with **Interests and history** and a printable therapist summary, sharing, safe zones (circles, hand-drawn shapes and water danger zones) and privacy controls.
 
-A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as `guide.html`) walks families through everything.
+A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as [`guide.html`](https://luminaac-web.vercel.app/guide.html), linked from the Bridge header and the My Voice caregiver area, and cached for offline use) walks families through everything, with a printable quick-start one-pager.
 
 ## Screenshots
 
 | My Voice | The Bridge |
 |---|---|
 | <img src="screenshots/myvoice-desktop.png" alt="My Voice core-word board with a sentence strip" width="420" /> | <img src="screenshots/bridge-desktop.png" alt="The Bridge Today view with moment capture" width="420" /> |
-| **Signal library** | **Safe zones** |
-| <img src="screenshots/signals-desktop.png" alt="Signal library with confidence levels" width="420" /> | <img src="screenshots/safety-desktop.png" alt="Safe zones on a map" width="420" /> |
-| **Feeling estimates** | **Shared learning** |
-| <img src="screenshots/feelings-desktop.png" alt="Feeling estimates waiting for caregiver confirmation" width="420" /> | <img src="screenshots/fl-desktop.png" alt="Opt-in federated learning settings" width="420" /> |
-| **Caretaker guide** | **On a phone** |
+| **Signal library** | **Feeling estimates** |
+| <img src="screenshots/signals-desktop.png" alt="Signal library with confidence levels" width="420" /> | <img src="screenshots/feelings-desktop.png" alt="Feeling estimates waiting for caregiver confirmation" width="420" /> |
+| **Water danger zones** | **Drawing a zone by hand** |
 | <img src="screenshots/water-map-desktop.png" alt="Water danger zones near a safe zone on the map" width="420" /> | <img src="screenshots/draw-freehand-desktop.png" alt="Drawing a zone by hand" width="420" /> |
-| **Videos and talk** | **Interests and history** |
-| <img src="screenshots/talk-about-mobile.png" alt="Talk about it board after a video" width="200" /> | <img src="screenshots/insights-interests-desktop.png" alt="Interest map, top words and growth chart" width="420" /> |
-| <img src="screenshots/guide-desktop.png" alt="Caretaker guide contents page" width="420" /> | <img src="screenshots/myvoice-mobile.png" alt="My Voice on a phone" width="200" /> |
+| **Video board (Bridge)** | **Interests and history** |
+| <img src="screenshots/video-board-desktop.png" alt="Videos and games tab with the video list and game settings" width="420" /> | <img src="screenshots/insights-interests-desktop.png" alt="Interest map, top words and growth chart" width="420" /> |
+| **Sound game: copy my sound** | **Therapist summary** |
+| <img src="screenshots/game-echo-desktop.png" alt="Copy my sound game with a microphone level bar" width="420" /> | <img src="screenshots/therapist-report-desktop.png" alt="Printable therapist summary" width="420" /> |
+| **Caretaker guide** | **On a phone: talk about a video** |
+| <img src="screenshots/guide-desktop.png" alt="Caretaker guide contents page" width="420" /> | <img src="screenshots/talk-about-mobile.png" alt="Talk about it board after a video, on a phone" width="200" /> |
 
 ## Feature map
 
@@ -61,6 +62,8 @@ flowchart LR
     MV[My Voice<br/>index.html] --> SH[(shared.js<br/>localStorage + IndexedDB)]
     MV --> GEO[geo.js<br/>safe zones]
     MV --> SW1[Service worker<br/>offline cache]
+    MV --> GM[games.js + interests.js<br/>sound games, history]
+    MV -. caregiver-chosen videos only .-> YT[(youtube-nocookie.com)]
   end
   subgraph Caregiver device
     BR[The Bridge<br/>bridge.html] --> SH2[(shared.js<br/>localStorage + IndexedDB)]
@@ -95,6 +98,17 @@ python3 -m http.server 8080
 
 The microphone, camera and service worker need `localhost` or HTTPS.
 
+### Hosting
+
+The live app at <https://luminaac-web.vercel.app> is the static front end deployed on Vercel from `main`, with no build step:
+
+- `vercel.json` serves the repository root as is, and sends `sw.js` and the web manifests with `Cache-Control: no-cache` so updates reach installed apps. `sw.js` also gets `Service-Worker-Allowed: /`.
+- `.vercelignore` keeps `backend/`, `native/`, `tests/`, `docs/` and Markdown files (except `PRIVACY.md` and `THIRD-PARTY.md`) off public hosting. `screenshots/` is served because the in-app guide shows them.
+- Any static host works the same way. Serve over HTTPS and don't cache `sw.js` long-term.
+- The backend isn't part of the Vercel deployment. Run it separately if you need sync, alerts or share links.
+
+When you change any shipped file, bump `VERSION` in `sw.js` (currently `luminaac-v0.9.1`) so devices pick up the new copy. To rebuild `guide.html` from `docs/CARETAKER-GUIDE.md`, run `python3 tools/mkguide.py` (needs the Python `markdown` package).
+
 ### Backend (optional)
 
 ```bash
@@ -128,6 +142,8 @@ node tests/interests-games.test.mjs   # 44 tests: YouTube links, embed lock-down
 | `geo.js`, `emotion.js`, `fl-core.js` | Geofence maths, on-device prosody and face estimates, federated learning core (shared with the backend) |
 | `water.js`, `bridge-p6.js`, `phase6.css`, `vendor/simplify.js` | Phase 6: water lookup and clipping, freehand drawing and shape editing, Water card |
 | `interests.js`, `games.js`, `bridge-p7.js`, `myvoice-p7.js`, `phase7.css` | Phase 7: interest and history maths, sound games and pitch, Videos and games tab and Insights section, My videos and Sound games |
+| `guide.html`, `guide.css`, `tools/mkguide.py` | In-app caretaker guide, built from `docs/CARETAKER-GUIDE.md` |
+| `vercel.json`, `.vercelignore` | Static hosting setup for the live app |
 | `motion-lite.js` | Restrained motion wrapper around Motion that respects reduced motion |
 | `vendor/` | Leaflet, qrcode-generator, jsQR, Motion and OpenMoji (see `THIRD-PARTY.md`) |
 | `ai.js`, `ai-worker.js` | Phase 4: transformers.js speech-emotion model and Kokoro voices in a Web Worker (lazy, cached, WebGPU or WASM) |
@@ -148,7 +164,9 @@ Documentation: [Caretaker guide](docs/CARETAKER-GUIDE.md), [Product spec](PRODUC
 - **Local first.** Settings and learned signals live in `localStorage` (`luminaac:*`); recordings live in IndexedDB (`luminaac-media`). Nothing leaves the device unless a caregiver turns on sync.
 - **Caregivers decide.** Every feeling estimate and every learned signal needs a caregiver's confirmation before it counts.
 - **Opt-in everything.** Safe zones need explicit consent, the speech model and face estimate are off by default, and federated learning sends only clipped, noised and masked weight deltas with a per-device privacy budget.
-- **Retention and control.** 7, 30 or 90 days or forever, with export, restore and delete-all under Bridge, then Privacy.
+- **Videos and games.** Only caregiver-added videos play, through the privacy-enhanced YouTube player with no autoplay or suggestions. Watch history and game turns stay on the device where they happened; only the video list and game settings sync. The game microphone is optional and never records.
+- **Patterns, not diagnosis.** Insights and the therapist summary describe what happened; they never assess or diagnose.
+- **Retention and control.** 7, 30 or 90 days or forever, with export, restore and delete-all (moments, signals and video and game history) under Bridge, then Privacy.
 
 Full details in [PRIVACY.md](PRIVACY.md).
 
@@ -171,13 +189,14 @@ Vanilla JavaScript ES modules, Web Audio, IndexedDB, Service Workers, WebAuthn a
 - [Human](https://github.com/vladmandic/human) by Vladimir Mandic (MIT)
 - [Motion](https://motion.dev) (MIT), [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) (MIT), [jsQR](https://github.com/cozmo/jsQR) (Apache-2.0)
 - [transformers.js](https://github.com/huggingface/transformers.js) and [kokoro-js](https://github.com/hexgrad/kokoro) (Apache-2.0), loaded only when turned on
+- YouTube IFrame Player API with the privacy-enhanced host, only for caregiver-chosen videos (YouTube API Services Terms)
 - Atkinson Hyperlegible Next by the Braille Institute (SIL OFL)
 
 Versions, files and licence notes are in [THIRD-PARTY.md](THIRD-PARTY.md).
 
 ## Roadmap
 
-Next up: photo symbols and recorded caregiver voices, two-switch and row/column scanning, end-to-end encryption of synced data, Web Push alerts, shipping the Capacitor apps for background geofencing, and validating the speech-emotion model with real caregivers. Longer term: on-device audio embeddings, gesture keypoints and a small per-child classifier. See [ROADMAP.md](ROADMAP.md).
+Next up: a word strip during videos, topic word pages from interests, opt-in weekly summaries for the care team, word-level sound games on the device, photo symbols and recorded caregiver voices, two-switch and row/column scanning, end-to-end encryption of synced data, Web Push alerts, shipping the Capacitor apps for background geofencing, and validating the speech-emotion model with real caregivers. Longer term: on-device audio embeddings, gesture keypoints and a small per-child classifier. See [ROADMAP.md](ROADMAP.md).
 
 ## Contributing
 
