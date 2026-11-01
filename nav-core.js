@@ -8,7 +8,9 @@ export const HUBS = [
   { id: "home", label: "Home", tabs: ["today"] },
   { id: "programs", label: "Programs", tabs: ["vocab", "routines", "sound", "potty", "play"] },
   { id: "progress", label: "Progress", tabs: ["signals", "insights"] },
-  { id: "circle", label: "Circle", tabs: ["team", "safety", "account", "privacy"] },
+  { id: "circle", label: "Circle", tabs: ["team", "account", "privacy"] },
+  // Safety gets its own button: parents of a child who wanders need it in one tap.
+  { id: "safety", label: "Safety", tabs: ["safety"] },
 ];
 
 export const hubOf = (tab) => HUBS.find((h) => h.tabs.includes(tab)) || HUBS[0];

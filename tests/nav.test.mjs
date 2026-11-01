@@ -6,11 +6,11 @@ const t = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? "ok  " : "FA
 const ALL = ["today", "signals", "vocab", "routines", "play", "potty", "sound", "insights", "team", "safety", "account", "privacy"];
 const placed = N.HUBS.flatMap((h) => h.tabs);
 t("every old tab is in exactly one hub", ALL.every((x) => placed.filter((y) => y === x).length === 1) && placed.length === ALL.length);
-t("four hubs", N.HUBS.length === 4);
+t("five hubs, Safety one tap away", N.HUBS.length === 5 && N.hubOf("safety").id === "safety" && N.resolveHash("#safety") === "safety");
 t("hubOf: potty lives in Programs", N.hubOf("potty").id === "programs");
 t("hubOf: unknown tab falls back to Home", N.hubOf("nope").id === "home");
 
-t("hash: hub name opens its first tab", N.resolveHash("#circle") === "team");
+t("hash: hub name opens its first tab", N.resolveHash("#circle") === "team" && N.resolveHash("#programs") === "vocab");
 t("hash: old tab links still work", N.resolveHash("#sound") === "sound");
 t("hash: junk gives nothing", N.resolveHash("#x") === null && N.resolveHash("") === null);
 

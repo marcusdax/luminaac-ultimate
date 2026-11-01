@@ -7,6 +7,7 @@ const ICON = {
   home: "M4 11l8-7 8 7v9h-5v-6H9v6H4z",
   programs: "M5 4h14v16H5zM9 8h6M9 12h6M9 16h3",
   progress: "M4 20V10M10 20V4M16 20v-7M2 20h20",
+  safety: "M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6zM9 12l2 2 4-4",
   circle: "M9 11a3 3 0 100-6 3 3 0 000 6zM17 11a3 3 0 100-6 3 3 0 000 6zM3 20c0-3 3-5 6-5s6 2 6 5M15 15c3 0 6 2 6 5",
 };
 

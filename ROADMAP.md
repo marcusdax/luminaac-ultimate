@@ -1,5 +1,8 @@
 # Roadmap
 
+## v0.11.3: Safety gets its own hub
+Safety moves out of Circle into a fifth Bridge hub (shield icon), so the zones map and water alerts are one tap away. Full sweep: all 12 Bridge tabs, every My Voice view, all 13 stories, games and Sound Path activities open and respond, with no errors; 368 automated tests pass.
+
 ## v0.11.2: Redesign fixes and fast water search
 - **Lock-ups:** the Bridge no longer uses View Transitions, which snapshot the whole page and could freeze taps on iPad Safari. It uses a 140 ms CSS fade instead.
 - **Stale files:** the service worker now installs with `cache: "reload"`, so a new version can't pick up an old copy of a file from the browser cache.
