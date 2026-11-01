@@ -1,9 +1,9 @@
 # Vercel serves the static web app only. The backend runs separately,
-# and tests, screenshots and planning docs stay out of public hosting.
+# and tests and planning docs stay out of public hosting.
+# screenshots/ is served because guide.html shows them.
 backend/
 native/
 tests/
-screenshots/
 docs/
 *.md
 !PRIVACY.md
