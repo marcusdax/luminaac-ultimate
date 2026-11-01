@@ -30,6 +30,7 @@ host.innerHTML = `
     <h2 id="ppTitle" class="pp-sr">Potty Path</h2>
     <div class="pp-top"><ol class="pp-path" id="ppPath" aria-hidden="true"></ol><span class="pp-new" id="ppNew" hidden></span></div>
     <div class="pp-stage" id="ppStage" aria-live="polite"></div>
+    <div class="pp-actslot" id="ppAct"></div>
     <div class="pp-bottom">
       <div class="pp-comp" id="ppComp"></div>
       <div class="pp-tokens" id="ppTokens" aria-label="Tokens"></div>
@@ -57,7 +58,7 @@ mv.append(...host.children);
 // ---------- Sound: one cue per event, always the same ----------
 let actx;
 function chime(kind) {
-  const p = proto(); if (p.sound !== "soft") return;
+  const p = proto(); if (p.sound !== "soft" || p.publicMode) return;
   try {
     actx ||= new (window.AudioContext || window.webkitAudioContext)();
     const notes = kind === "celebrate" ? [523.25, 659.25, 783.99] : [523.25, 659.25];
@@ -68,7 +69,7 @@ function chime(kind) {
     });
   } catch {}
 }
-function line(text) { if (proto().sound !== "silent") speak(text, 0.85); }
+function line(text) { const p = proto(); if (p.sound !== "silent" && !p.publicMode) speak(text, 0.85); }
 
 // ---------- State ----------
 let cur = null, lastVoidSeen = Date.now(), renderTimer = 0, dismissed = new Set(), lastUndo = null;
@@ -80,21 +81,27 @@ const rec = (kind, data = {}, by = "child", sid = cur?.id) => S.record(kind, dat
 function startSession({ prompted, by, signal, bowel = false, cleanup = false }) {
   const sid = C.rid();
   S.record("session_start", { prompted, bowel, cleanup }, { by, sessionId: sid });
-  if (signal) {
-    S.record("signal", { modality: signal }, { by: by === "child" ? "child" : "caregiver", sessionId: sid });
-    award(C.tokensFor("signal", {}, proto()), "signal", sid);
-  }
+  if (signal) signalNow(signal, by === "child" ? "child" : "caregiver", sid);
   dismissed.delete(sid);
   open();
   return sid;
 }
 function award(n, why, sid) { if (n > 0) S.record("token_award", { n, why }, { by: "system", sessionId: sid }); }
+// Record a signal with its timing. Telling first earns most; telling after a wet is
+// thanked warmly with 1 token; repeat signals within 20 minutes earn nothing extra.
+function signalNow(modality, by, sid) {
+  const a = C.signalAward(events(), proto());
+  S.record("signal", { modality, ...(a.late && { late: true }) }, { by, sessionId: sid });
+  award(a.n, "signal", sid);
+  return a;
+}
 
 // ---------- The TOILET button (the child's voice) ----------
 $("ppToilet").addEventListener("click", () => {
   speak("I need the toilet");
+  hideSoon();
   const s = session();
-  if (s) { rec("signal", { modality: "aac_button" }, "child", s.id); award(C.tokensFor("signal", {}, proto()), "signal", s.id); open(); }
+  if (s) { const a = signalNow("aac_button", "child", s.id); if (a.late) line("Thank you for telling me."); open(); }
   else startSession({ prompted: false, by: "child", signal: "aac_button" });
   raiseAlert("potty", `${childName() || "Your child"} needs the toilet`);
 });
@@ -127,7 +134,7 @@ function open() {
   if (!dlg.open) { dlg.showModal(); document.documentElement.dataset.potty = "open"; }
   render();
 }
-dlg.addEventListener("close", () => { delete document.documentElement.dataset.potty; clearInterval(renderTimer); if (cur) dismissed.add(cur.id); hideGrown(); });
+dlg.addEventListener("close", () => { delete document.documentElement.dataset.potty; clearInterval(renderTimer); stopPond(); $("ppAct").textContent = ""; actKey = ""; if (cur) dismissed.add(cur.id); hideGrown(); });
 dlg.addEventListener("cancel", (e) => { e.preventDefault(); stop(); }); // Escape = the Stop button
 
 $("ppBreak").addEventListener("click", () => { if (!cur) return; if (cur.state === "coregulate") rec("resume"); else rec("pause", { why: "child break" }); render(); });
@@ -171,6 +178,7 @@ function render() {
     case "ended": doneView(stage, p); break;
     default: stepsView(stage, p, justVoided);
   }
+  calmActivity(p);
   companion(cur.state === "ended" ? (cur.refused ? "wave" : "proud") : cur.state === "coregulate" ? "sleepy" : justVoided ? "proud" : cur.state === "body_check" ? "wait" : cur.steps.length === 0 ? "wave" : "content");
   if (!$("ppGBar").hidden) renderGrown();
   if (["sitting", "body_check", "coregulate", "celebrate"].includes(cur.state) || justVoided) renderTimer = setInterval(render, still() ? 30e3 : 1000);
@@ -190,7 +198,10 @@ function renderTokens(p) {
 }
 function companion(mood) {
   const p = proto(), box = $("ppComp");
-  const skin = COMPANIONS[p.companion];
+  // The companion is a bridge, not a dependency: from stage 4 it only comes to
+  // celebrate, and in stage 5 it lives in the World.
+  const fading = (p.stage >= 4 && cur?.state !== "ended") || p.stage >= 5;
+  const skin = fading ? null : COMPANIONS[p.companion];
   box.hidden = !skin;
   if (!skin) return;
   box.className = `pp-comp mood-${mood}`;
@@ -221,7 +232,7 @@ function stepsView(stage, p, justVoided) {
   nowT.addEventListener("click", () => { rec("step", { step: step.id }); chime("step"); line(step.say); render(); });
   row.append(nowT, Object.assign(document.createElement("span"), { className: "pp-arrow", ariaHidden: "true", textContent: "→" }), tile(next, false, stepPhoto(next.id)));
   stage.append(row);
-  if (!cur.steps.length && cur.state === "approach" && !greeted.has(cur.id)) { greeted.add(cur.id); line(cur.initiated ? "You told me! Let's go." : step.say); }
+  if (!cur.steps.length && cur.state === "approach" && !greeted.has(cur.id)) { greeted.add(cur.id); line(cur.initiated ? (cur.late ? "Thank you for telling me." : "You told me! Let's go.") : step.say); }
 }
 function sitView(stage, p) {
   const total = Math.min(cur.sitTarget, cur.sitCap), f = Math.max(0, Math.min(1, cur.sitElapsed / total));
@@ -235,6 +246,62 @@ function sitView(stage, p) {
   else w.innerHTML = `<div class="pp-ring" style="--f:${shown}"><span class="pp-ringtick" ${f >= 1 ? "" : "hidden"}>${ICON.done}</span></div>`;
   stage.append(w);
   stage.insertAdjacentHTML("beforeend", `<p class="pp-soft">${cur.bowel ? "Feet flat on the stool. " : ""}Sitting.</p>`);
+}
+
+// ---------- Calm activities during the sit (optional, never scored, never logged) ----------
+// Drawn into its own slot and only rebuilt when the choice changes, so the
+// slow animations aren't restarted by the once-a-second timer render.
+let act = null, actKey = "", pondMic = null;
+function calmActivity(p) {
+  const slot = $("ppAct");
+  if (cur?.state !== "sitting") { if (actKey) { slot.textContent = ""; actKey = ""; stopPond(); } return; }
+  const offered = C.activitiesOffered(p);
+  if (!act || !offered.includes(act)) act = offered[0];
+  const key = act + "|" + offered.join();
+  if (key === actKey) return;
+  actKey = key; slot.textContent = ""; stopPond();
+  if (act === "none" && offered.length < 2) return;
+  const stage = slot;
+  const box = document.createElement("div"); box.className = "pp-act"; box.dataset.act = act;
+  if (act === "garden") box.innerHTML = `<div class="pp-garden${still() ? " still" : ""}" aria-label="Breathing garden. Tap a flower.">${[0, 1, 2, 3, 4].map((k) => `<button type="button" class="pp-flower" style="--d:${k * 0.8}s" aria-label="Flower"><i></i></button>`).join("")}</div><p class="pp-soft small">Breathe in… and out.</p>`;
+  else if (act === "pond" || act === "sound") box.innerHTML = `<button type="button" class="pp-pond" aria-label="Quiet pond. Tap the water."><span class="pp-koi" aria-hidden="true"></span><span class="pp-koi k2" aria-hidden="true"></span></button>${act === "sound" ? `<p class="pp-soft small">Make a sound: the water ripples.</p>` : ""}`;
+  else if (act === "story") box.innerHTML = `<div class="pp-story"><p>When I need the toilet, I can tell my grown-up.</p><p>I sit. I wait. My body might let the pee out.</p><p>Then I wash my hands. All done!</p></div>`;
+  else if (act === "photos") { box.innerHTML = `<div class="pp-photos" aria-label="Photo book"></div>`; fillPhotos(box.firstElementChild); }
+  if (offered.length > 1) {
+    const sw = document.createElement("div"); sw.className = "pp-actpick";
+    for (const a of offered) { const b = document.createElement("button"); b.type = "button"; b.className = "pp-actbtn" + (a === act ? " on" : ""); b.textContent = C.ACTIVITIES[a].split(" (")[0]; b.setAttribute("aria-pressed", String(a === act)); b.addEventListener("click", () => { act = a; render(); }); sw.append(b); }
+    box.append(sw);
+  }
+  stage.append(box);
+  box.querySelectorAll(".pp-flower").forEach((f) => f.addEventListener("click", () => { f.classList.remove("bloom"); void f.offsetWidth; f.classList.add("bloom"); }));
+  const pond = box.querySelector(".pp-pond");
+  if (pond) pond.addEventListener("click", (e) => ripple(pond, e.offsetX || pond.clientWidth / 2, e.offsetY || pond.clientHeight / 2));
+  if (act === "sound" && pond) listenPond(pond); else stopPond();
+}
+function ripple(pond, x, y) {
+  if (still()) return;
+  const r = document.createElement("span"); r.className = "pp-ripple"; r.style.left = x + "px"; r.style.top = y + "px";
+  pond.append(r); setTimeout(() => r.remove(), 1600);
+}
+async function listenPond(pond) {
+  if (pondMic) { pondMic.pond = pond; return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const a = new (window.AudioContext || window.webkitAudioContext)(), an = a.createAnalyser(); an.fftSize = 1024;
+    a.createMediaStreamSource(stream).connect(an);
+    const buf = new Float32Array(an.fftSize);
+    pondMic = { stream, a, pond, iv: setInterval(() => {
+      if (!dlg.open || !pondMic?.pond.isConnected) return stopPond();
+      an.getFloatTimeDomainData(buf); let s = 0; for (const v of buf) s += v * v;
+      if (Math.sqrt(s / buf.length) > 0.04 && Math.random() < 0.5) ripple(pondMic.pond, 30 + Math.random() * (pondMic.pond.clientWidth - 60), 20 + Math.random() * (pondMic.pond.clientHeight - 40));
+    }, 200) };
+  } catch { pondMic = null; }
+}
+function stopPond() { if (!pondMic) return; clearInterval(pondMic.iv); pondMic.stream.getTracks().forEach((t) => t.stop()); pondMic.a.close?.(); pondMic = null; }
+function fillPhotos(el) {
+  const keys = (S.read().profile.reinforcers || []).map((r) => r.photoKey).filter(Boolean).slice(0, 6);
+  if (!keys.length) { el.innerHTML = `<p class="pp-soft small">Add photos in the Bridge (Rewards) to see them here.</p>`; return; }
+  keys.forEach((k) => S.getPhoto(k).then((b) => { if (b) el.insertAdjacentHTML("beforeend", `<img src="${URL.createObjectURL(b)}" alt="" />`); }));
 }
 function bodyCheck(stage, p) {
   if (!cur.bodyCheck) { rec("body_check", {}, "system"); line("Check your body. Anything coming?"); }
@@ -258,10 +325,12 @@ function breakView(stage) {
   done.addEventListener("click", () => { rec("abort", {}); render(); });
   row.append(back, done); stage.append(row);
 }
-let worldShownFor = "";
+let worldShownFor = "", picked = null;
 function doneView(stage, p) {
   const L = C.ledger(events(), p);
-  stage.insertAdjacentHTML("beforeend", `<p class="pp-big">${cur.refused ? "See you later." : cur.outcome === "wet" ? "All clean." : cur.outcome === "void" ? "All done. You did it!" : "All done trying."}</p>`);
+  stopPond();
+  const told = cur.initiated && !cur.late;
+  stage.insertAdjacentHTML("beforeend", `<p class="pp-big">${cur.refused ? "See you later." : cur.late ? "Thank you for telling me." : told && cur.outcome === "void" ? "You told me, and you did it!" : told ? "Thank you for telling me!" : cur.outcome === "wet" ? "All clean." : cur.outcome === "void" ? "All done. You did it!" : "All done trying."}</p>`);
   if (p.worldOn && !cur.refused) {
     const pieces = C.worldPieces(events(), p), W = C.WORLDS[p.world] || C.WORLDS.train;
     const page = pieces.slice(Math.floor(Math.max(0, pieces.length - 1) / C.PAGE) * C.PAGE);
@@ -269,13 +338,29 @@ function doneView(stage, p) {
     stage.insertAdjacentHTML("beforeend", `<div class="pp-world${fresh && !still() ? " grow" : ""}" aria-label="Your ${esc(W.label.toLowerCase())} grew">${W.head}${page.map((x, k) => `<span class="pp-piece ${x}${k === page.length - 1 ? " new" : ""}">${W.pieces[x]}</span>`).join("")}<span class="pp-piece ghost" aria-hidden="true">◌</span></div>`);
   }
   if (L.full) {
-    const r = [...(S.read().profile.reinforcers || [])].sort((a, b) => a.rank - b.rank)[0];
+    const all = [...(S.read().profile.reinforcers || [])].sort((a, b) => a.rank - b.rank);
+    // From token phase C (or when the grown-up turns it on) the child picks the reward:
+    // variety from their own choice, never from random amounts.
+    const choose = (p.rewardChoice || p.tokenPhase === "C" || p.tokenPhase === "D") && all.length > 1 && !picked;
     const box = document.createElement("div"); box.className = "pp-reward";
-    box.innerHTML = `<span class="pp-rpic" aria-hidden="true">${r?.photoKey ? "" : "🎁"}</span><p>${r ? esc(r.label) + " time!" : "Reward time!"}</p>`;
-    if (r?.photoKey) S.getPhoto(r.photoKey).then((b) => { if (b) box.querySelector(".pp-rpic").innerHTML = `<img src="${URL.createObjectURL(b)}" alt="" />`; });
-    const given = document.createElement("button"); given.type = "button"; given.className = "mv-pbtn"; given.textContent = "Grown-up: given ✓";
-    given.addEventListener("click", () => { S.record("token_redeem", { ratio: L.ratio }, { by: "caregiver", sessionId: cur.id }); render(); });
-    box.append(given); stage.append(box);
+    if (choose) {
+      box.innerHTML = `<p>Pick one</p><div class="pp-rchoices"></div>`;
+      for (const r of all.slice(0, 3)) {
+        const b = document.createElement("button"); b.type = "button"; b.className = "pp-rchoice";
+        b.innerHTML = `<span class="pp-rpic" aria-hidden="true">${r.photoKey ? "" : "🎁"}</span><span>${esc(r.label)}</span>`;
+        if (r.photoKey) S.getPhoto(r.photoKey).then((x) => { if (x) b.querySelector(".pp-rpic").innerHTML = `<img src="${URL.createObjectURL(x)}" alt="" />`; });
+        b.addEventListener("click", () => { picked = r; speak(r.label); render(); });
+        box.querySelector(".pp-rchoices").append(b);
+      }
+    } else {
+      const r = picked || all[0];
+      box.innerHTML = `<span class="pp-rpic" aria-hidden="true">${r?.photoKey ? "" : "🎁"}</span><p>${r ? esc(r.label) + " time!" : "Reward time!"}</p>`;
+      if (r?.photoKey) S.getPhoto(r.photoKey).then((b) => { if (b) box.querySelector(".pp-rpic").innerHTML = `<img src="${URL.createObjectURL(b)}" alt="" />`; });
+      const given = document.createElement("button"); given.type = "button"; given.className = "mv-pbtn"; given.textContent = "Grown-up: given ✓";
+      given.addEventListener("click", () => { S.record("token_redeem", { ratio: L.ratio, ...(r && { choice: r.label }) }, { by: "caregiver", sessionId: cur.id }); picked = null; render(); });
+      box.append(given);
+    }
+    stage.append(box);
   }
   const close = document.createElement("button"); close.type = "button"; close.className = "pp-tile is-now pp-closebtn"; close.innerHTML = `<span class="pp-tico" aria-hidden="true">${ICON.done}</span><span class="pp-tlabel">Close</span>`;
   close.addEventListener("click", () => { dlg.close(); renderEntry(); });
@@ -293,7 +378,7 @@ function renderGrown() {
   b("Pee", () => { logged(rec("void", { type: "urine", where: "toilet" }, "caregiver")); award(C.tokensFor("void", {}, proto()), "void", cur.id); });
   b("Poo", () => { logged(rec("void", { type: "bm", where: "toilet" }, "caregiver")); award(C.tokensFor("void", {}, proto()), "void", cur.id); });
   b("Wet / missed", () => logged(rec("wet", { type: "urine" }, "caregiver")));
-  b("Asked ★", () => { logged(rec("signal", { modality: "other" }, "caregiver")); award(C.tokensFor("signal", {}, proto()), "signal", cur.id); });
+  b("Asked ★", () => { const a = C.signalAward(events(), proto()); logged(rec("signal", { modality: "other", ...(a.late && { late: true }) }, "caregiver")); award(a.n, "signal", cur.id); });
   b("Step ✓", () => { const { list, i } = C.currentStep(cur, proto()); if (cur.state === "sitting" || cur.state === "body_check") { rec("sit_end", {}, "caregiver"); settleSit(); } else logged(rec("step", { step: list[i]?.id || "done" }, "caregiver")); });
   b(cur.state === "coregulate" ? "Resume" : "Pause (distress)", () => logged(rec(cur.state === "coregulate" ? "resume" : "distress", {}, "caregiver")));
   b("End: hard moment", () => logged(rec("abort", { escalation: true }, "caregiver")), "quiet");
@@ -332,6 +417,54 @@ function renderEntry() {
 S.onChange(() => { renderEntry(); if (dlg.open) render(); });
 addEventListener("storage", (e) => { if (e.key === "luminaac:bridge") renderEntry(); });
 renderEntry();
+
+// ---------- "Soon: toilet" card, then the offer (planned sits only) ----------
+// 2 minutes before a planned sit a small Now/Next card appears in the corner, so
+// leaving what they're doing is never a surprise. At the time, a gentle offer:
+// "Let's go" or "Not now". No answer in 30 seconds just means not now (not counted).
+// A child's own TOILET tap skips all of this.
+const soon = document.createElement("div");
+soon.className = "pp-soon"; soon.hidden = true; soon.setAttribute("role", "status");
+soon.innerHTML = `<span class="pp-soonring" aria-hidden="true"></span><span><b>Next: toilet</b><span class="pp-soonsub">Soon</span></span>`;
+const offer = document.createElement("dialog");
+offer.className = "pp-offer"; offer.setAttribute("aria-labelledby", "ppOfferT");
+offer.innerHTML = `<div class="pp-offercomp" id="ppOfferComp"></div><h2 id="ppOfferT">Toilet time?</h2>
+  <div class="pp-offerrow"><button type="button" class="pp-offeryes" id="ppOfferYes">Let's go</button><button type="button" class="pp-offerno" id="ppOfferNo">Not now</button></div>`;
+document.body.append(soon, offer);
+let offerFor = 0, offerTimer = 0;
+const offered = (w) => S.read().events.some((e) => e.kind === "offer" && e.data.window === w);
+function hideSoon() { soon.hidden = true; }
+function tickSoon() {
+  const p = proto();
+  if (!enabled() || p.retired || !p.transitionCard || p.stage < 2 || dlg.open || session()) { hideSoon(); return; }
+  const w = C.nextWindow(p); if (!w || offered(w)) { hideSoon(); return; }
+  const pause = C.pauseState(events(), S.read().profile, p);
+  if (!C.canScheduleSit(events(), p, Date.now(), pause).ok) { hideSoon(); return; }
+  const left = w - Date.now();
+  if (left > 2 * C.MIN) { hideSoon(); return; }
+  if (left > 0) { soon.hidden = false; soon.style.setProperty("--f", String(1 - left / (2 * C.MIN))); return; }
+  hideSoon();
+  if (!offer.open && offerFor !== w) showOffer(w);
+}
+function showOffer(w) {
+  offerFor = w;
+  const skin = COMPANIONS[proto().companion];
+  $("ppOfferComp").innerHTML = skin && proto().stage < 5 ? skin.draw("wave") : "";
+  offer.showModal(); line("Toilet time?");
+  clearTimeout(offerTimer);
+  offerTimer = setTimeout(() => answerOffer(w, "none"), 30e3);
+}
+function answerOffer(w, answer) {
+  clearTimeout(offerTimer);
+  if (offer.open) offer.close();
+  S.record("offer", { window: w, answer }, { by: answer === "none" ? "system" : "child" });
+  if (answer === "yes") startSession({ prompted: true, by: "child" });
+  if (answer === "no") { S.record("refuse", { offer: true }, { by: "child" }); line("Okay. Later."); }
+}
+$("ppOfferYes").addEventListener("click", () => answerOffer(offerFor, "yes"));
+$("ppOfferNo").addEventListener("click", () => answerOffer(offerFor, "no"));
+offer.addEventListener("cancel", (e) => { e.preventDefault(); answerOffer(offerFor, "no"); });
+setInterval(tickSoon, 5000); tickSoon();
 window.__pottyOpen = () => dlg.open;
 // The "Bathroom" step of a routine story can hand over to Potty Path (call with go=true to start).
 window.__pottyStart = (go) => { if (!enabled()) return false; if (go) startSession({ prompted: true, by: "caregiver" }); return true; };

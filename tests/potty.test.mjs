@@ -119,5 +119,48 @@ const wk = P.weekSummary([ev("signal", { modality: "leads_adult" }, { t: now - 2
 t("week summary counts signal precision", wk.signals === 1 && wk.precision === 100 && wk.modalities[0][0] === "leads_adult");
 t("suggestions never change the plan, only advise", Array.isArray(P.suggestions(hist, { phase: 3 }, now)));
 
+// ---------- v0.11 mechanics: signal timing ----------
+const sigE = ev("signal", {}, { t: now - 30 * MIN }), voidE = ev("void", { type: "urine" }, { t: now - 25 * MIN });
+const wetE = ev("wet", { type: "urine" }, { t: now - 60 * MIN }), lateS = ev("signal", { late: true }, { t: now - 58 * MIN });
+const lonely = ev("signal", {}, { t: now - 120 * MIN });
+const tim = Object.fromEntries(P.signalTiming([sigE, voidE, wetE, lateS, lonely], now).map((x) => [x.id, x.timing]));
+t("signal before a toilet pee is early", tim[sigE.id] === "early");
+t("signal after a wet is late", tim[lateS.id] === "late");
+t("signal with nothing after is no_need", tim[lonely.id] === "no_need");
+t("late signal earns less than telling first", P.tokensFor("signal", { late: true }) < P.tokensFor("signal") && P.tokensFor("signal", { late: true }) > 0);
+t("order: signal > void > sit", P.tokensFor("signal") > P.tokensFor("void") && P.tokensFor("void") > P.tokensFor("sit_done"));
+t("signalAward: late after a wet", (() => { const a = P.signalAward([ev("wet", {}, { t: now - 5 * MIN })], {}, now); return a.late && a.n === 1; })());
+t("signalAward: tokens once per 20 min, trip still honoured", P.signalAward([ev("token_award", { n: 3, why: "signal" }, { t: now - 5 * MIN })], {}, now).n === 0);
+t("World: late signal is a lantern, not a landmark", P.worldPieces([ev("session_start", { prompted: false }, { s: "L1", t: now - 50 * MIN }), ev("signal", { late: true }, { s: "L1", t: now - 50 * MIN }), ev("session_end", {}, { s: "L1", t: now - 45 * MIN })], {}, now).join() === "lantern");
+
+// ---------- v0.11 mechanics: stages ----------
+const sess = (id, d, h, extra = [], o = {}) => [ev("session_start", { prompted: o.prompted !== false }, { s: id, t: at(d, h) }), ev("step", { step: "sit" }, { s: id, t: at(d, h) + 10e3 }),
+  ...extra.map(([k, data, sec]) => ev(k, data, { s: id, t: at(d, h) + sec * 1000 })), ev("session_end", {}, { s: id, t: at(d, h) + (o.len || 40) * 1000 })];
+const calmWeek = [6, 5, 4, 3, 2, 1, 0].flatMap((d) => sess("c" + d, d, 10));
+t("stage 1 → recommends stage 2 after calm sits", (() => { const s = P.stageProgress(calmWeek, { stage: 1 }, now); return s.advance?.to === 2 && /of the last 7/.test(s.advance.why); })());
+t("stage never advances by itself", P.stageProgress(calmWeek, { stage: 1 }, now).stage === 1);
+t("short sits don't meet stage 1", !P.stageProgress([6, 5, 4, 3, 2, 1, 0].flatMap((d) => sess("q" + d, d, 10, [], { len: 15 })), { stage: 1 }, now).advance);
+t("stability needs two separate weeks", !P.stageProgress(calmWeek, { stage: 1, stability: true }, now).advance);
+const hardTries = [4, 3, 2, 1, 0].flatMap((d, i) => sess("h" + d, d, 11, i >= 3 ? [["distress", {}, 12]] : []));
+t("2 hard tries in 5 → step back recommended, never advance", (() => { const s = P.stageProgress([...calmWeek, ...hardTries], { stage: 2 }, now); return s.stepBack?.to === 1 && !s.advance; })());
+t("'Not yet' quiets the card for 3 days", !P.stageProgress([...calmWeek, ev("stage", { action: "decline", to: 2 }, { t: now - DAY })], { stage: 1 }, now).advance);
+t("pause blocks advancing", !P.stageProgress(calmWeek, { stage: 1 }, now, { paused: true }).advance);
+
+// ---------- v0.11 mechanics: planner properties ----------
+const plan = (evs, proto = {}, nowT = now, pause) => P.nextSession(evs, proto, nowT, pause);
+const earlyN = (k) => Array.from({ length: k }, (_, i) => [ev("signal", {}, { t: at(1, 9 + i) }), ev("void", { type: "urine" }, { t: at(1, 9 + i) + 5 * MIN })]).flat();
+t("planner: more early signals never mean more sits", plan(earlyN(4)).intervalMin >= plan(earlyN(1)).intervalMin && plan(earlyN(4)).intervalMin > plan([]).intervalMin);
+const lateN = Array.from({ length: 4 }, (_, i) => [ev("wet", {}, { t: at(1, 9 + i) }), ev("signal", { late: true }, { t: at(1, 9 + i) + 2 * MIN })]).flat();
+t("planner: late signals bring sits sooner", plan(lateN).intervalMin < plan([]).intervalMin);
+t("planner: distress spaces sits out and recommends a step back", (() => { const x = plan([...calmWeek, ...hardTries], { stage: 2 }); return x.stepBack && x.intervalMin > 60 && x.celebration === "calm"; })());
+t("planner: bounds hold", (() => { const a = plan([...earlyN(6), ...Array.from({ length: 6 }, (_, i) => ev("dry_check", { dry: true }, { t: at(2, 8 + i) }))], { intervalMin: 120 }); const b = plan([...lateN, ...Array.from({ length: 6 }, (_, i) => ev("dry_check", { dry: false }, { t: at(2, 8 + i) }))], { intervalMin: 45 }); return a.intervalMin <= 120 && b.intervalMin >= 45 && a.sitSec >= 30 && a.sitSec <= 180; })());
+t("planner: replay gives the same plan", JSON.stringify(plan(calmWeek)) === JSON.stringify(plan([...calmWeek].reverse())));
+t("planner: medical pause stops training", (() => { const x = plan(calmWeek, {}, now, { paused: true, reasons: [{ label: "No poo" }] }); return x.paused && !x.continue; })());
+t("planner: prompt level stays 1–3 and never rises by itself", (() => { const fails = [6, 5, 4, 3, 2, 1, 0].flatMap((d) => sess("f" + d, d, 11)); return plan(fails, { promptLevel: 1 }).promptLevel === 1 && plan(earlyN(5), { promptLevel: 3 }).promptLevel <= 3; })());
+t("planner: favourite activity stays; rotation only offers", (() => { const a = P.activitiesOffered({ activity: "pond", activities: ["pond", "garden"], rotate: true }); const b = P.activitiesOffered({ activity: "pond", activities: ["pond", "garden"] }); return a[0] === "pond" && a.includes("garden") && b.join() === "pond"; })());
+t("token phase advice waits for the stage and the grown-up", !P.tokenPhaseAdvice({ tokenPhase: "A", stage: 1 }) && P.tokenPhaseAdvice({ tokenPhase: "A", stage: 2 }).ratio === 3);
+t("new event kinds survive QR packing", (() => { const x = [ev("stage", { action: "confirm", to: 2 }), ev("offer", { answer: "yes" })]; return P.unpack(P.pack(x)).map((e) => e.kind).join() === "stage,offer"; })());
+t("sit length is measured", P.sessions(calmWeek, {}, now)[0].sitSecs >= 29);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

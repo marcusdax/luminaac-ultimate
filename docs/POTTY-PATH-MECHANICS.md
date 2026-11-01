@@ -1,6 +1,6 @@
 # Potty Path v0.2 mechanics: review and reconciled spec
 
-> **Status:** review of the "Game Mechanics & Flow (v0.2 deep spec)", 1 Nov 2026. Nothing here is built yet.
+> **Status:** review of the "Game Mechanics & Flow (v0.2 deep spec)", 1 Nov 2026. Built in v0.11 (M1–M7), behind `access.potty`.
 > **Read with:** `docs/POTTY-PATH.md` (the v0.10 blueprint, which is built), `potty-core.js`, and the wireframes canvas (7 artboards: Sit Mode, soon card and offer, signal responses, World, token phases, Bridge console, state machine): https://claude.ai/artifact/1eD5pazLSeNF8rvJEQWDWm. The link is private to the owner until shared.
 > **Verdict:** the spec's spine is right and most of it is already true in v0.10: three loops, add-only World, signal as the star, Break/Help/Stop everywhere, human-confirmed progress, and fading by design. **Six mechanics need correcting before build.** Two of them would quietly teach the wrong thing (§2.1, §2.2), and one runs backwards (§2.3). The state machine also has holes (§4).
 
@@ -109,8 +109,7 @@ Tokens (Phase A–B):
 | Sit | 1 |
 | Dry check | 1 |
 | Void in toilet | 2 |
-| Early signal | 3 |
-| Signal, no need to go | 1 |
+| Early signal, or asked with no need | 3 (given at the moment of asking, at most once per 20 min) |
 | Late signal | 1 |
 
 This is v0.10 with void and signal raised by 1, keeping the spec's order: signal > void > sit. To stop the child tapping repeatedly just for tokens, signal tokens count once per 20 minutes. **The trip is always honoured, every time.**

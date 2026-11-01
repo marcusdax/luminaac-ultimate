@@ -1,6 +1,6 @@
 # Sound Path and Safety Links: research-checked blueprint
 
-> **Status:** concept, not built. Written 1 Nov 2026 from a literature and technology search, to expand the "Neuro-Adaptive Speech Training" and "trackers and wearables" ideas.
+> **Status:** Sound Path increment A is built in v0.11 (behind `access.sound`, off by default). Increments B–D (video models, Mouth Mirror, Safety Links) are not built yet. Written 1 Nov 2026 from a literature and technology search, to expand the "Neuro-Adaptive Speech Training" and "trackers and wearables" ideas.
 > **Who it's for:** one nonverbal or minimally verbal autistic child, the family, and the child's SLP.
 > **Builds on:** v0.4 speech practice, v0.9 sound games (`games.js`: loudness and pitch meter, `judgeTry`, first sounds), v0.3 magic moments, v0.5 and v0.8 safe zones and water danger zones (`geo.js`), and the v0.10 Potty Path event-log pattern.
 

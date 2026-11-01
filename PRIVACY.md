@@ -43,6 +43,11 @@ LuminAAC is used by children who can't easily tell us what they're comfortable w
 - Run the server over HTTPS.
 - End-to-end encryption of the synced document is on the roadmap.
 
+## Sound Path practice data (v0.11)
+- No sound is ever recorded or stored. If you allow the microphone in Videos and games, it is only measured for loudness and pitch on the device, during a game.
+- The practice log (that a try happened, the game, and a grown-up's "got it / close / tried") lives under its own key (`luminaac:sound`) on the device that played. It is kept for a year, never synced, and never in share links or backups. **Delete practice data** removes it.
+- Targets and the ladder rung live in the Bridge document like other settings.
+
 ## Potty Path toilet data (v0.10)
 - Toilet logs are health data, so they're kept apart from everything else: their own storage key (`luminaac:potty`) and their own photo database, on the device where they were logged. Logs are kept for 90 days by default (28 to 365, your choice).
 - A parent or guardian must agree before anything is logged. The medical check and the sensory answers never leave the device. Only the plan (sit times, steps, look and sound) and whether it is paused travel with the rest of the Bridge, and never the reason for a pause.

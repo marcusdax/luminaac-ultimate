@@ -47,7 +47,7 @@ export function seed() {
     // Phase 2 (folded in from LuminAAC-Repository, luminaac, LuminAAC-Advanced and the spec doc)
     alerts: [],
     feedback: [],
-    access: { mode: "standard", size: 100, dwell: 0, scan: false, scanMs: 1500, safety: true, potty: false },
+    access: { mode: "standard", size: 100, dwell: 0, scan: false, scanMs: 1500, safety: true, potty: false, sound: false },
     stories: [
       { id: "st1", title: "Going to the dentist", kind: "story", steps: [
         { e: "🚗", text: "We drive to the dentist." },
@@ -73,6 +73,7 @@ export function seed() {
     games: { settings: { mic: false, volume: 0.7, quiet: false, calm: false, choices: 3, reward: "stickers" }, goals: [], plays: [] },
     // Potty Path plan only (the toilet log itself lives in luminaac:potty, see potty-store.js).
     potty: null,
+    sound: null,
     audit: [{ t: now, what: "Sample data loaded" }],
   };
 }

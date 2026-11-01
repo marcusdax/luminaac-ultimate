@@ -29,7 +29,7 @@
 .pp-toilet:focus-visible, .pp-world-btn:focus-visible, .pp-hold:focus-visible, .pp-tile:focus-visible, .pp-abtn:focus-visible, .pp-gbtn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; box-shadow: 0 0 0 6px var(--lumen); }
 
 /* ---------- Full-screen dialog ---------- */
-dialog.pp { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 16px 20px max(16px, env(safe-area-inset-bottom)); border: 0; background: var(--pp-bg); color: var(--ink); display: none; grid-template-rows: auto 1fr auto auto; gap: 12px; font-family: var(--font); }
+dialog.pp { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 16px 20px max(16px, env(safe-area-inset-bottom)); border: 0; background: var(--pp-bg); color: var(--ink); display: none; grid-template-rows: auto 1fr auto auto auto auto; gap: 12px; font-family: var(--font); }
 dialog.pp[open] { display: grid; }
 dialog.pp::backdrop { background: var(--pp-bg); }
 dialog.pp.is-sit { background: var(--pp-sit-bg); color: var(--pp-sit-ink); --lumen: var(--pp-sit-focus); --pp-tile: var(--pp-sit-tile); --pp-now: var(--pp-sit-tile); }
@@ -109,9 +109,48 @@ dialog.pp.is-sit { background: var(--pp-sit-bg); color: var(--pp-sit-ink); --lum
 dialog.pp-book { border: 0; border-radius: 20px; padding: 20px; max-width: min(760px, 94vw); background: var(--pp-bg); color: var(--ink); }
 .pp-bookrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
 
+/* ---------- v0.11: calm activities in the sit (never scored) ---------- */
+.pp-actslot:empty { display: none; }
+.pp-act { display: grid; justify-items: center; gap: 8px; }
+.pp-garden { display: flex; gap: 18px; justify-content: center; }
+.pp-flower { width: 64px; height: 64px; border-radius: 50%; border: 0; background: transparent; cursor: pointer; display: grid; place-items: center; }
+.pp-flower i { width: 34px; height: 34px; border-radius: 50%; background: radial-gradient(circle, var(--pp-now-ring) 0 22%, var(--pp-comp-fill) 24%); animation: pp-breathe 8s var(--pp-ease-soft) infinite; animation-delay: var(--d, 0s); }
+.pp-flower.bloom i { animation: pp-bloom 1.6s var(--pp-ease-soft); }
+@keyframes pp-breathe { 0%, 100% { transform: scale(.8); } 50% { transform: scale(1.25); } }
+@keyframes pp-bloom { 0% { transform: scale(1); } 40% { transform: scale(1.6); } 100% { transform: scale(1); } }
+.pp-pond { position: relative; overflow: hidden; width: min(420px, 86vw); height: 150px; border-radius: 40% / 50%; border: 0; background: var(--pp-sit-track); cursor: pointer; }
+.pp-koi { position: absolute; top: 45%; left: 10%; width: 34px; height: 14px; border-radius: 50%; background: var(--pp-now-ring); opacity: .7; animation: pp-drift 22s linear infinite; }
+.pp-koi.k2 { top: 65%; animation-duration: 30s; animation-direction: reverse; }
+@keyframes pp-drift { 0% { left: 6%; } 50% { left: 82%; } 100% { left: 6%; } }
+.pp-ripple { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; border: 2px solid var(--pp-sit-fill); animation: pp-ripple 1.6s ease-out forwards; pointer-events: none; }
+@keyframes pp-ripple { to { transform: scale(7); opacity: 0; } }
+.pp-story { max-width: 34em; text-align: center; font-size: var(--fs-md, 1.25rem); }
+.pp-photos { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; } .pp-photos img { width: 96px; height: 96px; object-fit: cover; border-radius: 14px; }
+.pp-actpick { display: flex; gap: 8px; } .pp-actbtn { min-height: 44px; padding: 4px 14px; border-radius: 12px; border: 2px solid var(--pp-path); background: transparent; color: inherit; font: 600 var(--fs-sm, 1rem) var(--font); }
+.pp-actbtn.on { background: var(--pp-sit-tile); border-color: var(--pp-sit-fill); }
+.pp-rchoices { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.pp-rchoice { display: grid; justify-items: center; gap: 6px; min-width: 120px; min-height: 120px; padding: 10px; border-radius: 18px; border: 3px solid var(--pp-now-ring); background: var(--pp-tile); color: var(--ink); font: 700 var(--fs-sm, 1rem) var(--font); cursor: pointer; }
+.pp-rchoice img, .pp-rchoice .pp-rpic { width: 72px; height: 72px; object-fit: cover; border-radius: 12px; font-size: 48px; }
+.pp-reward:has(.pp-rchoices) { flex-direction: column; }
+/* "Soon: toilet" corner card and the offer */
+.pp-soon { position: fixed; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: 30; display: flex; gap: 12px; align-items: center; padding: 10px 16px; border-radius: 16px; background: var(--paper, #fff); color: var(--ink); border: 2px solid var(--line); box-shadow: 0 4px 16px rgb(0 0 0 / .12); font-family: var(--font); }
+.pp-soon b { display: block; font-size: var(--fs-md, 1.25rem); } .pp-soonsub { font-size: var(--fs-xs, .875rem); color: var(--ink-soft); }
+.pp-soonring { width: 44px; height: 44px; border-radius: 50%; background: conic-gradient(var(--wc-action, #2f6f6a) calc(var(--f, 0) * 360deg), var(--line, #ddd) 0); }
+dialog.pp-offer { border: 0; border-radius: 28px; padding: 28px; background: var(--pp-bg); color: var(--ink); text-align: center; font-family: var(--font); }
+dialog.pp-offer::backdrop { background: rgb(0 0 0 / .35); }
+.pp-offercomp svg { width: 140px; height: auto; }
+.pp-offer h2 { font-size: var(--fs-xl, 2rem); margin: 8px 0 18px; }
+.pp-offerrow { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.pp-offeryes, .pp-offerno { min-width: 160px; min-height: 96px; border-radius: 24px; font: 800 var(--fs-lg, 1.5rem) var(--font); cursor: pointer; }
+.pp-offeryes { background: var(--wc-action-tint); border: 3px solid var(--wc-action); color: var(--ink); }
+.pp-offerno { background: var(--pp-tile); border: 3px solid var(--pp-path); color: var(--ink); }
+.pot-stage { border: 2px solid var(--wc-action); border-radius: 12px; padding: 12px 14px; margin: 0 0 10px; background: var(--paper); }
+.pot-stage h3 { margin: 0 0 4px; } .pot-stage .row { margin-top: 8px; }
+.pot-ladder { display: flex; gap: 4px; margin: 6px 0; } .pot-ladder span { flex: 1; height: 8px; border-radius: 4px; background: var(--line); } .pot-ladder span.on { background: var(--wc-action); }
+
 /* Keep the screen still / reduced motion: no loops, no rises. */
 dialog.pp.is-still *, dialog.pp.is-still *::after { animation: none !important; transition: none !important; }
-@media (prefers-reduced-motion: reduce) { dialog.pp *, dialog.pp-book * { animation: none !important; transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { dialog.pp *, dialog.pp-book *, .pp-soon * { animation: none !important; transition: none !important; } }
 @media (prefers-contrast: more) { .pp-tile, .pp-abtn { border-width: 4px; } }
 @media (orientation: portrait) and (max-width: 900px) {
   .pp-nownext { flex-direction: column; }

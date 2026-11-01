@@ -72,6 +72,44 @@ function renderFlags() {
   $("#potDocPrint")?.addEventListener("click", () => printDoc(doctorHTML()));
 }
 
+// ---------- Stage, planner and token phase (recommend → you confirm) ----------
+function renderStage() {
+  const el = $("#potStage"), p = proto(), all = evs();
+  if (!store().profile.consentAt || !db().access.potty) { el.textContent = ""; return; }
+  const sp = C.stageProgress(all, p, Date.now(), pause), plan = C.nextSession(all, p, Date.now(), pause), tp = C.tokenPhaseAdvice(p), rates = C.signalRates(all);
+  const st = C.STAGES[sp.stage];
+  let h = `<section class="pot-stage" aria-labelledby="h-pot-stage"><h3 id="h-pot-stage">Stage ${sp.stage}: ${esc(st.name)}</h3>
+    <div class="pot-ladder" aria-hidden="true">${C.STAGES.map((x) => `<span class="${x.id <= sp.stage ? "on" : ""}"></span>`).join("")}</div>
+    <p class="small">${esc(st.goal)}</p><p class="soft small">Next step when: ${esc(st.exit)}. So far: ${esc(sp.why)}.</p>`;
+  if (sp.advance) h += `<div class="pot-flag" role="status"><b>Ready for stage ${sp.advance.to}: ${esc(C.STAGES[sp.advance.to].name)}?</b><span class="soft small"> Here's why: ${esc(sp.advance.why)}. You decide${p.stability ? ", with your SLP" : ""}.</span>
+    <div class="row gap"><button type="button" class="btn" id="potStageYes">Confirm</button><button type="button" class="btn quiet" id="potStageNo">Not yet</button></div></div>`;
+  if (sp.stepBack) h += `<div class="pot-flag" role="status"><b>More support might help: back to stage ${sp.stepBack.to}?</b><span class="soft small"> ${esc(sp.stepBack.why)} Nothing is lost, the World stays, and nothing is said to ${esc(name())}.</span>
+    <div class="row gap"><button type="button" class="btn" id="potStageBack">Step back quietly</button></div></div>`;
+  if (!plan.paused) h += `<p class="small"><b>${plan.nextAt ? `Next sit about ${fmtT(plan.nextAt)}` : "Sit spacing"}</b> · every ${plan.intervalMin} min · sit ${plan.sitSec < 60 ? plan.sitSec + " s" : Math.round(plan.sitSec / 6) / 10 + " min"}${plan.promptLevel !== (p.promptLevel || 1) ? ` · reminders: level ${plan.promptLevel}` : ""}</p><p class="soft small">Why: ${esc(plan.reason)} Sit times you set in The plan still come first.</p>`;
+  if (rates.total) h += `<p class="small">Telling this week: ${rates.early} before going · ${rates.late} after a wet · ${rates.noNeed} just checking${rates.late >= 2 ? `. <b>${rates.late} late tellings: the body awareness is coming. Keep thanking every one.</b>` : ""}</p>`;
+  if (tp && p.tokensOn) h += `<p class="small">💡 Token board: ${esc(tp.text)} <button type="button" class="link-btn" id="potTP">Yes, change it</button></p>`;
+  if (sp.stage >= 5) h += `<p class="small">Fading out: check in weekly, then monthly, then stop. ${p.doneText ? `Your "done": ${esc(p.doneText)}` : "Write down what \"done\" means for your family in The plan."}</p>`;
+  html(el, h + `</section>`);
+  $("#potStageYes")?.addEventListener("click", () => {
+    const to = sp.advance.to, x = C.STAGES[to];
+    log("stage", { action: "confirm", from: sp.stage, to });
+    saveProto({ stage: to, phase: x.phase, sitSec: Math.min(x.sitSec, 300) }, `stage ${to}`);
+    B.toast(`Stage ${to}. A certificate is ready to print.`); printDoc(certificateHTML(to));
+  });
+  $("#potStageNo")?.addEventListener("click", () => { log("stage", { action: "decline", to: sp.advance.to }); render(); });
+  $("#potStageBack")?.addEventListener("click", () => {
+    const to = sp.stepBack.to, x = C.STAGES[to];
+    log("stage", { action: "step_back", from: sp.stage, to });
+    saveProto({ stage: to, phase: x.phase, sitSec: Math.min(x.sitSec, 300) }); // no "new" marker: the child just gets more support
+  });
+  $("#potTP")?.addEventListener("click", () => saveProto({ tokenPhase: tp.phase, tokenRatio: tp.ratio, ...(tp.phase === "C" && { rewardChoice: true }) }, "board"));
+}
+function certificateHTML(to) {
+  const W = C.WORLDS[proto().world] || C.WORLDS.train;
+  return `<div style="text-align:center;padding:40px;border:6px double #333"><p style="font-size:64px;margin:0">${W.head}</p><h1>${esc(name().charAt(0).toUpperCase() + name().slice(1))}</h1>
+    <h2>reached stage ${to}: ${esc(C.STAGES[to].name)}</h2><p>A new part of the World is open: ${esc(C.AREAS[to] || "")}</p><p>${new Date().toLocaleDateString()}</p></div>`;
+}
+
 // ---------- Live console ----------
 let modality = "leads_adult", stool = "", prompt = "";
 function renderLive() {
@@ -101,10 +139,16 @@ function renderLive() {
     add("Start a try", () => { const id = C.rid(); log("session_start", { prompted: true }, id); });
     add("Poo sit (after a meal)", () => { const id = C.rid(); log("session_start", { prompted: true, bowel: true }, id); });
   }
-  add("Asked ★", () => { const id = sid || C.rid(); if (!sid) log("session_start", { prompted: false }, id); log("signal", { modality }, id); award(C.tokensFor("signal", {}, p), "signal", id); B.toast("Asking always counts most. Go now."); }, "btn");
+  add("Asked ★", () => {
+    const a = C.signalAward(all, p), id = sid || C.rid();
+    if (!sid) log("session_start", { prompted: false }, id);
+    log("signal", { modality, ...(a.late && { late: true }) }, id); award(a.n, "signal", id);
+    B.toast(a.late ? "Telling after a wet still counts: thank them warmly, calm clean-up." : "Asking always counts most. Go now.");
+  }, "btn");
   add("Pee in toilet", () => { log("void", { type: "urine", where: "toilet" }, sid); award(C.tokensFor("void", {}, p), "void", sid); });
   add("Poo in toilet", () => { log("void", { type: "bm", where: "toilet", stool: stool ? +stool : undefined }, sid); award(C.tokensFor("void", {}, p), "void", sid); });
-  add("Dry check: dry", () => log("dry_check", { dry: true }, sid));
+  add("Dry check: dry", () => { log("dry_check", { dry: true }, sid); award(C.tokensFor("dry_check", { dry: true }, p), "dry", sid); });
+  add("Dry check: wet", () => log("dry_check", { dry: false }, sid));
   add("Wet / missed", () => { if (sid) log("wet", { type: "urine" }, sid); else { const id = C.rid(); log("session_start", { prompted: true, cleanup: true }, id); log("wet", { type: "urine" }, id); } });
   add("Poo in pants / nappy", () => log("wet", { type: "bm", stool: stool ? +stool : undefined }, sid));
   add("Drink", () => log("drink"));
@@ -132,7 +176,9 @@ function renderCoach() {
 // ---------- Today ----------
 const LABEL = { session_start: (e) => (e.data.cleanup ? "Clean-up" : e.data.bowel ? "Poo sit started" : e.data.prompted === false ? "Try started by asking" : "Try started"), step: (e) => `Step: ${(C.STEPS.find((s) => s.id === e.data.step) || C.CLEANUP_STEPS.find((s) => s.id === e.data.step) || C.DONE_STEP).label}`,
   sit_end: () => "Sit finished", more_time: () => "More time", void: (e) => `${e.data.type === "bm" ? "Poo" : "Pee"} in the toilet${e.data.stool ? ` (type ${e.data.stool})` : ""}`, wet: (e) => `${e.data.type === "bm" ? "Poo" : "Wet"} (missed)`,
-  dry_check: () => "Dry check: dry", signal: (e) => `Asked: ${C.MODALITIES[e.data.modality] || "yes"}`, refuse: () => "Not now", distress: () => "Distress: paused", pause: () => "Break", resume: () => "Back to it",
+  dry_check: (e) => (e.data.dry === false ? "Dry check: wet" : "Dry check: dry"), signal: (e) => `Asked${e.data.late ? " (after a wet)" : ""}: ${C.MODALITIES[e.data.modality] || "yes"}`,
+  stage: (e) => (e.data.action === "confirm" ? `Moved to stage ${e.data.to}` : e.data.action === "step_back" ? `Back to stage ${e.data.to} (more support)` : e.data.action === "set" ? `Stage set to ${e.data.to}` : `Stage ${e.data.to}: not yet`),
+  offer: (e) => `Offered a try: ${{ yes: "yes", no: "not now", none: "no answer" }[e.data.answer] || ""}`, refuse: () => "Not now", distress: () => "Distress: paused", pause: () => "Break", resume: () => "Back to it",
   abort: (e) => (e.data.escalation ? "Ended: hard moment" : "Ended"), session_end: () => "Try ended", prompt: (e) => `Help: ${C.PROMPTS[e.data.prompt] || ""}`, drink: () => "Drink", meal: () => "Meal",
   token_redeem: () => "Reward given", protocol_pause: () => "Plan paused", protocol_resume: () => "Plan resumed", body_answer: (e) => `Body check: ${{ need: "need to go", no: "don't need", unsure: "not sure" }[e.data.answer] || ""}`, note: (e) => e.data.text || "Note" };
 function renderToday() {
@@ -211,14 +257,37 @@ function renderPlan() {
       <label>Minutes between sits (at least 20) <input type="number" name="minGapMin" min="20" max="240" value="${p.minGapMin}" /></label>
       <label>Pause after this many days with no poo <input type="number" name="bmPauseDays" min="2" max="7" value="${p.bmPauseDays}" /></label>
     </fieldset>
+    <fieldset><legend>Stages and pacing</legend>
+      <label>Stage <select name="stage">${C.STAGES.map((x) => opt(x.id, `${x.id}. ${x.name}`, p.stage)).join("")}</select></label>
+      <p class="soft small">The app suggests stage changes; it never makes them. Set the starting stage here.</p>
+      <label>Minutes between planned sits (45–120) <input type="number" name="intervalMin" min="45" max="120" value="${p.intervalMin}" /></label>
+      <label class="check"><input type="checkbox" name="stability" ${p.stability ? "checked" : ""}/> Go slower: need two good weeks before suggesting the next stage (for apraxia or anxiety)</label>
+      <label class="check"><input type="checkbox" name="transitionCard" ${p.transitionCard ? "checked" : ""}/> Show a "Next: toilet" card 2 minutes before planned sits, then ask "Toilet time?" (stage 2 and up)</label>
+      <label>What "done" means for us <input name="doneText" maxlength="140" value="${esc(p.doneText || "")}" placeholder="Dry most days and tells us at school" /></label>
+    </fieldset>
+    <fieldset><legend>Calm things to do while sitting</legend>
+      ${Object.entries(C.ACTIVITIES).filter(([k]) => k !== "none").map(([k, l]) => `<label class="check"><input type="checkbox" name="activities" value="${k}" ${(p.activities || []).includes(k) ? "checked" : ""}/> ${esc(l)}</label>`).join("")}
+      <label>Favourite (shown first) <select name="activity">${Object.entries(C.ACTIVITIES).filter(([k]) => k === "none" || (p.activities || []).includes(k)).map(([k, l]) => opt(k, l, p.activity)).join("")}</select></label>
+      <label class="check"><input type="checkbox" name="rotate" ${p.rotate ? "checked" : ""}/> Also offer a second choice (the favourite always stays)</label>
+      <p class="soft small">Never scored and never required. "Nothing" is often the right choice.</p>
+    </fieldset>
+    <fieldset><legend>Token phase</legend>
+      <label>Phase <select name="tokenPhase">${Object.entries(C.TOKEN_PHASES).map(([k, x]) => opt(k, `${k}: ${x.label}`, p.tokenPhase)).join("")}</select></label>
+      <label class="check"><input type="checkbox" name="rewardChoice" ${p.rewardChoice ? "checked" : ""}/> Let ${esc(name())} pick from up to 3 rewards when the board is full</label>
+      <label class="check"><input type="checkbox" name="publicMode" ${p.publicMode ? "checked" : ""}/> Out and about: no voice or chimes in unfamiliar bathrooms</label>
+    </fieldset>
     <label class="check"><input type="checkbox" name="retired" ${p.retired ? "checked" : ""}/> Graduated: retire Potty Path (the TOILET button stays forever)</label>
     <p class="row gap"><button type="button" class="btn quiet" id="potEasier">Easier board</button></p>`);
   f.onchange = (e) => {
     const el = e.target, k = el.name;
     if (k === "step") return saveProto({ steps: [...f.querySelectorAll("[name=step]:checked")].map((x) => x.value).concat("sit").filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => C.STEPS.findIndex((s) => s.id === a) - C.STEPS.findIndex((s) => s.id === b)) }, "steps");
+    if (k === "activities") { const list = [...f.querySelectorAll("[name=activities]:checked")].map((x) => x.value); return saveProto({ activities: list, activity: list.includes(p.activity) ? p.activity : "none" }); }
+    if (k === "tokenPhase") return saveProto({ tokenPhase: el.value, tokenRatio: C.TOKEN_PHASES[el.value].ratio }, "board");
+    if (k === "stage") { const x = C.STAGES[+el.value]; log("stage", { action: "set", to: x.id }); return saveProto({ stage: x.id, phase: x.phase, sitSec: x.sitSec }); }
+    if (k === "doneText") return saveProto({ doneText: el.value.trim().slice(0, 140) });
     if (k === "sitWindows") return saveProto({ sitWindows: el.value.split(/[,\s]+/).map((x) => x.trim()).filter((x) => /^\d{1,2}:\d{2}$/.test(x)).map((x) => x.padStart(5, "0")) });
     const v = el.type === "checkbox" ? el.checked : el.type === "number" || /Sec|Ratio|phase/.test(k) ? +el.value : el.value;
-    const clamp = { minGapMin: [20, 240], maxSitsPerDay: [1, 10], bmPauseDays: [2, 7] }[k];
+    const clamp = { minGapMin: [20, 240], maxSitsPerDay: [1, 10], bmPauseDays: [2, 7], intervalMin: [45, 120] }[k];
     saveProto({ [k]: clamp ? Math.min(clamp[1], Math.max(clamp[0], v || clamp[0])) : v }, { timer: "timer", companion: "friend", world: "world", tokenRatio: "board" }[k]);
   };
   $("#potEasier").addEventListener("click", () => saveProto({ tokenRatio: 1 }, "board"));
@@ -313,10 +382,27 @@ function doctorHTML() {
     <h2>Poos, last 14 days</h2><ul>${bms.map((e) => `<li>${new Date(e.t).toLocaleString()} · ${e.kind === "void" ? "toilet" : "pants/nappy"}${e.data.stool ? ` · Bristol type ${e.data.stool}` : ""}</li>`).join("") || "<li>None logged</li>"}</ul>
     <h2>Last 7 days</h2><p>${w.toiletVoids} in the toilet, ${w.wets} missed, ${w.signals} times asked, ${w.distress} hard moments.</p>`;
 }
+// A keepsake that replaces the screen: every World piece, page by page.
+function worldBookHTML() {
+  const p = proto(), W = C.WORLDS[p.world] || C.WORLDS.train, pieces = C.worldPieces(evs(), p), pages = [];
+  for (let i = 0; i < Math.max(1, pieces.length); i += C.PAGE) pages.push(pieces.slice(i, i + C.PAGE));
+  return `<h1>${esc(name().charAt(0).toUpperCase() + name().slice(1))}'s ${esc(W.label.toLowerCase())}</h1>${pages.map((pg, i) => `<h2>Page ${i + 1}</h2><p style="font-size:44px;line-height:1.4">${W.head} ${pg.map((x) => W.pieces[x] || "").join(" ")}</p>`).join("")}
+    <p>${pieces.filter((x) => x === "big").length} times telling first · ${pieces.length} visits in all. Nothing was ever taken away.</p>`;
+}
+function progressHTML() {
+  const p = proto(), L = C.live(evs()), stages = L.filter((e) => e.kind === "stage" && e.data.action !== "decline"), w = C.weekSummary(L, p), r = C.signalRates(L, Date.now(), 28), plan = C.nextSession(L, p, Date.now(), pause);
+  return `<h1>Potty Path progress: ${esc(name())}</h1><p>From LuminAAC, ${new Date().toLocaleDateString()}. Family-logged; gaps are possible.</p>
+    <h2>Stage now: ${p.stage}. ${esc(C.STAGES[p.stage].name)}</h2><ul>${stages.map((e) => `<li>${new Date(e.t).toLocaleDateString()}: ${esc(LABEL.stage(e))}</li>`).join("") || "<li>No stage changes yet</li>"}</ul>
+    <h2>Telling (last 4 weeks)</h2><p>${r.early} before going, ${r.late} after a wet, ${r.noNeed} with no need. Ways: ${w.modalities.map(([k, n]) => `${esc(C.MODALITIES[k] || k)} (${n})`).join(", ") || "none logged this week"}.</p>
+    <h2>Last 7 days</h2><p>${w.sessions} tries, ${w.toiletVoids} in the toilet, ${w.wets} missed, ${w.refusals} "not now", ${w.distress} hard moments.</p>
+    <h2>Current settings</h2><p>Sits every ${plan.intervalMin || p.intervalMin} min, token phase ${esc(p.tokenPhase)} (${p.tokenRatio} per reward), reminders level ${p.promptLevel || 1}${p.stability ? ", two-week stability gate on" : ""}.</p>
+    ${p.stage >= 5 ? `<h2>Fading plan</h2><p>Check-ins weekly, then monthly, then stop. Family's "done": ${esc(p.doneText || "not written yet")}.</p>` : ""}`;
+}
 function renderPrint() {
   html($("#potPrint"), `<p class="row gap" style="flex-wrap:wrap"></p><p class="soft small">On iPhone and iPad, web apps can't wake you with alarms. The calendar file adds a daily reminder at each sit time instead, with no server and no names in the reminder text beyond your child's first name.</p>`);
   const row = $("#potPrint p");
   row.append(btn("Print the wall schedule", () => printDoc(scheduleHTML())), btn("Print a school handoff sheet", () => printDoc(handoffHTML())), btn("Print a doctor summary", () => printDoc(doctorHTML())),
+    btn("Print the World book", () => printDoc(worldBookHTML())), btn("Print a progress sheet for the SLP", () => printDoc(progressHTML())),
     btn("Download calendar reminders", () => { const p = proto(); if (!p.sitWindows.length) return B.toast("Add sit times in The plan first."); const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([C.ics(p, db().profile.child)], { type: "text/calendar" })), download: "toilet-reminders.ics" }); a.click(); }));
 }
 
@@ -417,7 +503,7 @@ function renderHelp() {
 // ---------- Render + live updates ----------
 function render() {
   if ($("#tab-potty").hidden) return;
-  renderOn(); renderFlags(); renderLive(); renderCoach(); renderToday(); renderHints(); renderWeek(); renderPlan(); renderSetup(); renderPrint(); renderDevices(); renderData(); renderHelp();
+  renderOn(); renderFlags(); renderStage(); renderLive(); renderCoach(); renderToday(); renderHints(); renderWeek(); renderPlan(); renderSetup(); renderPrint(); renderDevices(); renderData(); renderHelp();
   const consent = !!store().profile.consentAt;
   ["#potLive", "#potCoach", "#potTimeline", "#potHints", "#potWeek", "#potPlan", "#potSetup", "#potPrint", "#potDevices", "#potData"].forEach((s) => ($(s).closest(".card").hidden = !consent));
 }

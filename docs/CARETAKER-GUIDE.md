@@ -39,7 +39,7 @@ LuminAAC is a talker (an AAC app, short for augmentative and alternative communi
 
 You are your child's best translator. LuminAAC helps you share what you already know with the device and with the people around your child.
 
-**What's new in 0.10:** Potty Path, a calm toilet routine that teaches your child a way to say "I need to go" (see [section 12](#potty-path)). **New in 0.9:** a video board you choose, four gentle sound games, and an **Interests and history** section on Insights with a printable therapist summary (see [section 11](#videos-games-insights)). Version 0.8 added hand-drawn zones and water danger zones (see [section 10](#drawing-and-water)).
+**What's new in 0.11:** **Sound Path**, short voice games that build new sounds and words (see [Sound Path](#sound-path)), and Potty Path stages, a "Next: toilet" card, calm things to do while sitting and fairer rewards for telling (see [section 12](#potty-path)). **New in 0.10:** Potty Path, a calm toilet routine that teaches your child a way to say "I need to go" (see [section 12](#potty-path)). **New in 0.9:** a video board you choose, four gentle sound games, and an **Interests and history** section on Insights with a printable therapist summary (see [section 11](#videos-games-insights)). Version 0.8 added hand-drawn zones and water danger zones (see [section 10](#drawing-and-water)).
 
 Everything works on your own device. You don't need an account, and nothing leaves the device unless you choose to connect it.
 
@@ -238,6 +238,20 @@ Tap **Print a summary for a therapist** for a one-page report you can print or s
 ![The printable therapist summary](../screenshots/therapist-report-desktop.png)
 ![My videos and Sound games on a phone](../screenshots/myvideos-mobile.png)
 
+<a id="sound-path"></a>
+### Sound Path (new in 0.11)
+
+Sound Path is short, playful voice practice that builds new sounds, then syllables, then words. Your child's talker stays their main, reliable voice: research shows AAC doesn't stop speech and often helps it a little. Turn it on in **Bridge → Sound Path**.
+
+- **The ladder:** 0 any voice → 1 long sounds (ah, ee, mmm) → 2 a sound plus a vowel (ma, ba) → 3 the same sound twice (mama, bye-bye) → 4 two different parts (bubble) → 5 their own board words → 6 two words. The app suggests moving up when most targets are "got it" on 3 different days, and suggests going back when it's been hard. You decide.
+- **Targets:** pick 2–4. Suggestions put sounds your child already makes first. For words, write the **good-enough form** ("wa" for water): that's what counts as success for now.
+- **Three games in My Voice → Sound Path:** **Sing and Tap** (the word is sung on two notes while two drums light up; based on Auditory-Motor Mapping Training), **Word Train** (each part of a word is a carriage; a sound or a tap couples it), and **Sound World** (their voice moves a train, lifts a balloon and fills a jar; nothing to get right).
+- **Say it with me:** when your child taps a target word on the board, the board says it as always, then a soft "Your turn" shows for 3 seconds. Nothing is ever blocked or asked again.
+- **You're the judge.** Press and hold **Grown-up** in a game, then mark each try **Got it**, **Close** or **Tried**. With no grown-up there, every try simply counts as tried. The app never marks a try wrong and never scores speech by itself.
+- **How it adapts:** a new target is practised a few times in a row with praise every try. Once it's reliable it's mixed with others and spoken praise fades to every other try (a sticker still comes every time). Two breaks or one Stop end practice for the day.
+- **Sounds you've heard:** tap a sound on the chart when you hear your child make it, and log words they use to mean something. Print the **sheet for the SLP**.
+- **What it doesn't do:** no mouth or tongue exercises (research doesn't support them for speech), no smile detection, and no recording. The microphone is only measured for loudness and pitch, on the device, and only if you allow it in Videos and games.
+
 <a id="potty-path"></a>
 ## 12. Potty Path: toilet learning and asking to go
 
@@ -313,6 +327,17 @@ The toilet log stays **on this device only**. It is never part of share links, B
 
 - **QR codes:** with no internet, show your log as QR codes on one device and scan them with **Scan a code** on the other.
 - **Your LuminAAC server:** turn on **Send the toilet log to our server** in Potty Path. Leave **Lock it so the server can't read it** on. Then pass the lock key to the other device with **Scan a code**.
+
+### Stages, telling first and calm extras (new in 0.11)
+
+- **Stages.** Potty Path now follows six stages: Familiar, Sitting, Scheduled sits, Telling, Doing it more on their own, and Fading out. The Bridge card shows the stage and what the next step needs, with the numbers behind it. When it's met, it asks **Ready for the next stage?** Nothing changes until you tap **Confirm**, and you get a certificate to print. **Not yet** quiets the card for 3 days.
+- **Stepping back is normal.** If a few tries in a row were hard, the card offers **Step back quietly**. Nothing is said to your child, the World stays, and only the support goes up. Tick **Go slower** in The plan if your child has apraxia of speech or anxiety: then the next stage needs two good weeks.
+- **Telling first earns most.** Telling you before going earns 3 tokens and a landmark in the World. A pee in the toilet earns 2; a sit or a dry check earns 1. Telling you *after* a wet is still thanked warmly ("Thank you for telling me"), earns 1 token and adds a small lantern, so accidents never pay better than telling first. Asking again within 20 minutes doesn't add tokens, but the trip is always honoured.
+- **The sit spacing adapts.** If your child often tells you in time, planned sits spread out. If tellings come after a wet, sits come a little sooner. The card says why, and your sit times always come first. It never suggests more physical help.
+- **"Next: toilet."** From stage 2, a small card appears in the corner 2 minutes before a planned sit, then a gentle **Toilet time?** with **Let's go** and **Not now**. No answer in 30 seconds just means not now, and it isn't counted.
+- **Calm things to do while sitting.** In The plan, choose any of: Breathing garden, Quiet pond, Story page, Photo book (your reward photos), or Sound pond (the water ripples to their voice; uses the microphone). The favourite always shows first; a second choice is only offered if you tick it. None of these is scored.
+- **Token phases.** A: one try, one reward. B: a board of 3. C: a bigger board (5, then 8) where your child picks from up to 3 rewards. D: everyday praise and the World. The card suggests the next phase when the stage is right; you confirm.
+- **Fading out.** From stage 4 the companion only comes to celebrate; in stage 5 it lives in the World. Print the **World book** as a keepsake, and a **progress sheet** for your SLP. **Out and about** turns off voice and chimes in unfamiliar bathrooms.
 
 <a id="pairing-devices"></a>
 ## 13. Pairing devices

@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="phase4.css" />
   <link rel="stylesheet" href="phase7.css" />
   <link rel="stylesheet" href="potty.css" />
+  <link rel="stylesheet" href="sound.css" />
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -44,6 +45,7 @@
       <button type="button" class="tab" data-tab="routines">Stories</button>
       <button type="button" class="tab" data-tab="play">Videos and games</button>
       <button type="button" class="tab" data-tab="potty">Potty Path</button>
+      <button type="button" class="tab" data-tab="sound">Sound Path</button>
       <button type="button" class="tab" data-tab="insights">Insights</button>
       <button type="button" class="tab" data-tab="team">Team</button>
       <button type="button" class="tab" data-tab="safety">Safety</button>
@@ -301,6 +303,7 @@
         <h1 id="h-potty">Potty Path</h1>
         <p class="lede">A calm toilet routine that teaches <span class="child-name">your child</span> a way to say "I need to go". Asking always counts most. It's a support tool, not medical advice: check with your child's doctor first. <a href="guide.html#potty-path">Read the guide for Potty Path</a></p>
         <div id="potFlags"></div>
+        <div id="potStage"></div>
         <div class="pot-grid">
           <section class="card" aria-labelledby="h-pot-on"><h2 id="h-pot-on">Turn on</h2><div id="potOn"></div></section>
           <section class="card" aria-labelledby="h-pot-live"><div class="card-head"><h2 id="h-pot-live">Right now</h2><span class="pill" id="potPhase"></span></div><div id="potLive"></div></section>
@@ -321,6 +324,25 @@
           <section class="card" aria-labelledby="h-pot-data"><h2 id="h-pot-data">Toilet data</h2><div id="potData"></div></section>
         </div>
         <section class="card" aria-labelledby="h-pot-help"><h2 id="h-pot-help">When it's hard</h2><div id="potHelp"></div></section>
+      </section>
+
+      <section class="panel" id="tab-sound" aria-labelledby="h-sound" hidden>
+        <h1 id="h-sound">Sound Path</h1>
+        <p class="lede">Short, playful voice practice that builds new sounds, then syllables, then words, while the talker stays <span class="child-name">your child</span>'s reliable voice. Built from current research; it's practice support, not therapy. Share the SLP sheet with your speech therapist. <a href="guide.html#sound-path">Read the guide for Sound Path</a></p>
+        <div class="pot-grid">
+          <section class="card" aria-labelledby="h-sp-on"><h2 id="h-sp-on">Turn on</h2><div id="spOn"></div></section>
+          <section class="card" aria-labelledby="h-sp-ladder"><h2 id="h-sp-ladder">The ladder</h2><div id="spLadder"></div></section>
+          <section class="card" aria-labelledby="h-sp-week"><h2 id="h-sp-week">This week</h2><div id="spWeek"></div></section>
+        </div>
+        <div class="pot-grid">
+          <section class="card" aria-labelledby="h-sp-targets"><h2 id="h-sp-targets">Targets</h2><div id="spTargets"></div></section>
+          <section class="card" aria-labelledby="h-sp-inv"><h2 id="h-sp-inv">Sounds you've heard</h2><div id="spInv"></div></section>
+        </div>
+        <div class="pot-grid">
+          <section class="card" aria-labelledby="h-sp-set"><h2 id="h-sp-set">Practice settings</h2><div id="spSettings"></div></section>
+          <section class="card" aria-labelledby="h-sp-coach"><h2 id="h-sp-coach">How to help</h2><div id="spCoach"></div></section>
+          <section class="card" aria-labelledby="h-sp-data"><h2 id="h-sp-data">Sheet and data</h2><div id="spData"></div></section>
+        </div>
       </section>
 
       <!-- TEAM -->
@@ -677,6 +699,7 @@
   <script type="module" src="bridge-p7.js"></script>
   <script src="vendor/jsQR.js" defer></script>
   <script type="module" src="bridge-potty.js"></script>
+  <script type="module" src="bridge-sound.js"></script>
   <dialog id="dlgReset" aria-labelledby="dlgResetT">
     <form id="formReset" class="form" method="dialog">
       <h2 id="dlgResetT">Choose a new password</h2>

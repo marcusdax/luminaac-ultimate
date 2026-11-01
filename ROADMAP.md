@@ -1,5 +1,8 @@
 # Roadmap
 
+## v0.11: Sound Path and Potty Path mechanics (phase 9)
+Sound Path increment A from `docs/SOUND-PATH.md` (ladder, practice engine, Sing and Tap, Word Train, Sound World, Say it with me, judge bar, inventory, SLP sheet) and Potty Path M1–M7 from `docs/POTTY-PATH-MECHANICS.md`, both behind feature flags that are off by default. Next: Sound Path increment B (family video models, Mouth Mirror with on-device face landmarks), then Safety Links (tracker cards, "if found" page, webhook alerts for door and pool sensors).
+
 ## v0.10: Potty Path (phase 8)
 A toilet-learning and communication module built from the expert-reviewed blueprint in `docs/POTTY-PATH.md`, with all three increments shipped behind `access.potty` (off by default). It covers the one-device core, then assessment and hints, then two devices (QR and end-to-end encrypted server sync). Next: a 5-family pilot with a paid autistic-adult advisory panel and an SLP/BCBA safety review before the guide promotes it. Sensors and prediction stay deferred.
 
