@@ -8,6 +8,11 @@
   Vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
 </p>
 
+<p align="center">
+  <strong>Try it:</strong> <a href="https://luminaac-web.vercel.app">My Voice</a> &middot; <a href="https://luminaac-web.vercel.app/bridge.html">The Bridge</a> &middot; <a href="https://luminaac-web.vercel.app/guide.html">Caretaker guide</a><br />
+  Open on a phone or tablet and choose <em>Add to Home Screen</em> (Safari) or <em>Install app</em> (Chrome).
+</p>
+
 ---
 
 ## Mission
