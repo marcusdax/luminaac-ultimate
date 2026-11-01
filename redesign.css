@@ -10,19 +10,33 @@
 .rd-hub[aria-current="page"] { background: var(--dusk); color: #fff; font-weight: 800; }
 :root[data-theme="contrast"] .rd-hub[aria-current="page"] { outline: 2px solid var(--ink); }
 
+.rd-short { display: none; }
+@media (max-width: 760px) { .rd .rd-short { display: inline; } }
 .rd-sub { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s4); }
 .rd-sub[hidden] { display: none; }
 .rd-chip { min-height: 44px; padding: 0 var(--s4); border-radius: var(--r-chip); border: 1px solid var(--line); background: var(--paper-raised); color: var(--ink); font: 700 var(--fs-xs) var(--font); cursor: pointer; }
 .rd-chip[aria-current="page"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 
 @media (max-width: 760px) {
+  /* A strip that scrolls left and right: every hub fills the width on a big
+     phone, and on a small one (or with more hubs later) you swipe for the rest. */
   .rd-hubs {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
-    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0;
+    display: flex; flex-direction: row; gap: 0;
+    overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: none;
     padding: var(--s1) var(--s2) calc(var(--s1) + env(safe-area-inset-bottom));
     background: var(--paper); border-right: 0; border-top: 1px solid var(--line);
   }
-  .rd-hub { flex-direction: column; justify-content: center; gap: 2px; min-height: 60px; padding: 0; font-size: 12px; text-align: center; }
+  .rd-hubs::-webkit-scrollbar { display: none; }
+  .rd-hub { flex: 1 0 76px; scroll-snap-align: center; flex-direction: column; justify-content: center; gap: 2px; min-height: 60px; padding: 0; font-size: 12px; text-align: center; }
+  /* Header fits a 360 px phone: short labels, smaller mark, no name line. */
+  .rd .top { min-width: 0; }
+  .rd .logo img { width: 32px; height: 32px; }
+  .rd .logo-word { white-space: nowrap; font-size: var(--fs-sm); }
+  .rd .top .who { display: none; }
+  .rd .top .pill-link { min-height: 40px; flex: none; }
+  .rd #helpLink { margin-left: auto; }
+  .rd .rd-long { display: none; }
   .rd-hub[aria-current="page"] { background: none; color: var(--ink); }
   .rd-hub[aria-current="page"] svg { color: var(--ember-deep); }
   .rd main { padding-bottom: 104px; }

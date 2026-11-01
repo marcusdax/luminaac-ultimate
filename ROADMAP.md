@@ -1,5 +1,8 @@
 # Roadmap
 
+## v0.11.4: Bridge fits Android phones
+On phones the Bridge hub bar is a strip that scrolls left and right (each hub at least 76 px, current hub kept in view), and the header uses short labels ("Help", "My Voice") so the page is exactly the screen width down to 360 px. Before, the header pushed the page to 411 px and phones zoomed out.
+
 ## v0.11.3: Safety gets its own hub
 Safety moves out of Circle into a fifth Bridge hub (shield icon), so the zones map and water alerts are one tap away. Full sweep: all 12 Bridge tabs, every My Voice view, all 13 stories, games and Sound Path activities open and respond, with no errors; 368 automated tests pass.
 

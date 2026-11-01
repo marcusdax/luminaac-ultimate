@@ -26,9 +26,12 @@ function init() {
   // "Back to My Voice" reopens the Caregiver area (see backToCare in nav-core.js).
   document.querySelectorAll('a[href="index.html"]').forEach((a) => {
     a.href = "index.html#care";
-    if (a.classList.contains("pill-link")) a.textContent = "Back to My Voice";
+    if (a.classList.contains("pill-link")) a.innerHTML = `<span class="rd-long">Back to My Voice</span><span class="rd-short">My Voice</span>`;
     a.addEventListener("click", () => { try { sessionStorage.setItem(BACK, String(Date.now())); } catch {} });
   });
+
+  const help = document.getElementById("helpLink");
+  if (help) help.innerHTML = `<span class="rd-long">Help and guide</span><span class="rd-short">Help</span>`;
 
   const bar = document.createElement("nav");
   bar.className = "rd-hubs";
@@ -52,6 +55,9 @@ function init() {
     const hub = hubOf(tab);
     last[hub.id] = tab;
     bar.querySelectorAll("[data-hub]").forEach((b) => (b.dataset.hub === hub.id ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current")));
+    // On a narrow phone the bar scrolls sideways; keep the current hub in view.
+    const cur = bar.querySelector("[aria-current]");
+    if (bar.scrollWidth > bar.clientWidth) bar.scrollTo({ left: cur.offsetLeft - (bar.clientWidth - cur.offsetWidth) / 2, behavior: "instant" });
     const tabs = hub.tabs.filter(isShown);
     sub.hidden = tabs.length < 2;
     sub.innerHTML = tabs.map((id) => `<button type="button" class="rd-chip" data-tab="${id}"${id === tab ? ' aria-current="page"' : ""}>${oldTab(id).textContent.trim()}</button>`).join("");
