@@ -1,0 +1,14 @@
+import { patchManifest, patchPlist, ANDROID_PERMS } from "../native/native-config.mjs";
+let pass = 0, fail = 0; const t = (n, c) => (c ? pass++ : (fail++, console.log("FAIL", n)));
+const man = `<?xml version="1.0" encoding="utf-8"?>\n<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n    <uses-permission android:name="android.permission.INTERNET" />\n</manifest>`;
+const m1 = patchManifest(man);
+t("all permissions added", ANDROID_PERMS.every((p) => m1.includes(`android.permission.${p}"`)));
+t("internet kept", m1.includes("INTERNET"));
+t("manifest idempotent", patchManifest(m1) === m1);
+const pl = `<?xml version="1.0"?>\n<plist version="1.0">\n<dict>\n\t<key>CFBundleName</key>\n\t<string>App</string>\n</dict>\n</plist>`;
+const p1 = patchPlist(pl);
+t("plist keys", ["NSLocationAlwaysAndWhenInUseUsageDescription", "NSMicrophoneUsageDescription", "NSCameraUsageDescription", "UIBackgroundModes"].every((k) => p1.includes(`<key>${k}</key>`)));
+t("background mode location", /<string>location<\/string>/.test(p1));
+t("plist idempotent", patchPlist(p1) === p1);
+t("existing keys kept", p1.includes("CFBundleName"));
+console.log(`${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
