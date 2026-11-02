@@ -1,7 +1,7 @@
 // Tiny JSON-file store. One file per family keeps data separable and easy to delete.
 // Swap for MongoDB later (the original LuminAAC-Repository server.js targets it);
 // the route layer only calls these five functions.
-import { mkdirSync, readFileSync, writeFileSync, renameSync, existsSync, rmSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync, renameSync, existsSync, rmSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 
@@ -25,4 +25,5 @@ export function write(family, data) {
 }
 export function update(family, fn) { const d = read(family); const out = fn(d); write(family, d); return out; }
 export function remove(family) { const f = file(family); if (existsSync(f)) rmSync(f); }
+export const list = () => readdirSync(DIR).filter((f) => /^[a-f0-9]{32}\.json$/.test(f)).map((f) => f.slice(0, 32));
 export { DIR };

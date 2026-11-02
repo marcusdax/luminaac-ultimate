@@ -441,6 +441,35 @@ t("youtube: @name without a key explains how to paste the channel link", /channe
   t("mail: non-urgent alerts don't email", mailer.outbox().length === before + 1);
 }
 
+// ---- Weekly summary ----
+{
+  const sm = await import("./summary.js");
+  const now = Date.now();
+  const s = sm.build({ doc: { moments: [{ t: now - 1000, meaning: "Park" }, { t: now - 2000, meaning: "Park" }, { t: now - 3000 }, { t: now - 9 * 864e5, meaning: "Old" }], signals: [{ created: now - 5000 }], notes: [{ text: "secret note" }] }, alerts: [{ t: now - 10, kind: "help", ack: null, loc: { lat: 1, lng: 2 } }], chat: [{ t: now - 10, text: "private chat" }] }, now);
+  t("summary: counts this week only", s.moments === 3 && s.explained === 2 && s.top[0] === "Park" && s.newSignals === 1 && s.urgent === 1 && s.unanswered === 1 && s.chat === 1);
+  const txt = JSON.stringify(s);
+  t("summary: no notes, chat text or location", !txt.includes("secret") && !txt.includes("private chat") && !txt.includes("lat"));
+  t("summary: due after a week, not before", sm.due({ on: true, last: now - 7 * 864e5 }, now) && !sm.due({ on: true, last: now - 864e5 }, now) && !sm.due({ on: false }, now));
+  t("summary: preview", (await call("GET", "/api/summary/preview")).json.data.title === "This week in LuminAAC");
+  t("summary: parent turns it on", (await call("PUT", "/api/summary", { on: true })).json.data.on === true);
+  t("summary: a family key can't ask for email", (await call("PUT", "/api/summary", { emailMe: true })).status === 400);
+  const lg = await call("POST", "/api/auth/login", { email: "fallback@example.org", password: "long enough password" }, null);
+  const tok = lg.json?.data?.token;
+  t("summary: signed-in member opts in to email", tok && (await call("PUT", "/api/summary", { emailMe: true }, tok)).json.data.emailMe === true);
+  t("summary: cron needs the secret", (await call("POST", "/api/cron/weekly", {}, null)).status === 401);
+  process.env.CRON_SECRET = "cron-secret-for-tests-123";
+  const before = mailer.outbox().length;
+  const cr = await call("POST", "/api/cron/weekly", {}, "cron-secret-for-tests-123");
+  const m = mailer.outbox()[0];
+  t("summary: cron emails the opted-in member", cr.json.data.sent >= 1 && mailer.outbox().length === before + 1 && m.subject === "This week in LuminAAC" && /unsubscribe\?f=/.test(m.text) && m.headers["List-Unsubscribe"]);
+  t("summary: not sent twice in a week", (await call("POST", "/api/cron/weekly", {}, "cron-secret-for-tests-123")).json.data.sent === 0);
+  const link = /(\/api\/summary\/unsubscribe\?\S+)/.exec(m.text)[1];
+  t("summary: a bad unsubscribe link is refused", (await fetch(base + link.replace(/t=\w/, "t=Z"))).status === 400);
+  const un = await fetch(base + link);
+  t("summary: one-click unsubscribe works", un.status === 200 && /unsubscribed/.test(await un.text()) && (await call("GET", "/api/summary/preview", null, tok)).json.data.emailMe === false);
+  delete process.env.CRON_SECRET;
+}
+
 console.log(`\n${pass} passed, ${failN} failed`);
 
 server.close(); process.exit(failN ? 1 : 0);

@@ -104,3 +104,38 @@ $("#formPush").addEventListener("submit", async (e) => {
 new MutationObserver(() => !$("#tab-account").hidden && render()).observe($("#tab-account"), { attributes: true, attributeFilter: ["hidden"] });
 render();
 window.__notify = { render, saved };
+
+// ---- Weekly care-team summary (opt-in) ----
+const wk = document.createElement("section");
+wk.className = "card"; wk.id = "weeklyCard"; wk.setAttribute("aria-labelledby", "h-weekly");
+wk.innerHTML = `<div class="card-head"><h2 id="h-weekly">Weekly summary for the care team</h2><span class="pill" id="wkState">Off</span></div>
+  <p class="soft">Once a week, a short note with counts only: moments, the words said most, alerts and team messages. Never notes, places, videos or recordings.</p>
+  <div id="wkOff" hidden><p class="soft">This needs a family account or a paired server.</p></div>
+  <div id="wkOn" class="form" hidden>
+    <h3 class="h3">Preview</h3>
+    <ul class="mini-list" id="wkPreview"></ul>
+    <label class="check"><input type="checkbox" id="wkFamily" /> Send the weekly summary to our care team</label>
+    <label class="check"><input type="checkbox" id="wkEmail" /> Email it to me</label>
+    <p class="soft small" id="wkEmailNote"></p>
+    <p class="soft small">To get it as a notification instead, tick "The weekly summary" in Account and devices, Notifications. Everyone can stop it from the link in each email.</p>
+  </div>
+  <p class="soft" id="wkStatus" role="status"></p>`;
+($("#h-digest")?.closest(".card") || $("#tab-insights")).after(wk);
+async function renderWeekly() {
+  const on = online(); $("#wkOff").hidden = on; $("#wkOn").hidden = !on;
+  if (!on) { $("#wkState").textContent = "Off"; return; }
+  try {
+    const s = await api(db(), "GET", "/api/summary/preview");
+    $("#wkPreview").innerHTML = s.lines.map((l) => `<li>${B.esc(l)}</li>`).join("");
+    $("#wkFamily").checked = s.on; $("#wkFamily").disabled = (db().account?.role || "parent") !== "parent";
+    $("#wkEmail").checked = s.emailMe; $("#wkEmail").disabled = !s.canEmail;
+    $("#wkEmailNote").textContent = s.canEmail ? "" : "To get it by email, sign in with an account and confirm your email address.";
+    $("#wkState").textContent = s.on ? "On" : "Off";
+  } catch (e) { $("#wkStatus").textContent = `Couldn't load the summary: ${e.message}`; }
+}
+for (const [id, k] of [["#wkFamily", "on"], ["#wkEmail", "emailMe"]]) $(id).addEventListener("change", async (e) => {
+  try { await api(db(), "PUT", "/api/summary", { [k]: e.target.checked }); $("#wkStatus").textContent = "Saved."; renderWeekly(); }
+  catch (err) { e.target.checked = !e.target.checked; $("#wkStatus").textContent = `Couldn't save: ${err.message}`; }
+});
+new MutationObserver(() => !$("#tab-insights").hidden && renderWeekly()).observe($("#tab-insights"), { attributes: true, attributeFilter: ["hidden"] });
+renderWeekly();

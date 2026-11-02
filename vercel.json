@@ -38,5 +38,11 @@
     "api/index.js": {
       "maxDuration": 30
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/weekly",
+      "schedule": "0 15 * * 1"
+    }
+  ]
 }

@@ -21,6 +21,7 @@ import * as mailer from "./mailer.js";
 import * as potty from "./potty.js";
 import * as yt from "./youtube.js";
 import * as wp from "./webpush.js";
+import * as summary from "./summary.js";
 
 const PORT = Number(process.env.PORT || 3001);
 const ORIGINS = (process.env.ALLOWED_ORIGINS || "*").split(",").map((s) => s.trim());
@@ -206,6 +207,28 @@ function alertEvent(a) {
 }
 export { notify, pushLog, emailFallback };
 
+// Weekly summary: the family turns it on; each person picks push (in Notifications)
+// and/or email here. Every email carries a one-click unsubscribe link.
+const unsubToken = (fam, uid) => createHash("sha256").update(`unsub:${fam}:${uid}:${process.env.UNSUB_SECRET || wp.keys(store.DIR).privateKey}`).digest("base64url").slice(0, 32);
+export async function sendWeekly(now = Date.now(), base = process.env.APP_URL || "") {
+  let sent = 0;
+  for (const fam of store.list()) {
+    const d = store.read(fam);
+    if (!summary.due(d.summaryCfg, now)) continue;
+    const s = summary.build(d, now);
+    store.update(fam, (x) => { x.summaryCfg.last = now; });
+    const r = await notify(fam, { type: "summary", topic: "weekly", payload: { kind: "summary", title: s.title, body: s.short, tag: "weekly", url: "bridge.html#insights" } }).catch(() => []);
+    sent += r.filter((x) => x.status >= 200 && x.status < 300).length;
+    for (const uid of d.summaryCfg.emails || []) {
+      const u = acc.userById(uid); if (!u || !u.emailVerified || !u.memberships.some((m) => m.family === fam)) continue;
+      const link = `${base.replace(/\/+$/, "")}/api/summary/unsubscribe?f=${fam}&u=${uid}&t=${unsubToken(fam, uid)}`;
+      await mailer.send({ to: u.email, subject: s.title, headers: { "List-Unsubscribe": `<${link}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
+        text: `${s.lines.join("\n")}\n\nOpen the Bridge for the full picture: ${base}/bridge.html#insights\n\nThis summary has counts only. It never includes notes, places, videos or recordings.\nStop these emails: ${link}\n` }).then(() => sent++).catch((e) => console.error("weekly mail failed:", e.message));
+    }
+  }
+  return sent;
+}
+
 // ---------- routes ----------
 async function route(req, res, url) {
   const p = url.pathname.replace(/\/+$/, "") || "/";
@@ -243,6 +266,18 @@ async function route(req, res, url) {
   }
 
   // ---- YouTube channel lookup (public, read-only, youtube.com only) ----
+  if (p === "/api/summary/unsubscribe" && (M === "GET" || M === "POST")) {
+    const f = url.searchParams.get("f") || "", u = url.searchParams.get("u") || "", t = url.searchParams.get("t") || "";
+    const good = /^[a-f0-9]{32}$/.test(f) && t.length === 32 && t === unsubToken(f, u);
+    if (good) store.update(f, (d) => { if (d.summaryCfg) d.summaryCfg.emails = (d.summaryCfg.emails || []).filter((x) => x !== u); });
+    res.writeHead(good ? 200 : 400, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+    return res.end(`<!doctype html><meta name="viewport" content="width=device-width"><title>LuminAAC</title><body style="font:18px/1.5 system-ui;max-width:32rem;margin:3rem auto;padding:0 1rem"><h1 style="font-size:1.4rem">${good ? "You're unsubscribed" : "That link didn't work"}</h1><p>${good ? "You won't get the weekly summary by email any more. You can turn it back on in the Bridge." : "It may be incomplete. You can turn the summary off in the Bridge under Progress."}</p></body>`);
+  }
+  if (p === "/api/cron/weekly" && (M === "GET" || M === "POST")) {
+    const sec = process.env.CRON_SECRET;
+    if (!sec || req.headers.authorization !== `Bearer ${sec}`) return fail(res, 401, "Unauthorized");
+    return ok(res, { sent: await sendWeekly() });
+  }
   if (p === "/api/push/key" && M === "GET") return ok(res, { publicKey: wp.keys(store.DIR).publicKey });
   if (p === "/api/youtube" && M === "GET") {
     try { return ok(res, await yt.channel(url.searchParams.get("channel"))); }
@@ -453,6 +488,22 @@ async function route(req, res, url) {
     if ((m = /^\/api\/fl\/round\/([\w-]+)\/update$/.exec(p)) && M === "POST") { const b = await body(req); return R(fl.submit(m[1], b.client, b.masked, P)); }
     if ((m = /^\/api\/fl\/round\/([\w-]+)\/unmask$/.exec(p)) && M === "GET") return R(fl.unmaskRequest(m[1]));
     if ((m = /^\/api\/fl\/round\/([\w-]+)\/reveal$/.exec(p)) && M === "POST") { const b = await body(req); return R(await fl.reveal(m[1], b.client, b, P)); }
+  }
+
+  // ---- Weekly summary ----
+  if (p === "/api/summary" || p === "/api/summary/preview") {
+    if (!can(w, "alerts:read") && !can(w, "chat")) return deny();
+    const d = store.read(key), cfg = d.summaryCfg || { on: false, emails: [] };
+    const me = w.user ? cfg.emails?.includes(w.user.id) : false;
+    if (p === "/api/summary/preview" && M === "GET") return ok(res, { ...summary.build(d), on: !!cfg.on, emailMe: me, canEmail: !!w.user?.emailVerified, last: cfg.last || null });
+    if (p === "/api/summary" && M === "PUT") {
+      const b = await body(req);
+      if (typeof b.on === "boolean" && w.role !== "parent") return deny();
+      if (typeof b.emailMe === "boolean" && !w.user) return fail(res, 400, "Validation failed", "sign in to get the summary by email");
+      if (b.emailMe && !w.user.emailVerified) return fail(res, 400, "Validation failed", "confirm your email address first");
+      const out = store.update(key, (x) => { const c = (x.summaryCfg ||= { on: false, emails: [], last: 0 }); if (typeof b.on === "boolean") { c.on = b.on; audit(x, `Weekly summary turned ${b.on ? "on" : "off"}`); } if (typeof b.emailMe === "boolean") c.emails = b.emailMe ? [...new Set([...(c.emails || []), w.user.id])] : (c.emails || []).filter((y) => y !== w.user.id); return { on: c.on, emailMe: w.user ? c.emails.includes(w.user.id) : false }; });
+      return ok(res, out, "Saved");
+    }
   }
 
   // ---- Web Push subscriptions (one per browser; preferences are per person) ----
@@ -736,6 +787,9 @@ export function reload() {
   for (const [file, map] of [[IDX, shareIndex], [HOOKS, hookIndex]]) { map.clear(); try { for (const [k, f] of Object.entries(JSON.parse(readFileSync(file, "utf8")))) map.set(k, f); } catch {} }
 }
 reload();
+
+// Self-hosted: check hourly for families whose weekly summary is due. On Vercel a cron calls /api/cron/weekly.
+if (!process.env.VERCEL && process.env.LUMINAAC_NO_LISTEN !== "1") setInterval(() => sendWeekly().catch((e) => console.error("weekly:", e.message)), 3600e3).unref();
 
 if (process.env.LUMINAAC_NO_LISTEN !== "1") {
   server.listen(PORT, () => console.log(`LuminAAC backend on http://localhost:${PORT}  (data: ${store.DIR})`));
