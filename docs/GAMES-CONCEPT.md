@@ -1,6 +1,13 @@
 # Games concept: play that talks
 
-Status: concept for review, November 2026. Nothing here is built yet.
+Status: all eight games built in v0.13 (November 2026): `play-core.js` (rules, 29 tests), `play.js` (the frame and games), `play.css`, `bridge-play.js` (settings).
+
+How the build differs from the plan below:
+- **No Lottie, Rive, howler.js, Tone.js or matter-js.** Characters and scenes are inline SVG and OpenMoji. Motion is CSS, and sound is a soft Web Audio chime. That means no new downloads and nothing heavy on his iPad. Animated character files can come later.
+- **MediaPipe pose is the only new library.** It loads from jsDelivr only when a parent has allowed the camera and the child taps **Use the camera**.
+- **The World is its own add-only "play world"** (`luminaac:play-world` on the device), shown under Word games. It is not merged with Potty Path's World yet.
+- **Story Stage plays sentences but doesn't save them yet.** Saving them to My day is the next step.
+- **Tiles keep their Talk column.** Rows are packed, so a core word sits in the same column as on Talk, not always the same row.
 
 The structure borrows from [Claude Code Game Studios](https://github.com/marcusdax/Claude-Code-Game-Studios):
 

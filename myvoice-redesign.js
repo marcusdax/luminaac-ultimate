@@ -49,7 +49,7 @@ function init() {
     <p class="rd-empty" id="rdEmpty" hidden>Nothing here yet. A grown-up can add games, videos and stories in the Bridge.</p>`;
   $("#view-plans").after(play);
   const cards = $("#rdCards");
-  const blocks = [".mv-stories", "#mvVideosBox", ".mv-games", "#spBox"].map((s) => $(s)).filter(Boolean);
+  const blocks = [".mv-stories", "#mvVideosBox", ".mv-games", ".mv-play2", "#spBox"].map((s) => $(s)).filter(Boolean);
   blocks.forEach((b) => { b.open = true; b.classList.add("rd-card"); cards.append(b); });
 
   // Potty Path's "My world" book: a card that opens it, shown when the button would be.

@@ -1,5 +1,11 @@
 # Roadmap
 
+## v0.16: Word games and the "quiet sky" look
+- **Eight word games** (`docs/GAMES-CONCEPT.md`): Word Garden, Conductor, Feelings Weather (also in Calm), Story Stage, Pattern Lab, My Turn Your Turn, Sound Pond and Copy the Robot. They are played with the child's own word tiles in their Talk columns, and every tap speaks.
+- **Shared rules:** "All done" in a fixed corner, nothing fails, an add-only play world, and Bridge settings for which games show, movement, sound, rest time, tile count and camera consent.
+- **Look** (DESIGN.md): a still sky behind words, a dark lantern rail with the open section lit, and a lit hub indicator. The hub layout is the default, so every device gets it.
+- **Next:** save Story Stage scenes to My day, merge the play world with Potty Path's World, and animated characters (Lottie or Rive) once there are files for them.
+
 ## v0.15: Shared boards, and no more lock-ups
 - **v0.14.2 fix:** game, story and Sound Path pop-ups lived inside the Talk view, so opening one from Play made an invisible pop-up that blocked every button. A small guard (`dialog-guard.js`) now moves each pop-up to the top of the page before it opens and closes any that can't be seen. The microphone is released when a game closes, even if permission arrives late.
 - **Open Board Format** import and export (.obf and .obz) in the My Voice Caregiver area (`obf-core.js`), with no server and no account.

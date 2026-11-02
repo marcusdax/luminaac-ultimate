@@ -97,3 +97,32 @@ html:not(.rd) .rd-log { display: none; }
   .rd-view { flex-direction: row; align-items: center; gap: var(--s2); margin: calc(-1 * var(--s2)) 0 var(--s3); }
   .rd-log { bottom: 88px; right: 14px; }
 }
+/* ---------- v0.13 look (DESIGN.md): quiet sky, dark bands frame, lit = chosen ---------- */
+/* Sky: two close stops plus a static grain; never animated behind words. */
+html.rd body {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 .15 0 0 0 0 .19 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, var(--sky-top), var(--sky-low)) fixed;
+  background-blend-mode: soft-light, normal;
+}
+:root[data-theme="contrast"].rd body { background: #000; }
+
+/* My Voice: the lantern rail, on the same band as the sentence strip. */
+.rd .nav { background: var(--dusk); border-radius: var(--r-sheet); margin: var(--s3) 0 var(--s3) var(--s3); padding: var(--s3) var(--s2); }
+.rd .nav-btn { color: var(--band-ink); font-weight: 700; }
+.rd .nav-btn:hover { color: #fff; }
+.rd .nav-btn[aria-current="page"] { background: var(--lit); color: var(--lit-ink); box-shadow: none; font-weight: 800; }
+.rd .nav-care .hold-ring { inset: 2px; }
+@media (max-width: 760px) {
+  .rd .nav { margin: 0; border-radius: var(--r-sheet) var(--r-sheet) 0 0; border-top: 0; background: var(--dusk); min-height: var(--nav-h); }
+}
+
+/* Bridge: paper hub bar (a caregiver tool never looks like the child's rail); lit marks the current hub. */
+.rd-hub[aria-current="page"] { background: var(--lit); color: var(--lit-ink); }
+@media (max-width: 760px) {
+  .rd-hub::before { content: ""; width: 32px; height: var(--indicator); border-radius: 999px; margin-bottom: 2px; background: transparent; transition: background var(--t-ui) var(--ease); }
+  .rd-hub[aria-current="page"] { background: none; color: var(--ink); }
+  .rd-hub[aria-current="page"]::before { background: var(--lit); }
+  .rd-hub[aria-current="page"] svg { color: var(--ink); }
+}
+@media (prefers-reduced-motion: reduce) { .rd-hub::before { transition: none; } }

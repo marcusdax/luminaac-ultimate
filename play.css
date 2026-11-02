@@ -1,0 +1,118 @@
+/* Word games (play.js). DESIGN.md: a dark band frames the game, lit = chosen,
+   scenes are mid-value and low-chroma, motion only confirms what he did. */
+.pk { inset: 0; width: 100vw; max-width: none; height: 100dvh; max-height: none; margin: 0; padding: 0; border: 0;
+  display: none; grid-template-rows: auto 1fr auto auto; background: var(--scene-day); color: var(--ink); font-family: var(--font); }
+.pk[open] { display: grid; }
+.pk::backdrop { background: var(--dusk); }
+.pk[data-scene="dawn"] { background: var(--scene-dawn); } .pk[data-scene="dusk"] { background: var(--scene-dusk); }
+.pk[data-scene="sea"] { background: var(--scene-sea); } .pk[data-scene="rails"] { background: var(--scene-rails); }
+.pk[data-scene="night"] { background: var(--scene-night); color: #e6ecef; }
+
+.pk-top { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); padding-top: max(var(--s3), env(safe-area-inset-top)); background: var(--dusk); color: #fff; }
+.pk-top h2 { margin: 0; font-size: var(--fs-md); font-weight: 800; white-space: nowrap; }
+.pk-strip { flex: 1; min-width: 0; margin: 0; min-height: 48px; display: flex; align-items: center; gap: var(--s2); padding: 0 var(--s4); border-radius: var(--r-strip); background: #2c3e4c; color: var(--band-ink); font-size: var(--fs-lg); font-weight: 800; overflow: hidden; white-space: nowrap; }
+.pk-strip .is-lit { background: var(--lit); color: var(--lit-ink); padding: 2px 10px; border-radius: 10px; }
+.pk-done { min-height: var(--target-min); padding: 0 var(--s5); border: 2px solid var(--lit); border-radius: var(--r-chip); background: transparent; color: #fff; font: 800 var(--fs-sm) var(--font); cursor: pointer; }
+.pk-done:focus-visible { outline: 3px solid var(--lit); outline-offset: 2px; }
+
+.pk-scene { position: relative; overflow: hidden; min-height: 0; }
+.pk-note { margin: 0; padding: var(--s2) var(--s4); font-size: var(--fs-md); font-weight: 700; text-align: center; background: color-mix(in srgb, var(--paper) 85%, transparent); color: var(--ink); min-height: 2.6em; }
+.pk-tiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--s2); padding: var(--s3) var(--s4); padding-bottom: max(var(--s3), env(safe-area-inset-bottom)); background: var(--paper); border-top: 1px solid var(--line); }
+.pk-tiles .tile { min-height: 84px; }
+.pk-tiles[hidden] { display: none; }
+.pk-tiles .tile .label { word-break: keep-all; overflow-wrap: normal; hyphens: none; }
+@media (max-width: 760px) {
+  .pk-top h2 { display: none; }
+  .pk-tiles { gap: 6px; padding-left: var(--s2); padding-right: var(--s2); }
+  .pk-tiles .tile { min-height: 70px; padding-left: 2px; padding-right: 2px; }
+  .pk-tiles .tile .pic { font-size: 1.6rem; height: 34px; }
+  .pk-tiles .tile .label { font-size: 0.8rem; letter-spacing: -0.01em; }
+}
+
+.pk-rest { height: 100%; display: grid; place-content: center; text-align: center; font-size: var(--fs-lg); font-weight: 800; }
+.pk-rest span { font-size: 5rem; }
+
+/* 1. Garden */
+.pk-garden { position: absolute; inset: 0; }
+.pk-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 26%; background: #a7bf92; }
+.pk-sky-sun { position: absolute; right: 8%; top: 10%; width: 72px; height: 72px; border-radius: 50%; background: var(--lit); opacity: .8; }
+.pk-plants { position: absolute; z-index: 1; left: 0; right: 0; bottom: 18%; display: flex; flex-wrap: wrap-reverse; justify-content: center; align-items: flex-end; gap: var(--s4); margin: 0; padding: 0 var(--s4); list-style: none; }
+.pk-plant { display: flex; flex-direction: column; align-items: center; transition: transform var(--t-ui) var(--ease); }
+.pk-plant .pk-pic { font-size: 2.6rem; line-height: 1; }
+.pk-plant.s2 .pk-pic { font-size: 3.4rem; } .pk-plant.s3 .pk-pic { font-size: 4.6rem; }
+.pk-lbl { font-weight: 800; background: var(--paper); border-radius: 8px; padding: 0 8px; }
+
+/* 2. Conductor */
+.pk-rails { position: absolute; inset: 0; }
+.pk-track { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pk-track path { stroke: var(--ink-soft); stroke-width: 1.4; vector-effect: non-scaling-stroke; stroke-width: 6px; stroke-linecap: round; }
+.pk-sign { position: absolute; transform: translate(-50%, -50%); padding: 6px 12px; border-radius: 12px; background: var(--paper); font-weight: 800; font-size: var(--fs-md); white-space: nowrap; }
+.pk-train { position: absolute; width: clamp(88px, 14vw, 150px); height: auto; transform: translate(-10%, -78%); transition-property: left, top; transition-timing-function: var(--ease); }
+
+/* 3. Weather */
+.pk-weather { position: absolute; inset: 0; display: grid; place-content: center; gap: var(--s4); text-align: center; transition: background 1.2s var(--ease); }
+.pk-big { font-size: 7rem; line-height: 1; }
+.pk-weather-say { margin: 0; font-size: var(--fs-xl); font-weight: 800; }
+.pk-cloud { min-height: 96px; padding: 0 var(--s6); border-radius: var(--r-chip); border: 0; background: var(--paper); color: var(--ink); font: 800 var(--fs-md) var(--font); cursor: pointer; transition: transform var(--t-breath-out) ease-in-out; }
+.pk-cloud.is-in { transform: scale(1.35); transition-duration: var(--t-breath-in); }
+.pk-breath[hidden] { display: none; }
+
+/* 4. Story Stage */
+.pk-stage { position: absolute; inset: 0; display: grid; place-items: center; grid-template-rows: 1fr auto auto; padding: var(--s4); }
+.pk-set { position: absolute; inset: 0; display: grid; place-items: center; font-size: 14rem; opacity: .25; }
+.pk-actor { position: relative; font-size: 6rem; line-height: 1; }
+.pk-line { position: relative; margin: 0; font-size: var(--fs-xl); font-weight: 800; text-align: center; }
+.pk-play { position: relative; min-height: var(--target-min); padding: 0 var(--s6); border: 0; border-radius: var(--r-chip); background: var(--lit); color: var(--lit-ink); font: 800 var(--fs-md) var(--font); cursor: pointer; }
+.pk-play:disabled { background: var(--line); color: var(--ink-soft); cursor: default; }
+.pk-actor.do-jump { animation: pk-jump 1s var(--ease) 3; } .pk-actor.do-run { animation: pk-run 1.5s ease-in-out 2; }
+.pk-actor.do-dance { animation: pk-dance .8s ease-in-out 4; } .pk-actor.do-swim { animation: pk-swim 1.6s ease-in-out 2; }
+.pk-actor.do-sleep { animation: pk-sleep 3s ease-in-out 1; } .pk-actor.do-eat { animation: pk-eat .6s ease-in-out 5; }
+@keyframes pk-jump { 50% { transform: translateY(-40%); } }
+@keyframes pk-run { 50% { transform: translateX(60%); } }
+@keyframes pk-dance { 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } }
+@keyframes pk-swim { 50% { transform: translate(40%, 10%) rotate(8deg); } }
+@keyframes pk-sleep { 50% { transform: rotate(-80deg) translateY(10%); opacity: .7; } }
+@keyframes pk-eat { 50% { transform: scale(1.12); } }
+
+/* 5. Pattern Lab */
+.pk-lab { position: absolute; inset: 0; display: grid; grid-template-rows: 1fr auto; place-items: center; padding: var(--s5); gap: var(--s5); }
+.pk-item { font-size: 7rem; line-height: 1; }
+.pk-boxes { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s4); }
+.pk-box { min-width: 160px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s2); border-radius: var(--r-sheet); border: 3px solid var(--line); background: var(--paper); color: var(--ink); font: 800 var(--fs-md) var(--font); cursor: pointer; }
+.pk-box span { font-size: 2.6rem; }
+.pk-box.is-hint { border-color: var(--lit); box-shadow: 0 0 0 6px var(--lumen-soft); }
+.pk-box.is-got { border-color: var(--ok); }
+
+/* 6. My Turn, Your Turn */
+.pk-table { position: absolute; inset: 0; display: grid; grid-template-rows: 1fr auto 1fr; }
+.pk-half { display: grid; place-items: center; padding: var(--s4); }
+.pk-grown { transform: rotate(180deg); background: color-mix(in srgb, var(--paper) 50%, transparent); }
+.pk-mid { min-height: 4rem; padding: var(--s2); text-align: center; font-size: 2.6rem; letter-spacing: .1em; }
+.pk-turn { min-width: 240px; min-height: 110px; border-radius: var(--r-sheet); border: 3px solid var(--line); background: var(--paper); color: var(--ink-soft); font: 800 var(--fs-lg) var(--font); cursor: pointer; }
+.pk-turn.is-lit { background: var(--lit); border-color: var(--lit); color: var(--lit-ink); }
+.pk-turn:disabled { cursor: default; }
+
+/* 7. Sound Pond */
+.pk-pond { position: absolute; inset: 6% 4%; border-radius: 40% 46% 42% 48%; background: #9fc4c6; overflow: hidden; cursor: pointer; }
+.pk-fish { position: absolute; left: 4%; top: 45%; font-size: 3.6rem; line-height: 1; transform: scaleX(-1); transition: left .3s linear, top .3s ease; }
+.pk-goal { position: absolute; right: 4%; top: 40%; font-size: 3rem; }
+.pk-ripple { position: absolute; top: 50%; width: 40px; height: 40px; margin: -20px; border: 3px solid #e8f2f3; border-radius: 50%; animation: pk-ripple 1.2s ease-out forwards; pointer-events: none; }
+@keyframes pk-ripple { to { transform: scale(5); opacity: 0; } }
+
+/* 8. Robot */
+.pk-robot { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: var(--s3); text-align: center; }
+.pk-bot { font-size: 6rem; line-height: 1; transition: transform var(--t-ui) var(--ease); }
+.pk-bot.is-happy { transform: scale(1.15) rotate(-6deg); }
+.pk-pose { font-size: 4rem; }
+.pk-pose-say { margin: 0; font-size: var(--fs-xl); font-weight: 800; }
+.pk-robot-row { display: flex; flex-wrap: wrap; gap: var(--s3); justify-content: center; }
+.pk-did, .pk-cam { min-height: 72px; padding: 0 var(--s6); border-radius: var(--r-chip); border: 0; font: 800 var(--fs-md) var(--font); cursor: pointer; }
+.pk-did { background: var(--lit); color: var(--lit-ink); }
+.pk-cam { background: var(--paper); color: var(--ink); }
+.pk-video { width: 200px; border-radius: var(--r-tile); transform: scaleX(-1); }
+
+.pk-calm-door { margin-top: var(--s4); }
+
+/* Still mode and reduced motion: nothing moves except what he taps, and that jumps. */
+.pk.pk-still *, .pk.pk-still *::before { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) { .pk *, .pk *::before { animation: none !important; transition: none !important; } }

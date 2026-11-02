@@ -2,7 +2,7 @@
 
 A friendly guide for parents, grandparents, carers, teachers and therapists. You don't need to be technical. Read the [quick start](#quick-start) if you only have five minutes, and come back to the rest when you need it.
 
-*This guide covers LuminAAC version 0.14 (November 2026). Open the app at [luminaac-web.vercel.app](https://luminaac-web.vercel.app): My Voice for your child, [the Bridge](https://luminaac-web.vercel.app/bridge.html) for you.*
+*This guide covers LuminAAC version 0.16 (November 2026). Open the app at [luminaac-web.vercel.app](https://luminaac-web.vercel.app): My Voice for your child, [the Bridge](https://luminaac-web.vercel.app/bridge.html) for you.*
 
 ## Contents
 
@@ -40,7 +40,7 @@ LuminAAC is a talker (an AAC app, short for augmentative and alternative communi
 
 You are your child's best translator. LuminAAC helps you share what you already know with the device and with the people around your child.
 
-**What's new in 0.14:** alerts on your phone and a weekly email summary, your own photos and recorded voice on any word, switch scanning for one or two switches, optional end-to-end encryption (Privacy page), a "Say the word" game in Sound Path, and a **Check how well we agree** card on Insights where each caregiver labels moments on their own. **New in 0.13:** the simpler layout is now the standard on every device (Bridge pages grouped under Home, Programs, Progress, Circle and Safety; My Voice gets Talk, Calm, My day and Play), and the older layout's header fits a phone. **New in 0.12:** **team chat** for everyone in your child's circle (see [section 16](#inviting-your-team)), **sensors and wearable trackers** that can alert you (see [section 11](#sensors-and-wearables)), **YouTube channels** next to single videos, with Ms Rachel already linked (see [section 12](#videos-games-insights)), and water search that finds water from the map picture in seconds (see [section 10](#drawing-and-water)). The family server that makes chat, sync and alerts work now comes with the app, so there's nothing to install. **New in 0.11:** **Sound Path**, short voice games that build new sounds and words (see [Sound Path](#sound-path)), and Potty Path stages, a "Next: toilet" card, calm things to do while sitting and fairer rewards for telling (see [section 13](#potty-path)). **New in 0.10:** Potty Path, a calm toilet routine that teaches your child a way to say "I need to go" (see [section 13](#potty-path)). **New in 0.9:** a video board you choose, four gentle sound games, and an **Interests and history** section on Insights with a printable therapist summary (see [section 12](#videos-games-insights)). Version 0.8 added hand-drawn zones and water danger zones (see [section 10](#drawing-and-water)).
+**What's new in 0.16:** eight **word games** your child plays with their own board words (see [Word games](#word-games)), and a calmer look: a quiet sky behind the words and a dark menu bar where the open section is lit. **New in 0.14:** alerts on your phone and a weekly email summary, your own photos and recorded voice on any word, switch scanning for one or two switches, optional end-to-end encryption (Privacy page), a "Say the word" game in Sound Path, and a **Check how well we agree** card on Insights where each caregiver labels moments on their own. **New in 0.13:** the simpler layout is now the standard on every device (Bridge pages grouped under Home, Programs, Progress, Circle and Safety; My Voice gets Talk, Calm, My day and Play), and the older layout's header fits a phone. **New in 0.12:** **team chat** for everyone in your child's circle (see [section 16](#inviting-your-team)), **sensors and wearable trackers** that can alert you (see [section 11](#sensors-and-wearables)), **YouTube channels** next to single videos, with Ms Rachel already linked (see [section 12](#videos-games-insights)), and water search that finds water from the map picture in seconds (see [section 10](#drawing-and-water)). The family server that makes chat, sync and alerts work now comes with the app, so there's nothing to install. **New in 0.11:** **Sound Path**, short voice games that build new sounds and words (see [Sound Path](#sound-path)), and Potty Path stages, a "Next: toilet" card, calm things to do while sitting and fairer rewards for telling (see [section 13](#potty-path)). **New in 0.10:** Potty Path, a calm toilet routine that teaches your child a way to say "I need to go" (see [section 13](#potty-path)). **New in 0.9:** a video board you choose, four gentle sound games, and an **Interests and history** section on Insights with a printable therapist summary (see [section 12](#videos-games-insights)). Version 0.8 added hand-drawn zones and water danger zones (see [section 10](#drawing-and-water)).
 
 Everything works on your own device. You don't need an account, and nothing leaves the device unless you choose to connect it. Team chat and sensors are the two things that need a free family account (see [section 15](#accounts)).
 
@@ -288,6 +288,39 @@ Tap **Print a summary for a therapist** for a one-page report you can print or s
 ![Interests and history on Insights](../screenshots/insights-interests-desktop.png)
 ![The printable therapist summary](../screenshots/therapist-report-desktop.png)
 ![My videos and Sound games on a phone](../screenshots/myvideos-mobile.png)
+
+<a id="word-games"></a>
+### Word games (new in 0.16)
+
+Under **Word games** (in Play, or further down Talk), your child plays with **their own word tiles**. The tiles have the same colours and pictures as on Talk, and core words sit in the same columns. Every tap speaks the word, so playing is talking.
+
+**The eight games:**
+- **Word Garden:** a word plants a sprout, and tapping it again grows it. Two words together ("more water") make it bloom.
+- **Conductor:** the train waits until he asks. Places (park, home, school) pick the line. "Go", "stop", "fast", "slow", "more" and "again" drive it.
+- **Feelings Weather:** pick the sky that feels like you; every sky is OK. Rain and storms clear only when your child chooses to breathe with the cloud. It also has a door in **Calm**.
+- **Story Stage:** choose who, what they do and where ("dino, jump, park"). Then **Play it**, and the show says the sentence.
+- **Pattern Lab:** sort by kind or colour. A wrong box is never wrong: the right one glows.
+- **My Turn, Your Turn:** you sit on the top half, your child on the bottom, and a lit token passes between you.
+- **Sound Pond:** voice makes ripples and moves a fish. With the microphone off, taps do it instead.
+- **Copy the Robot:** copy the pose, then tap **I did it**. If you allow it, the camera can check arm positions on the device. Nothing is recorded or sent.
+
+**How every game works:**
+- **All done** is always in the top-right corner, and it always works.
+- Nothing fails, and there are no timers to beat, streaks to lose or purchases.
+- Every try adds to **My play world**, which only grows.
+
+**Your settings:** in **Bridge → Videos and games → Word games** you choose:
+- which games show;
+- **Movement** (Gentle, or Still: nothing moves by itself);
+- **Game sounds** (soft, normal or off; words are still spoken);
+- **Rest after** 5 to 20 minutes, or no limit;
+- how many word buttons Word Garden shows;
+- whether two words make a bloom;
+- whether **Copy the Robot may use the camera**. Only a parent can turn the camera on.
+
+**Honest limits:**
+- Game turns and the play world stay on the device where they were played.
+- The camera check needs the internet the first time, to load the pose model.
 
 <a id="sound-path"></a>
 ### Sound Path (new in 0.11)
@@ -578,6 +611,8 @@ The **Privacy** page puts you in control.
 **8. Stay in control.** On **Privacy**, choose how long to keep recordings, export a backup, or delete everything.
 
 **8a. Sensors and trackers (optional).** On **Safety**, add your child's tracker as a one-tap button, and give door or pool sensors a link so their alarms ring in the Bridge.
+
+**8b. Word games (optional).** In Play, try **Word Garden** or **Conductor** together. Set movement, sound and rest time in **Videos and games → Word games**.
 
 **9. Videos and games (optional).** In **Videos and games**, paste a few favourite YouTube links and add words to talk about, or link a whole channel (Ms Rachel is already there). Try a sound game together. See what it shows on **Insights**, and tap **Print a summary for a therapist** before appointments.
 

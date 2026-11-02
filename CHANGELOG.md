@@ -2,6 +2,16 @@
 
 All notable changes. Versions match the service worker cache name in `sw.js`.
 
+## 0.16.0 (2 November 2026)
+### Added
+- **Eight word games** in Play (and Feelings Weather in Calm), played with the child's own word tiles in their Talk columns. Every tap speaks. The games are Word Garden, Conductor, Feelings Weather, Story Stage, Pattern Lab, My Turn Your Turn, Sound Pond and Copy the Robot.
+  - Built as one frame, with "All done" always in the top-right corner.
+  - Nothing fails, and an add-only play world grows with every try.
+  - Files: `play-core.js` (rules), `play.js`, `play.css`.
+- **Word games settings** in the Bridge (Videos and games): which games show, movement (gentle or still), game sounds, rest time, word buttons and blooms. Camera use for Copy the Robot needs a parent's consent. Files: `bridge-play.js`.
+- **DESIGN.md "quiet sky, lit strip" look:** a still sky behind words, a dark lantern rail with the open section lit, and a lit indicator in the Bridge hub bar. Its tokens are in `tokens.css`.
+- Tests: `tests/play.test.mjs` (29).
+
 ## 0.15.0 (2 November 2026)
 ### Added
 - Open Board Format import and export in the My Voice Caregiver area: save core words and every folder as one .obz file, or add words from a .obf or .obz made by another AAC app (`obf-core.js`). Pictures and word colours travel with the file; nothing is uploaded.

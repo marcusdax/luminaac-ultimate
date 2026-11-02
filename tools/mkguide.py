@@ -37,7 +37,7 @@ html=f'''<!doctype html>
       <p class="g-lede">Everything you need to help your child be heard, in plain words.</p>
     </div>
     {body}
-    <footer class="g-foot"><p>LuminAAC caretaker guide, version 0.13 (November 2026). Live app: <a href="https://luminaac-web.vercel.app">luminaac-web.vercel.app</a>. Fallback pictures: OpenMoji (openmoji.org), CC BY-SA 4.0. Font: Atkinson Hyperlegible Next.</p></footer>
+    <footer class="g-foot"><p>LuminAAC caretaker guide, version 0.16 (November 2026). Live app: <a href="https://luminaac-web.vercel.app">luminaac-web.vercel.app</a>. Fallback pictures: OpenMoji (openmoji.org), CC BY-SA 4.0. Font: Atkinson Hyperlegible Next.</p></footer>
   </main>
 </body>
 </html>
