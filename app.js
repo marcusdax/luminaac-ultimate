@@ -2,6 +2,7 @@
 // (except optional ARASAAC pictures). All data lives in localStorage.
 import { CORE, FOLDERS, QUICK, SCALE, CALM_NEEDS, PLANS } from "./vocab.js";
 import { KOKORO_VOICES } from "./ai.js";
+import { hasVoice, hasPhoto, playVoice, applyPhoto } from "./symbols.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -72,6 +73,12 @@ function loadVoices() {
 
 function say(text, opts = {}) {
   const { onWord, onEnd } = opts;
+  // A caregiver's own recording of this exact word or phrase wins over any synthetic voice.
+  if (!opts.system && !opts.synth && hasVoice(text)) {
+    speechSynthesis?.cancel?.();
+    playVoice(text).then((ok) => (ok ? onEnd?.() : say(text, { ...opts, synth: true })));
+    return;
+  }
   if (String(settings.voice || "").startsWith("kokoro:") && !opts.system) {
     // Natural voice runs on this device in a worker; any failure falls back to the system voice.
     const starts = [...text.matchAll(/\S+/g)].map((m) => m.index); let timer;
@@ -221,6 +228,7 @@ function tile(item, onTap) {
   label.className = "label";
   label.textContent = item.w;
   b.append(pic, label);
+  applyPhoto(pic, item.w); // a photo symbol replaces the picture when a caregiver added one
   b.addEventListener("click", () => onTap(item));
   return b;
 }
@@ -275,6 +283,7 @@ function loadPictos(root) {
   if (!settings.pictos) return;
   $$(".tile", root).forEach((t) => {
     const w = t.dataset.w.toLowerCase();
+    if (hasPhoto(w)) return; // the family's own photo wins
     if (t.dataset.p) return setPicto(t, t.dataset.p);
     if (data.pictoIds[w] === 0) return setMoji(t);
     if (data.pictoIds[w]) return setPicto(t, data.pictoIds[w]);
@@ -288,7 +297,7 @@ function setPicto(t, id) {
   img.alt = "";
   img.decoding = "async";
   img.src = `https://static.arasaac.org/pictograms/${id}/${id}_300.png`;
-  img.onload = () => { pic.textContent = ""; pic.append(img); };
+  img.onload = () => { if (pic.querySelector(".sym-photo")) return; pic.textContent = ""; pic.append(img); };
   img.onerror = () => setMoji(t); // ARASAAC 404 or offline: use the local OpenMoji picture
 }
 // Local fallback pictures (OpenMoji, CC BY-SA 4.0, vendored in vendor/openmoji).

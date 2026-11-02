@@ -2,6 +2,7 @@
 // signals, context pages, the Personality page, Play-moment buttons, and
 // Exploration mode (browse without speaking; taps are logged for caregivers).
 import { load, persist, suggest, activeRules, getMedia, speak, partOfDay, recordFeedback, raiseAlert, MILESTONES } from "./shared.js";
+import { hasVoice, playVoice, applyPhoto } from "./symbols.js";
 
 const talk = document.getElementById("view-talk");
 let db = load();
@@ -75,6 +76,7 @@ function render() {
     b.innerHTML = `<span class="pic" aria-hidden="true">${p.e}</span><span class="label"></span>${p.momentId ? '<span class="mv-play" aria-hidden="true">▶</span>' : ""}`;
     b.querySelector(".label").textContent = p.label;
     b.setAttribute("aria-label", p.label + (p.momentId ? ", plays a moment" : ""));
+    applyPhoto(b.querySelector(".pic"), p.label);
     b.addEventListener("click", () => playOrSay(p));
     pt.append(b);
   });
@@ -176,6 +178,7 @@ function playPractice(id) {
 
 async function playOrSay(p) {
   if (exploring()) return logExplore(p.label);
+  if (!p.momentId && hasVoice(p.label) && (await playVoice(p.label))) return;
   if (p.momentId) {
     const blob = await getMedia(p.momentId).catch(() => null);
     if (blob) {

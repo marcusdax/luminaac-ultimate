@@ -423,3 +423,5 @@ form input:not([type="radio"]):not([type="checkbox"]):not([type="range"]), form 
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 .still *, .still *::before, .still *::after { animation: none !important; transition: none !important; }
+/* Family photo symbols: square, rounded, fill the picture spot */
+.tile .pic img.sym-photo, .mv-ptile .pic img.sym-photo { width: 56px; height: 56px; object-fit: cover; border-radius: 10px; }
