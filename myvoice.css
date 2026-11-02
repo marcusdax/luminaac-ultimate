@@ -79,3 +79,5 @@ body.still .mv-chip.is-top { animation: none; }
 .mv > * { min-width: 0; } .mv-bar { min-width: 0; max-width: 100%; }
 @media (max-width: 760px) { .mv-none { position: sticky; right: 0; z-index: 1; background: var(--paper-raised); border-style: solid; box-shadow: -14px 0 12px -4px var(--fog, #e9edea); } }
 @media (max-width: 760px) { .mv-suggest { width: 100%; max-width: 100%; } }
+.scan-row { box-shadow: 0 0 0 4px var(--ember-deep), 0 0 0 9px var(--lumen-soft) !important; }
+@media (prefers-reduced-motion: no-preference) { .scan-hi, .scan-row { transition: box-shadow .12s; } }

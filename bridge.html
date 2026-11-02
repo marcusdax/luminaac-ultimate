@@ -158,9 +158,23 @@
             <label>Button size <span class="soft" id="sizeOut"></span><input type="range" name="size" min="80" max="160" step="10" /></label>
             <label>Select by resting the pointer (dwell)
               <select name="dwell"><option value="0">Off</option><option value="800">0.8 seconds</option><option value="1200">1.2 seconds</option><option value="2000">2 seconds</option></select></label>
-            <label class="check"><input type="checkbox" name="scan" /> Switch scanning (highlight moves on its own; Space or Enter picks)</label>
-            <label>Scanning speed
-              <select name="scanMs"><option value="1000">Fast (1 second)</option><option value="1500">Medium (1.5 seconds)</option><option value="2500">Slow (2.5 seconds)</option></select></label>
+            <label class="check"><input type="checkbox" name="scan" /> Switch scanning</label>
+            <fieldset class="scan-opts"><legend>Scanning</legend>
+              <label>Switches
+                <select name="switches"><option value="1">One switch: the highlight moves on its own, the switch picks</option><option value="2">Two switches: one moves the highlight, one picks</option></select></label>
+              <label>Pattern
+                <select name="method"><option value="rowcol">Rows, then buttons in the row</option><option value="linear">One button at a time</option></select></label>
+              <label>Scanning speed
+                <select name="scanMs"><option value="1000">Fast (1 second)</option><option value="1500">Medium (1.5 seconds)</option><option value="2500">Slow (2.5 seconds)</option><option value="4000">Very slow (4 seconds)</option></select></label>
+              <label>Extra time on the first item
+                <select name="firstHold"><option value="0">None</option><option value="500">Half a second</option><option value="1000">1 second</option><option value="2000">2 seconds</option></select></label>
+              <label>Stop after this many rounds with no pick
+                <select name="loops"><option value="2">2</option><option value="3">3</option><option value="5">5</option></select></label>
+              <label>Ignore repeat presses within
+                <select name="debounce"><option value="0">Off</option><option value="250">0.25 seconds</option><option value="500">0.5 seconds</option><option value="1000">1 second</option></select></label>
+              <label class="check"><input type="checkbox" name="auditory" /> Say each item quietly as it lights up (auditory scanning)</label>
+              <p class="soft small">Switch 1 is Space or Enter. Switch 2 is Tab or the right arrow. Most switch interfaces can send these keys.</p>
+            </fieldset>
             <label class="check"><input type="checkbox" name="safety" /> Show "I need help" and "Take me home" buttons</label>
           </form>
         </section>
