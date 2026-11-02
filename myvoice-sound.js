@@ -130,7 +130,10 @@ const prompt = (t) => { $("spSay").textContent = t; };
 let mic = null;
 async function startMic() {
   if (mic) return mic;
+  const my = running;
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } });
+  // Closed or stopped while the browser was asking: release the microphone at once.
+  if (my !== running || !game) { stream.getTracks().forEach((t) => t.stop()); throw new Error("closed"); }
   const a = actx(); await a.resume?.();
   const an = a.createAnalyser(); an.fftSize = 2048; a.createMediaStreamSource(stream).connect(an);
   return (mic = { stream, an, buf: new Float32Array(an.fftSize), rate: a.sampleRate });

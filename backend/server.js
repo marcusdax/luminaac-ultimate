@@ -237,7 +237,7 @@ async function route(req, res, url) {
   const p = url.pathname.replace(/\/+$/, "") || "/";
   const M = req.method;
 
-  if (p === "/api/health" && M === "GET") return ok(res, { status: "ok", version: "0.14.0", uptime: Math.round(process.uptime()), time: new Date().toISOString() });
+  if (p === "/api/health" && M === "GET") return ok(res, { status: "ok", version: "0.14.2", uptime: Math.round(process.uptime()), time: new Date().toISOString() });
 
   // Public: read a share link (no family key needed)
   let m;

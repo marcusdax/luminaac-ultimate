@@ -242,6 +242,7 @@ function startGame(g) {
 }
 function endGame() { stopMic(); clearTimeout(turnTimer); game = null; renderGames(); }
 function record(ok, item, extra = {}) {
+  if (!game) return;
   const d = load(); d.games ||= { settings: {}, goals: [], plays: [] };
   d.games.plays.push({ t: Date.now(), game: game?.id, ok: !!ok, item, ...extra }); d.games.plays = d.games.plays.slice(-3000); persist(d);
   const n = d.games.plays.length, r = settings().reward;
@@ -263,16 +264,19 @@ const stage = (html) => { $("mvGStage").innerHTML = html; };
 const prompt = (t) => { $("mvGSay").textContent = t; };
 
 // ---------- Microphone (optional, on the device, nothing recorded) ----------
-let mic = null;
+let mic = null, micGen = 0;
 async function startMic() {
   if (mic) return mic;
+  const gen = micGen;
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } });
+  // The game was closed while the browser was asking for the microphone: let it go at once.
+  if (gen !== micGen || !game) { stream.getTracks().forEach((t) => t.stop()); throw new Error("game closed"); }
   const a = ac(); await a.resume?.();
   const src = a.createMediaStreamSource(stream), an = a.createAnalyser(); an.fftSize = 2048; src.connect(an);
   mic = { stream, an, buf: new Float32Array(an.fftSize), rate: a.sampleRate };
   return mic;
 }
-function stopMic() { mic?.stream.getTracks().forEach((t) => t.stop()); mic = null; $("mvMeter").hidden = true; }
+function stopMic() { micGen++; mic?.stream.getTracks().forEach((t) => t.stop()); mic = null; $("mvMeter").hidden = true; }
 // Listen for up to `ms`, drawing a loudness bar and a pitch dot. Resolves with judgeTry().
 function listen(ms = 3000, { stopOnVoice = false } = {}) {
   return new Promise((res) => {
@@ -296,6 +300,7 @@ async function micTurn(onResult) {
   try { await startMic(); } catch { prompt("The microphone isn't on. Tap \"I did it\" instead."); return false; }
   prompt("Your turn. I'm listening…");
   const r = await listen(3000);
+  if (!game) return false; // closed while listening
   onResult(r); return true;
 }
 
@@ -362,6 +367,7 @@ function playFirst() {
 // ---------- 4. My turn, your turn (turn-taking with beats) ----------
 let turnTimer = null, turnN = 0;
 function playTurns() {
+  if (!game) return;
   turnN = 1 + (turnN % 3);
   stage(`<button type="button" class="mv-drum" id="mvDrum" aria-label="Drum. Tap for your turn"><span aria-hidden="true">🥁</span></button><div class="mv-beats" aria-hidden="true">${"<i></i>".repeat(turnN)}</div>`);
   prompt("My turn. Listen."); $("mvDrum").disabled = true;
