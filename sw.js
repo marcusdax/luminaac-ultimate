@@ -6,7 +6,7 @@
 //  • Model weights from the Hugging Face hub are cached by Transformers.js itself
 //    ("transformers-cache"); Human's models are vendored locally under vendor/human.
 //  • The backend API (/api/…) and map tiles are never cached here.
-const VERSION = "luminaac-v0.14.0";
+const VERSION = "luminaac-v0.14.1";
 const SHELL = `${VERSION}-shell`, CDN = `${VERSION}-cdn`;
 const FILES = [
   "./", "index.html", "bridge.html", "guide.html", "guide.css", "manifest.webmanifest", "bridge.webmanifest", "favicon.svg",

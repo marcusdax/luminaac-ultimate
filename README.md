@@ -118,7 +118,7 @@ The live app at <https://luminaac-web.vercel.app> is deployed on Vercel from `ma
 - `.vercelignore` keeps `native/`, `tests/`, `docs/`, `backend/test.mjs`, `backend/data/` and Markdown files (except `PRIVACY.md` and `THIRD-PARTY.md`) off public hosting. `screenshots/` is served because the in-app guide shows them.
 - Any static host works for the front end alone. Serve over HTTPS and don't cache `sw.js` long-term. Point the Bridge at your own server under Account and devices.
 
-When you change any shipped file, bump `VERSION` in `sw.js` (currently `luminaac-v0.14.0`) so devices pick up the new copy. When an update takes over, `pwa.js` reloads the Bridge once, and My Voice only while it is out of sight. To rebuild `guide.html` from `docs/CARETAKER-GUIDE.md`, run `python3 tools/mkguide.py` (needs the Python `markdown` package).
+When you change any shipped file, bump `VERSION` in `sw.js` (currently `luminaac-v0.14.1`) so devices pick up the new copy. When an update takes over, `pwa.js` reloads the Bridge once, and My Voice only while it is out of sight. To rebuild `guide.html` from `docs/CARETAKER-GUIDE.md`, run `python3 tools/mkguide.py` (needs the Python `markdown` package).
 
 ### Backend (optional)
 
