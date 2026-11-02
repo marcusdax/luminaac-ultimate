@@ -4,7 +4,7 @@ This is a small Node 18+ API with no dependencies. It handles family sync, role-
 
 ```bash
 node server.js     # http://localhost:3001
-node test.mjs      # 113 tests, in-process, temporary data dir
+node test.mjs      # 155 tests, in-process, temporary data dir
 ```
 
 | Env | Default | Meaning |
@@ -25,6 +25,18 @@ node test.mjs      # 113 tests, in-process, temporary data dir
 | `APP_URL` | request Origin | Base URL used in email links |
 | `DEADMAN_MINUTES` | 30 | Default quiet-device window (devices may choose 5–1440) |
 | `DEADMAN_CHECK_MS` | 60000 | How often the quiet-device check runs |
+| `KV_REST_API_URL`, `KV_REST_API_TOKEN` | – | Upstash Redis REST settings (also read as `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`). When set, `api/index.js` mirrors the data files to Redis (hosted mode) |
+| `YOUTUBE_API_KEY` | – | Optional YouTube Data API v3 key: resolves @handles and lists a channel's newest videos with titles |
+
+## v0.5: hosted mode, chat, sensors, YouTube
+
+- **Hosted on Vercel.** `../api/index.js` imports this server, runs requests one at a time per instance, and wraps each one in `mirror.pull()` / `mirror.push()` so the JSON files in `/tmp` match Redis (`lum:files` and `lum:rev` hashes). On Vercel, `/api/alerts/stream` answers 410, and clients poll `/api/updates` instead.
+- `GET /api/updates?since=t` returns `{ now, version, alerts, chat }`, filtered by role, in one call.
+- `GET /api/chat?since=t` and `POST /api/chat {text}` are for parent, teacher, therapist and family roles, never child devices; the last 500 messages are kept. `DELETE /api/chat/:id` works for parents, or for the author.
+- `GET|POST /api/sensors` and `DELETE /api/sensors/:id` are for parents. POST returns a one-time `path` of `/api/hooks/<secret>`; only the secret's SHA-256 is stored.
+- `GET|POST /api/hooks/<secret>` is public: the secret is the credential. It raises a `sensor` alert (urgent for doors, gates, pools and wearables unless set otherwise), takes an optional `message`, `value1` (IFTTT) or `?message=`, and allows 30 calls per 10 minutes per sensor.
+- `GET /api/youtube?channel=<link|UC id|@handle>` is public and read-only, and reaches only youtube.com and googleapis.com. It returns `{ id, title, playlist, videos }`, where `playlist` is the uploads list (`UU…`) and always playable. Without `YOUTUBE_API_KEY`, titles come from the public feed when YouTube serves it, and @handles are refused with instructions. Results are cached for 30 minutes.
+- `childView` now includes linked `videos.channels`.
 
 **How it relates to the repo.** The repo's Express server needs Mongo, Redis, TensorFlow, and socket.io, and most of its routes were never written. This server keeps the parts that were real: the `/api` prefix, the `{success, data, message}` and `{error, details}` envelopes, and every predictions route with the same request and response fields. It also adds `/api/sync`, `/api/share`, and `/api/alerts` (with an SSE stream). You can swap the file store for Mongo later by changing `store.js` only.
 

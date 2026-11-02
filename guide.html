@@ -31,7 +31,7 @@
     </div>
     
 <p>A friendly guide for parents, grandparents, carers, teachers and therapists. You don't need to be technical. Read the <a href="#quick-start">quick start</a> if you only have five minutes, and come back to the rest when you need it.</p>
-<p><em>This guide covers LuminAAC version 0.9 (October 2026). Open the app at <a href="https://luminaac-web.vercel.app">luminaac-web.vercel.app</a>: My Voice for your child, <a href="https://luminaac-web.vercel.app/bridge.html">the Bridge</a> for you.</em></p>
+<p><em>This guide covers LuminAAC version 0.12 (November 2026). Open the app at <a href="https://luminaac-web.vercel.app">luminaac-web.vercel.app</a>: My Voice for your child, <a href="https://luminaac-web.vercel.app/bridge.html">the Bridge</a> for you.</em></p>
 <h2>Contents</h2>
 <ol>
 <li><a href="#what-luminaac-is">What LuminAAC is</a></li>
@@ -44,11 +44,12 @@
 <li><a href="#help-alerts">Help and "Take me home" alerts</a></li>
 <li><a href="#safe-zones-and-consent">Safe zones and consent</a></li>
 <li><a href="#drawing-and-water">Drawing zones by hand and water danger zones</a></li>
+<li><a href="#sensors-and-wearables">Sensors and wearable trackers</a></li>
 <li><a href="#videos-games-insights">Videos, sound games and what they tell you</a></li>
 <li><a href="#potty-path">Potty Path: toilet learning and asking to go</a></li>
 <li><a href="#pairing-devices">Pairing devices</a></li>
 <li><a href="#accounts">Accounts, email checks and password reset</a></li>
-<li><a href="#inviting-your-team">Inviting your team and roles</a></li>
+<li><a href="#inviting-your-team">Inviting your team, roles and team chat</a></li>
 <li><a href="#feeling-estimates">Feeling estimates</a></li>
 <li><a href="#shared-learning">Shared learning and privacy</a></li>
 <li><a href="#installing-it-as-an-app">Installing it as an app</a></li>
@@ -65,8 +66,8 @@
 <li><strong>The Bridge</strong> is your side. You catch the small moments when your child tells you something in their own way (a sound, a look, a gesture) and say what it meant. Over time, My Voice starts offering the right words at the right time.</li>
 </ul>
 <p>You are your child's best translator. LuminAAC helps you share what you already know with the device and with the people around your child.</p>
-<p><strong>What's new in 0.11:</strong> <strong>Sound Path</strong>, short voice games that build new sounds and words (see <a href="#sound-path">Sound Path</a>), and Potty Path stages, a "Next: toilet" card, calm things to do while sitting and fairer rewards for telling (see <a href="#potty-path">section 12</a>). <strong>New in 0.10:</strong> Potty Path, a calm toilet routine that teaches your child a way to say "I need to go" (see <a href="#potty-path">section 12</a>). <strong>New in 0.9:</strong> a video board you choose, four gentle sound games, and an <strong>Interests and history</strong> section on Insights with a printable therapist summary (see <a href="#videos-games-insights">section 11</a>). Version 0.8 added hand-drawn zones and water danger zones (see <a href="#drawing-and-water">section 10</a>).</p>
-<p>Everything works on your own device. You don't need an account, and nothing leaves the device unless you choose to connect it.</p>
+<p><strong>What's new in 0.12:</strong> <strong>team chat</strong> for everyone in your child's circle (see <a href="#inviting-your-team">section 16</a>), <strong>sensors and wearable trackers</strong> that can alert you (see <a href="#sensors-and-wearables">section 11</a>), <strong>YouTube channels</strong> next to single videos, with Ms Rachel already linked (see <a href="#videos-games-insights">section 12</a>), and water search that finds water from the map picture in seconds (see <a href="#drawing-and-water">section 10</a>). The family server that makes chat, sync and alerts work now comes with the app, so there's nothing to install. <strong>New in 0.11:</strong> <strong>Sound Path</strong>, short voice games that build new sounds and words (see <a href="#sound-path">Sound Path</a>), and Potty Path stages, a "Next: toilet" card, calm things to do while sitting and fairer rewards for telling (see <a href="#potty-path">section 13</a>). <strong>New in 0.10:</strong> Potty Path, a calm toilet routine that teaches your child a way to say "I need to go" (see <a href="#potty-path">section 13</a>). <strong>New in 0.9:</strong> a video board you choose, four gentle sound games, and an <strong>Interests and history</strong> section on Insights with a printable therapist summary (see <a href="#videos-games-insights">section 12</a>). Version 0.8 added hand-drawn zones and water danger zones (see <a href="#drawing-and-water">section 10</a>).</p>
+<p>Everything works on your own device. You don't need an account, and nothing leaves the device unless you choose to connect it. Team chat and sensors are the two things that need a free family account (see <a href="#accounts">section 15</a>).</p>
 <figure><img src="screenshots/myvoice-desktop.png" alt="My Voice, the child's talker" loading="lazy" /><figcaption>My Voice, the child's talker</figcaption></figure>
 <p><a id="first-setup"></a></p>
 <h2>2. First setup</h2>
@@ -78,6 +79,11 @@
 </ol>
 <p>The first time, LuminAAC loads some sample moments so the pages aren't empty. You can delete them from <strong>Privacy</strong> whenever you like.</p>
 <p><strong>Tip:</strong> you can open the welcome again from the Bridge any time if someone new is setting up.</p>
+<p><strong>Try the new layout.</strong> A simpler layout is being tested. To switch it on for a device, open the app once with <code>?redesign=1</code> at the end of the address (for example <code>luminaac-web.vercel.app/bridge.html?redesign=1</code>). Use <code>?redesign=0</code> to go back. Each device remembers its choice.</p>
+<ul>
+<li><strong>The Bridge</strong> groups its pages into five buttons: <strong>Home</strong>, <strong>Programs</strong> (vocabulary, stories, Sound Path, Potty Path, videos and games), <strong>Progress</strong> (signals and insights), <strong>Circle</strong> (team and chat, account and devices, privacy) and <strong>Safety</strong>. Small tabs under the title switch pages inside a group, and each group remembers where you were. On a phone the buttons sit along the bottom; swipe them left and right if they don't all fit.</li>
+<li><strong>My Voice</strong> gets <strong>Talk</strong>, <strong>Calm</strong>, <strong>My day</strong> (plans), <strong>Play</strong> (stories, videos, sound games and Sound Path in one place) and <strong>Caregiver</strong>. While a plan is under way, a <strong>Now / Next</strong> line at the top of Talk shows the step to do now and the one after.</li>
+</ul>
 <figure><img src="screenshots/bridge-desktop.png" alt="The Bridge, Today page" loading="lazy" /><figcaption>The Bridge, Today page</figcaption></figure>
 <p><a id="my-voice-basics"></a></p>
 <h2>3. My Voice basics for your child</h2>
@@ -87,10 +93,10 @@
 <li><strong>Quick phrases and next words.</strong> Common phrases sit near the top, and ideas for the next word appear as your child builds a message.</li>
 <li><strong>Folders.</strong> Words are grouped (people, actions, food, places and more). Colours stay the same everywhere, so your child can learn where things live.</li>
 <li><strong>Calm.</strong> A feelings scale and a slow breathing guide, plus short notes for the person helping.</li>
-<li><strong>Plans.</strong> Picture steps for the day, such as getting ready for school.</li>
+<li><strong>Plans</strong> (<strong>My day</strong> in the new layout). Picture steps for the day, such as getting ready for school.</li>
 <li><strong>My things.</strong> Your child's own buttons. A button can even play back a recorded moment.</li>
-<li><strong>My videos and Sound games.</strong> Further down the Talk page. <strong>My videos</strong> shows only the videos you added. <strong>Sound games</strong> has four short games. See <a href="#videos-games-insights">section 11</a>.</li>
-<li><strong>Caregiver area.</strong> Press and hold <strong>Caregiver</strong> for two seconds to open it. Children can't open it by accident. Choose <strong>Lock and return to Talk</strong> when you're done.</li>
+<li><strong>My videos and Sound games.</strong> Further down the Talk page. <strong>My videos</strong> shows only the videos you added. <strong>Sound games</strong> has four short games. See <a href="#videos-games-insights">section 12</a>.</li>
+<li><strong>Caregiver area.</strong> Press and hold <strong>Caregiver</strong> for two seconds to open it. Children can't open it by accident. Choose <strong>Lock and return to Talk</strong> when you're done. In the new layout the Bridge is opened from here, with <strong>Open the Bridge</strong>, and the Bridge's <strong>Back to My Voice</strong> brings you straight back to the Caregiver area (not Talk), so you can lock it before handing the device back.</li>
 </ul>
 <p>Words stay in the same place on the board. That's on purpose: it lets your child build muscle memory, so please don't worry if the board looks "busy" at first.</p>
 <figure><img src="screenshots/myvoice-mobile.png" alt="My Voice on a phone" loading="lazy" /><figcaption>My Voice on a phone</figcaption></figure>
@@ -182,16 +188,41 @@
 <ol>
 <li>Turn on <strong>Send an urgent alert near water</strong>.</li>
 <li>Set <strong>Alert when closer than</strong>. 50 metres suits most families. Phone locations can be 10 to 30 metres out.</li>
-<li>Tap <strong>Find water near my zones</strong> (or <strong>near me</strong>). LuminAAC looks up mapped ponds, pools, rivers and lakes from OpenStreetMap and saves them on your devices, so checks work offline.</li>
+<li>Tap <strong>Find water near my zones</strong> (or <strong>near me</strong>). LuminAAC first reads the water colour from the map picture around each place, which takes a few seconds, and turns alerts on straight away. It then looks up the same water by name (ponds, pools, rivers and lakes from OpenStreetMap), which can take up to a minute, and swaps in the named places when they arrive. Everything is saved on your devices, so checks work offline.</li>
 <li>Water shows on the map in blue with a red halo. Tap <strong>Ignore</strong> for water that isn't a risk, such as a fenced fountain.</li>
 </ol>
 <p>If your child gets close, you get an <strong>urgent</strong> alert with a triple chime and their location, at the top of your alerts.</p>
-<p><strong>Honest limits:</strong> maps miss garden pools, new ponds and seasonal water, so draw those yourself as a danger area. Finding water needs internet and the free map service can be busy; try again in a minute. This adds to supervision; it never replaces it.</p>
+<p><strong>Honest limits:</strong> maps miss garden pools, new ponds and seasonal water, so draw those yourself as a danger area. Finding water needs internet. If the name search is busy, the shapes from the map picture are kept and the status line says so. This adds to supervision; it never replaces it.</p>
 <p><figure><img src="screenshots/draw-freehand-desktop.png" alt="Drawing a zone by hand" loading="lazy" /><figcaption>Drawing a zone by hand</figcaption></figure>
 <figure><img src="screenshots/water-map-desktop.png" alt="Water near a safe zone" loading="lazy" /><figcaption>Water near a safe zone</figcaption></figure>
 <figure><img src="screenshots/water-alert-desktop.png" alt="An urgent water alert" loading="lazy" /><figcaption>An urgent water alert</figcaption></figure></p>
+<p><a id="sensors-and-wearables"></a></p>
+<h2>11. Sensors and wearable trackers</h2>
+<p>The <strong>Sensors and wearables</strong> card at the bottom of the <strong>Safety</strong> page brings your child's other safety gear into one place.</p>
+<h3>Wearable trackers</h3>
+<p>If your child wears a GPS watch or tag, add it so its map is one tap away when it matters.</p>
+<ol>
+<li>Open <strong>Add a tracker</strong> and pick it: AngelSense, AirTag / Find My, Samsung SmartTag, Google Find Hub, Jiobit or Life360. The web address is filled in for you; for any other tracker, paste the https address you sign in to.</li>
+<li>Give the button a name, such as "Sam's watch", and choose <strong>Add tracker</strong>.</li>
+</ol>
+<p><strong>Open Sam's watch</strong> then opens that tracker's own map in a new tab. LuminAAC doesn't read the tracker's location itself.</p>
+<h3>Sensors and alarms</h3>
+<p>Door, gate and window sensors, pool alarms, bed sensors, motion sensors, or your tracker's own alerts can ring in the Bridge. This needs a free family account (see <a href="#accounts">section 15</a>), because the alert has to reach every caregiver.</p>
+<ol>
+<li>Type a name, such as "Back door", and pick the type. Doors, gates, pool alarms and tracker alerts are marked <strong>Urgent</strong>: they chime three times like a water alert. Untick it for gentle alerts.</li>
+<li>Choose <strong>Add sensor</strong>. You get a private web link. <strong>Copy it now</strong>: it's shown only once.</li>
+<li>Tap <strong>Send a test alert</strong>. Within a few seconds it appears at the top of the Bridge.</li>
+<li>Connect the sensor to the link. Open <strong>How to connect a sensor</strong> for the details:<ul>
+<li><strong>IFTTT</strong> works with SmartThings, Ring, Alexa, Google Home and many trackers. Make an applet: if your sensor triggers, then <em>Webhooks → Make a web request</em> with the link, method POST, content type application/json, and a body such as <code>{"message":"opened"}</code>.</li>
+<li><strong>Home Assistant</strong>: add a <code>rest_command</code> with the link and <code>method: post</code>, and call it from an automation.</li>
+<li>Anything else that can open a web address can use the link. Adding <code>?message=…</code> sets the words shown.</li>
+</ul>
+</li>
+</ol>
+<p>Each sensor shows when it last alerted. <strong>Remove</strong> switches its link off for good.</p>
+<p><strong>Honest limits:</strong> anyone who has a sensor's link can raise an alert, so keep links private, and remove a sensor if a link gets out. Alerts reach an open Bridge within about 30 seconds. A sensor only alerts if its own app or hub is working and online. This adds to supervision; it never replaces it.</p>
 <p><a id="videos-games-insights"></a></p>
-<h2>11. Videos, sound games and what they tell you</h2>
+<h2>12. Videos, sound games and what they tell you</h2>
 <h3>A video board you choose</h3>
 <p>Your child sees <strong>only</strong> the videos you add. There is no search, no autoplay, no suggested videos and no comments.</p>
 <ol>
@@ -199,6 +230,13 @@
 <li>Paste a YouTube link, give it a short name and an emoji, and tick what it's about (for example <em>Trains and cars</em>). Add a few words to talk about, such as "choo choo, whistle".</li>
 <li>On your child's device the videos appear under <strong>My videos</strong>. Your child presses <strong>Play</strong> when ready. At the end the screen is covered, so YouTube's "watch next" pictures never show, and a <strong>Talk about it</strong> board appears with words from the video.</li>
 </ol>
+<h3>YouTube channels</h3>
+<p>Below the single-video form, <strong>YouTube channels</strong> lets you link a whole channel your child loves, so its new videos show up without you adding each one. <strong>Ms Rachel</strong> is linked for you the first time the Bridge opens on a device. <strong>Hide</strong> or <strong>Unlink</strong> her like any other channel, and <strong>Add Ms Rachel</strong> brings her back.</p>
+<ol>
+<li>On YouTube, open the channel, then its About section, then <strong>Share channel</strong> and <strong>Copy channel ID</strong> (or copy the link that has <code>/channel/UC…</code> in it).</li>
+<li>Paste it under <strong>Channel link</strong>. Give the button a name and an emoji if you like, and choose <strong>Link channel</strong>.</li>
+</ol>
+<p>On your child's device, <strong>My videos</strong> gets an <strong>All of …</strong> button that plays the channel's videos in order, plus a button for each of its newest videos (up to 6). New videos appear by themselves; the Bridge checks every few hours. Single videos you add yourself work exactly as before, and your child still sees only what you chose.</p>
 <p>Videos play through YouTube's privacy-enhanced player (youtube-nocookie.com). Your child doesn't need, and shouldn't use, a Google account. Video pictures (thumbnails) are off by default because they load from YouTube; tick <strong>Show video pictures</strong> to turn them on.</p>
 <h3>Sound games</h3>
 <p>Under <strong>Sound games</strong> your child can play:</p>
@@ -239,7 +277,7 @@
 <li><strong>What it doesn't do:</strong> no mouth or tongue exercises (research doesn't support them for speech), no smile detection, and no recording. The microphone is only measured for loudness and pitch, on the device, and only if you allow it in Videos and games.</li>
 </ul>
 <p><a id="potty-path"></a></p>
-<h2>12. Potty Path: toilet learning and asking to go</h2>
+<h2>13. Potty Path: toilet learning and asking to go</h2>
 <p>Potty Path is a calm toilet routine for children who are learning to use the toilet, often over months or years. Its main goal is to give your child a way to say "I need to go". Asking always counts most, more than a pee in the toilet. It's a support tool, not medical advice. Talk to your child's doctor first, because constipation is very common in autistic children and needs treating before anything else.</p>
 <h3>Turning it on</h3>
 <ol>
@@ -331,7 +369,7 @@ It also has <strong>Graduated</strong>, which retires Potty Path but keeps the T
 <li><strong>Fading out.</strong> From stage 4 the companion only comes to celebrate; in stage 5 it lives in the World. Print the <strong>World book</strong> as a keepsake, and a <strong>progress sheet</strong> for your SLP. <strong>Out and about</strong> turns off voice and chimes in unfamiliar bathrooms.</li>
 </ul>
 <p><a id="pairing-devices"></a></p>
-<h2>13. Pairing devices</h2>
+<h2>14. Pairing devices</h2>
 <p>Pairing links your child's tablet to your Bridge so alerts, words and rules stay in step.</p>
 <ol>
 <li>On your Bridge, open <strong>Account and devices</strong> and choose to pair a device. A QR code and a 6-digit code appear.</li>
@@ -342,17 +380,17 @@ It also has <strong>Graduated</strong>, which retires Potty Path but keeps the T
 <p><figure><img src="screenshots/pairing-desktop.png" alt="Pairing with a QR code" loading="lazy" /><figcaption>Pairing with a QR code</figcaption></figure>
 <figure><img src="screenshots/devices-desktop.png" alt="The device list" loading="lazy" /><figcaption>The device list</figcaption></figure></p>
 <p><a id="accounts"></a></p>
-<h2>14. Accounts, email checks and password reset</h2>
+<h2>15. Accounts, email checks and password reset</h2>
 <p>You don't need an account to use LuminAAC on one device. An account helps when several people or devices are involved.</p>
 <ul>
-<li><strong>Create an account</strong> on <strong>Account and devices</strong> with your email and a password of at least 10 characters. A short sentence works well. You can also add a passkey (fingerprint or face unlock) later.</li>
-<li><strong>Check your email.</strong> We send a link to confirm it's really you. Open it within 24 hours.</li>
+<li><strong>Create an account</strong> on <strong>Account and devices</strong> with your email and a password of at least 10 characters. A short sentence works well. The server address is already filled in. You can also add a passkey (fingerprint or face unlock) later.</li>
+<li><strong>Check your email.</strong> We send a link to confirm it's really you. Open it within 24 hours. <em>For now, the hosted server can't send email yet, so these emails don't arrive. Add a passkey and keep your password somewhere safe.</em></li>
 <li><strong>Forgot your password?</strong> Choose it on the sign-in form. We email a reset link that works once, for 30 minutes. After you choose a new password you're signed out everywhere, then you can sign in again.</li>
 </ul>
 <p><figure><img src="screenshots/verify-pending-desktop.png" alt="Waiting for the email check" loading="lazy" /><figcaption>Waiting for the email check</figcaption></figure>
 <figure><img src="screenshots/reset-dialog-desktop.png" alt="Choosing a new password" loading="lazy" /><figcaption>Choosing a new password</figcaption></figure></p>
 <p><a id="inviting-your-team"></a></p>
-<h2>15. Inviting your team and roles</h2>
+<h2>16. Inviting your team, roles and team chat</h2>
 <p>On the <strong>Team</strong> page you can bring in the people in your child's circle.</p>
 <ol>
 <li>Choose <strong>Invite someone</strong>, enter their name, and pick a role: <strong>teacher</strong>, <strong>therapist</strong> or <strong>family</strong>.</li>
@@ -366,8 +404,17 @@ It also has <strong>Graduated</strong>, which retires Potty Path but keeps the T
 <li><strong>Family:</strong> a lighter view, ideal for grandparents.</li>
 </ul>
 <p>Use <strong>See it as</strong> to check exactly what someone else sees. Anyone can add a note to the shared log so the whole team stays in the loop.</p>
+<h3>Team chat</h3>
+<p><strong>Team chat</strong> sits at the top of the <strong>Team</strong> page. It's one conversation for everyone in your child's circle: "He slept badly, go gently today," "We tried the snack board at 10 and it worked."</p>
+<ol>
+<li>Create your family account on <strong>Account and devices</strong> (see <a href="#accounts">section 15</a>).</li>
+<li>Under <strong>Members</strong>, pick a role (teacher, therapist, family member or co-parent) and choose <strong>Create invite code</strong>. Each code works once, for 7 days.</li>
+<li>Send the code to the person. They open <a href="https://luminaac-web.vercel.app/bridge.html">the Bridge</a> on their own phone or computer, go to <strong>Account and devices</strong>, create an account with the code under <strong>Invite code, if someone invited you</strong>, and then see the chat on <strong>Team</strong>.</li>
+</ol>
+<p>Messages show who wrote them and their role. A dot on <strong>Circle</strong> (or <strong>Team</strong>) means there's something new. Press Ctrl+Enter (or Cmd+Enter) to send from a keyboard. A parent can delete any message.</p>
+<p><strong>Honest limits:</strong> chat is never shown on your child's device. New messages arrive within about 30 seconds while the Bridge is open; there are no phone notifications yet. Messages are kept on the family server (the last 500), and a copy of the last 200 stays on each device so you can read them offline.</p>
 <p><a id="feeling-estimates"></a></p>
-<h2>16. Feeling estimates</h2>
+<h2>17. Feeling estimates</h2>
 <p>LuminAAC can <strong>estimate</strong> how your child might be feeling from their voice (pitch, loudness and pace), and from their face in a video if you allow it.</p>
 <ul>
 <li>These are <strong>guesses</strong>, always labelled as estimates.</li>
@@ -379,7 +426,7 @@ It also has <strong>Graduated</strong>, which retires Potty Path but keeps the T
 <p><figure><img src="screenshots/emotion-desktop.png" alt="Feeling estimates" loading="lazy" /><figcaption>Feeling estimates</figcaption></figure>
 <figure><img src="screenshots/face-try-desktop.png" alt="Trying the face estimate" loading="lazy" /><figcaption>Trying the face estimate</figcaption></figure></p>
 <p><a id="shared-learning"></a></p>
-<h2>17. Shared learning and privacy</h2>
+<h2>18. Shared learning and privacy</h2>
 <p>Under <strong>Privacy → Help improve suggestions for everyone</strong> you can join shared learning. It's <strong>off unless you turn it on</strong>.</p>
 <ul>
 <li>Your device learns which suggestions tend to help, right here.</li>
@@ -389,18 +436,18 @@ It also has <strong>Graduated</strong>, which retires Potty Path but keeps the T
 </ul>
 <figure><img src="screenshots/fl-desktop.png" alt="Shared learning" loading="lazy" /><figcaption>Shared learning</figcaption></figure>
 <p><a id="installing-it-as-an-app"></a></p>
-<h2>18. Installing it as an app</h2>
+<h2>19. Installing it as an app</h2>
 <p>You can add LuminAAC to your home screen so it opens like an app and works offline.</p>
 <p>Open <a href="https://luminaac-web.vercel.app">luminaac-web.vercel.app</a> (My Voice) or <a href="https://luminaac-web.vercel.app/bridge.html">the Bridge</a> first.</p>
 <ul>
 <li><strong>Chrome or Edge (Android, Windows, Mac):</strong> choose <strong>Install app</strong> in the Bridge header, or the install icon in the address bar.</li>
 <li><strong>iPhone or iPad (Safari):</strong> tap Share, then <strong>Add to Home Screen</strong>.</li>
 </ul>
-<p><strong>Updates.</strong> The app updates itself the next time it's opened online. If a page looks out of date, close every LuminAAC tab and open it again.</p>
-<p><strong>Running your own copy.</strong> The public app is a static website hosted on Vercel. Schools or families who want their own copy can host the same files on any web host (see the project README). Sync, alerts and share links need the separate LuminAAC server, which isn't part of the hosted website.</p>
+<p><strong>Updates.</strong> The app updates itself the next time it's opened online. The Bridge reloads itself once when an update arrives. My Voice waits until it's out of sight, so your child is never interrupted mid-sentence. If a page still looks out of date, close every LuminAAC tab and open it again.</p>
+<p><strong>Running your own copy.</strong> The public app is hosted on Vercel, and its family server (for accounts, sync, alerts, chat and sensors) runs at the same address. Schools or families who want their own copy can host the files themselves, with or without the server (see the project README).</p>
 <p>Installed or not, the background location limits in <a href="#safe-zones-and-consent">Safe zones</a> still apply.</p>
 <p><a id="access-modes"></a></p>
-<h2>19. Access modes: large, switch and dwell</h2>
+<h2>20. Access modes: large, switch and dwell</h2>
 <p>Under <strong>Vocabulary → How My Voice responds</strong>, choose what suits your child's body and attention.</p>
 <ul>
 <li><strong>Large buttons.</strong> Fewer, bigger buttons for children who need bigger targets.</li>
@@ -409,7 +456,7 @@ It also has <strong>Graduated</strong>, which retires Potty Path but keeps the T
 </ul>
 <p>Ask your child's speech and language therapist or occupational therapist which mode to start with.</p>
 <p><a id="privacy-export-and-delete"></a></p>
-<h2>20. Privacy, export and delete</h2>
+<h2>21. Privacy, export and delete</h2>
 <p>The <strong>Privacy</strong> page puts you in control.</p>
 <ul>
 <li><strong>Keep recordings for</strong> 7, 30 or 90 days, or forever.</li>
@@ -417,30 +464,34 @@ It also has <strong>Graduated</strong>, which retires Potty Path but keeps the T
 <li><strong>Restore</strong> loads a file you exported earlier.</li>
 <li><strong>Video and game history</strong> (watch time, replays, <strong>Talk about it</strong> taps and game turns) stays on the device where it happened. It is never synced and never sent to YouTube. The server only carries your video list and game settings.</li>
 <li><strong>Delete all moments, signals and history</strong> wipes moments, signals, and video and game history from this device. It can't be undone, so export first if you're unsure.</li>
-<li><strong>Sync, alerts and share links</strong> is optional. It connects to a LuminAAC server your family or school runs. Recordings never leave the device.</li>
+<li><strong>Sync, alerts, chat and share links</strong> are optional. They use the LuminAAC family server, which runs with the app, or one your school runs. Your family's data on the hosted server is kept in a database at Upstash, a storage company used by the app's host. Recordings, moments' sound and video, the toilet log and watch history never leave the device.</li>
 <li><strong>Microphone.</strong> Moments and sound games only use it when you turn them on. Sound games measure loudness and pitch in memory and never record.</li>
 <li><strong>Videos.</strong> Play through YouTube's privacy-enhanced player. When a video plays, YouTube receives the request and may store data in the browser under its own policy. Your child doesn't need a Google account.</li>
 </ul>
 <figure><img src="screenshots/sync-desktop.png" alt="Privacy controls" loading="lazy" /><figcaption>Privacy controls</figcaption></figure>
 <p><a id="troubleshooting-and-questions"></a></p>
-<h2>21. Troubleshooting and questions</h2>
+<h2>22. Troubleshooting and questions</h2>
 <p><strong>My Voice doesn't speak.</strong> Check the volume and that the device isn't on silent. In Settings → Voice, try another voice or <em>Device default</em>.</p>
 <p><strong>The microphone or camera won't start.</strong> The browser asks for permission the first time. If you said no, open the site settings (the padlock in the address bar) and allow it. LuminAAC must be opened from a secure address (https) for this to work.</p>
 <p><strong>I'm not getting alerts.</strong> Check both devices are paired and online, and that <em>Show "I need help" and "Take me home" buttons</em> is on. Sign out and in again on the Bridge if needed.</p>
 <p><strong>The safe zone alert didn't come.</strong> My Voice has to be open on the screen. See the honest limits in <a href="#safe-zones-and-consent">Safe zones</a>.</p>
 <p><strong>I didn't get the email.</strong> Check your spam folder, wait a few minutes, then ask for a new link.</p>
 <p><strong>The reset link says it doesn't work.</strong> Links work once and expire after 30 minutes. Ask for a new one.</p>
+<p><strong>Team chat says I need an account.</strong> Chat only works between people with accounts in the same family. Create yours on <strong>Account and devices</strong>, then invite the others with a code (see <a href="#inviting-your-team">Team chat</a>).</p>
+<p><strong>A sensor alert didn't come.</strong> Tap <strong>Send a test alert</strong> on the sensor. If the test arrives, the problem is between the sensor and its app or hub: check the link was pasted in full and the method is POST. If you've lost the link, remove the sensor and add it again.</p>
+<p><strong>A channel won't link.</strong> Paste the channel's link that has <code>/channel/UC…</code> in it, or its channel ID. Links with an @name only work once a YouTube key is set on the server.</p>
+<p><strong>The Bridge reloaded by itself.</strong> That's an update arriving. It happens once, and nothing you typed in a saved form is lost.</p>
 <p><strong>A feeling estimate is wrong.</strong> That's fine. Change it. Only your confirmed answers count.</p>
 <p><strong>A video won't play.</strong> Videos need the internet, even when the rest of LuminAAC works offline. If it says the video can't play here, its owner doesn't allow embedding; pick another one. Your child can still use <strong>Talk about it</strong>.</p>
 <p><strong>The video list on my child's device is empty.</strong> Check <strong>Show "My videos" in My Voice</strong> is on in <strong>Videos and games</strong>, and that both devices are paired and synced. On a single device, make sure you're using the same browser.</p>
 <p><strong>Do the sound games need the microphone?</strong> No. The microphone is off until you turn it on in <strong>Sound game settings</strong>. Without it, your child taps <strong>I did it</strong> or the drum. Background noise can count as a try, and that's fine: every try is celebrated.</p>
 <p><strong>Insights show no videos or games.</strong> Watch history and game turns stay on the device where they happened. Open the Bridge in the same browser on your child's device to see them, or wait for a future version with opt-in summaries.</p>
-<p><strong>Does it work offline?</strong> Yes, once it has been opened online once, including this guide. Downloaded voices and models also work offline. Videos, maps, finding water and sync need the internet.</p>
+<p><strong>Does it work offline?</strong> Yes, once it has been opened online once, including this guide. Downloaded voices and models also work offline. Videos, maps, finding water, chat, sensors and sync need the internet.</p>
 <p><strong>Is my child's data sold or shared?</strong> No. It stays on your device unless you connect it, and even then recordings stay on the device.</p>
 <p><strong>Can my child break anything?</strong> The caregiver area needs a two-second press, and the Bridge is separate. Deleting needs a confirmation.</p>
 <p><strong>Who can I ask for help?</strong> Your child's speech and language therapist is a great partner. For app problems, see the project page.</p>
 <p><a id="quick-start"></a></p>
-<h2>22. Quick start one-pager</h2>
+<h2>23. Quick start one-pager</h2>
 <div class="one-pager">
 <p><strong>1. Set up (2 minutes).</strong> Open the Bridge, type your child's name, then yours and your role.</p>
 <p><strong>2. Give your child My Voice.</strong> Open My Voice on their tablet. Tap words, tap the strip to speak. Hold <strong>Caregiver</strong> for 2 seconds for grown-up settings.</p>
@@ -448,12 +499,13 @@ It also has <strong>Graduated</strong>, which retires Potty Path but keeps the T
 <p><strong>4. Say what it meant.</strong> Open the moment, answer <strong>What did that mean?</strong>, and save.</p>
 <p><strong>5. Confirm signals.</strong> On <strong>Signals</strong>, say yes or no to what LuminAAC noticed. Your answer always wins.</p>
 <p><strong>6. Stay safe (optional).</strong> Turn on the help buttons, pair your phone, and add safe zones with consent. Draw a zone by hand, and turn on water danger zones. Zones only work while My Voice is open.</p>
-<p><strong>7. Bring in your team (optional).</strong> On <strong>Team</strong>, invite a teacher, therapist or family member with the right role.</p>
+<p><strong>7. Bring in your team (optional).</strong> Create a family account on <strong>Account and devices</strong>, make an invite code for each teacher, therapist or family member, and talk in <strong>Team chat</strong>.</p>
 <p><strong>8. Stay in control.</strong> On <strong>Privacy</strong>, choose how long to keep recordings, export a backup, or delete everything.</p>
-<p><strong>9. Videos and games (optional).</strong> In <strong>Videos and games</strong>, paste a few favourite YouTube links and add words to talk about. Try a sound game together. See what it shows on <strong>Insights</strong>, and tap <strong>Print a summary for a therapist</strong> before appointments.</p>
+<p><strong>8a. Sensors and trackers (optional).</strong> On <strong>Safety</strong>, add your child's tracker as a one-tap button, and give door or pool sensors a link so their alarms ring in the Bridge.</p>
+<p><strong>9. Videos and games (optional).</strong> In <strong>Videos and games</strong>, paste a few favourite YouTube links and add words to talk about, or link a whole channel (Ms Rachel is already there). Try a sound game together. See what it shows on <strong>Insights</strong>, and tap <strong>Print a summary for a therapist</strong> before appointments.</p>
 <p><em>Remember: feeling guesses are only estimates, and you are the expert on your child.</em></p>
 </div>
-    <footer class="g-foot"><p>LuminAAC caretaker guide, version 0.9 (October 2026). Live app: <a href="https://luminaac-web.vercel.app">luminaac-web.vercel.app</a>. Fallback pictures: OpenMoji (openmoji.org), CC BY-SA 4.0. Font: Atkinson Hyperlegible Next.</p></footer>
+    <footer class="g-foot"><p>LuminAAC caretaker guide, version 0.12 (November 2026). Live app: <a href="https://luminaac-web.vercel.app">luminaac-web.vercel.app</a>. Fallback pictures: OpenMoji (openmoji.org), CC BY-SA 4.0. Font: Atkinson Hyperlegible Next.</p></footer>
   </main>
 </body>
 </html>

@@ -5,7 +5,7 @@
 <h3 align="center">An AAC app for nonverbal children that learns the child's own language from the people who love them.</h3>
 
 <p align="center">
-  Version 0.9 &middot; vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
+  Version 0.12 &middot; vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
 </p>
 
 <p align="center">
@@ -21,8 +21,8 @@ Many nonverbal children already communicate: a hum that means "more", a hand fla
 
 Two connected experiences:
 
-- **My Voice** (`index.html`): the child's talker. A motor-stable core-word board with speech, quick phrases, prediction, proactive suggestions from learned signals, help buttons, **My videos** (only caregiver-chosen videos, then a "Talk about it" board) and four gentle **Sound games**.
-- **The Bridge** (`bridge.html`): the caregiver portal. Catch a 15-second moment, say what it meant, and watch My Voice start offering the right words. Includes a signal library, vocabulary rules, stories, a **Videos and games** tab, insights with **Interests and history** and a printable therapist summary, sharing, safe zones (circles, hand-drawn shapes and water danger zones) and privacy controls.
+- **My Voice** (`index.html`): the child's talker. A motor-stable core-word board with speech, quick phrases, prediction, proactive suggestions from learned signals, help buttons, an "I need the toilet" button, **My videos** (only caregiver-chosen videos and YouTube channels, then a "Talk about it" board), four gentle **Sound games** and **Sound Path**.
+- **The Bridge** (`bridge.html`): the caregiver portal. Catch a 15-second moment, say what it meant, and watch My Voice start offering the right words. Includes a signal library, vocabulary rules, stories, a **Videos and games** tab, insights with **Interests and history** and a printable therapist summary, sharing, **team chat**, safe zones (circles, hand-drawn shapes and water danger zones), **sensors and wearable trackers**, Potty Path, Sound Path and privacy controls.
 
 A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as [`guide.html`](https://luminaac-web.vercel.app/guide.html), linked from the Bridge header and the My Voice caregiver area, and cached for offline use) walks families through everything, with a printable quick-start one-pager.
 
@@ -54,6 +54,8 @@ A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as 
 | 6 | v0.8 | Water danger zones from OpenStreetMap (Overpass) with a tunable buffer and urgent alerts, freehand safe and danger zones drawn by finger or stylus (pressure, palm rejection, simplification), shape editing with keyboard support |
 | 7 | v0.9 | Caregiver-chosen video board with a locked-down privacy-enhanced YouTube player and a "Talk about it" board, four gentle sound games (copy my sound with an on-device loudness and pitch meter, sound-to-picture, first sounds, turn-taking) with stickers, streaks, sensory settings and weekly goals, Interests and history insights (interest map, word growth, words to try, mood links) and a printable therapist summary. See [the concept](docs/CONCEPT-INTERESTS-INSIGHTS.md) |
 | 9 | v0.11 | **Sound Path and Potty Path mechanics.** Sound Path: a research-checked voice ladder (any voice → long sounds → syllables → words → two words), three games (Sing and Tap, Word Train, Sound World), "Say it with me" after board taps, a grown-up judge bar, an adaptive practice engine (blocked then mixed, fading praise, challenge point), a sound inventory and an SLP sheet. Potty Path: six stages with recommend-then-confirm, signal timing (telling first earns most; late tellings are thanked but never paid better), a pure session planner, a "Next: toilet" card and offer, calm sit activities, token phases with reward choice, and fading (World book, progress sheet). See [Sound Path](docs/SOUND-PATH.md) and [the mechanics review](docs/POTTY-PATH-MECHANICS.md) |
+| 10 | v0.11.1 to v0.11.4 | **Redesign R1, behind a switch** (`?redesign=1`). Five Bridge hubs (Home, Programs, Progress, Circle, Safety) over the 12 tabs, a scrolling bottom bar on phones and a left rail on larger screens, and old links still work. My Voice gets Talk · Calm · My day · Play, a Now/Next ribbon and the Bridge link inside the Caregiver area. Fast water search reads the water colour from OpenStreetMap tiles in seconds, then swaps in named Overpass results, asking all mirrors at once. See [the redesign proposal](docs/REDESIGN.md) |
+| 11 | v0.12 | **Family server on Vercel** (`api/index.js`, data mirrored to Upstash Redis by `backend/mirror.js`). **Team chat** for parents, teachers, therapists and family. **Sensors and wearables**: private webhook links for door, gate, pool and bed sensors (IFTTT, Home Assistant) with urgent alerts, plus one-tap tracker buttons. **YouTube channels** next to single videos, playing a channel's uploads in the privacy-enhanced player. Self-reloading updates |
 | 8 | v0.10 | **Potty Path**: a toilet-learning and communication module. An always-working "I need the toilet" button, a calm Now/Next step path with a companion, a silent sit timer with a body check and hard caps, add-only tokens and a World that only grows, a one-handed caregiver console with coaching scripts, medical red flags that pause the plan, explainable hints, printable schedule, school and doctor sheets, calendar reminders, QR handoff and opt-in end-to-end encrypted sync. See [the blueprint](docs/POTTY-PATH.md) |
 
 ## Architecture
@@ -73,19 +75,23 @@ flowchart LR
     BR --> EMO[emotion.js<br/>prosody + face]
     BR --> FL[fl-core.js<br/>local training, DP, masks]
   end
-  subgraph Optional backend - Node 18, zero dependencies
-    API[server.js] --> ACC[accounts.js<br/>webauthn.js]
+  subgraph Family server - Node 18, zero dependencies
+    VF[api/index.js<br/>Vercel function] --> API[server.js<br/>sync, alerts, chat, sensors]
+    API --> ACC[accounts.js<br/>webauthn.js]
     API --> FLS[flserver.js<br/>FedAvg, Shamir unmasking]
     API --> MAIL[mailer.js<br/>SMTP]
-    API --> ST[(store.js<br/>backend/data)]
+    API --> YTL[youtube.js<br/>channel lookup]
+    API --> ST[(store.js<br/>JSON files)]
+    VF --> MIR[mirror.js] --> RD[(Upstash Redis)]
   end
+  SEN[Sensors, IFTTT,<br/>Home Assistant] -- webhook --> API
   MV <-- sync, alerts, pairing --> API
   BR <-- sync, alerts, share links --> API
   FL -- masked weight deltas --> FLS
   AI -. models, first use only .-> HF[(Hugging Face Hub)]
 ```
 
-Everything works without the backend. The backend adds sync between devices, live alerts, share links, accounts and federated learning.
+Everything works without the backend. The backend adds sync between devices, alerts, team chat, sensor webhooks, share links, accounts, YouTube channel lookups and federated learning. On the live site it runs at the same address as the app (`/api`).
 
 ## Quick start
 
@@ -102,14 +108,15 @@ The microphone, camera and service worker need `localhost` or HTTPS.
 
 ### Hosting
 
-The live app at <https://luminaac-web.vercel.app> is the static front end deployed on Vercel from `main`, with no build step:
+The live app at <https://luminaac-web.vercel.app> is deployed on Vercel from `main`, with no build step. Pushing to `main` deploys it.
 
 - `vercel.json` serves the repository root as is, and sends `sw.js` and the web manifests with `Cache-Control: no-cache` so updates reach installed apps. `sw.js` also gets `Service-Worker-Allowed: /`.
-- `.vercelignore` keeps `backend/`, `native/`, `tests/`, `docs/` and Markdown files (except `PRIVACY.md` and `THIRD-PARTY.md`) off public hosting. `screenshots/` is served because the in-app guide shows them.
-- Any static host works the same way. Serve over HTTPS and don't cache `sw.js` long-term.
-- The backend isn't part of the Vercel deployment. Run it separately if you need sync, alerts or share links.
+- **The family server** runs as one Vercel function, `api/index.js`, and `vercel.json` rewrites every `/api/*` path to it. It is the unchanged `backend/server.js`. Vercel's disk is temporary, so `backend/mirror.js` copies the server's JSON files to and from Upstash Redis around each request (one `HGETALL` per request, and only changed files are read or written). It needs `KV_REST_API_URL` and `KV_REST_API_TOKEN`, which the Upstash integration sets. Without them, `/api` answers 503 except `/api/health` and `/api/youtube`.
+- **Hosted limits:** a held-open alert stream can't reach other instances, so the Bridge polls `/api/updates` every 30 seconds while visible (alerts and chat in one call). The quiet-device check runs on requests rather than a timer. Mail stays in the outbox until `MAIL_MODE=smtp` and SMTP settings are added. Optional `YOUTUBE_API_KEY` (YouTube Data API v3) enables @handle lookups and per-video titles when YouTube's public feed is down.
+- `.vercelignore` keeps `native/`, `tests/`, `docs/`, `backend/test.mjs`, `backend/data/` and Markdown files (except `PRIVACY.md` and `THIRD-PARTY.md`) off public hosting. `screenshots/` is served because the in-app guide shows them.
+- Any static host works for the front end alone. Serve over HTTPS and don't cache `sw.js` long-term. Point the Bridge at your own server under Account and devices.
 
-When you change any shipped file, bump `VERSION` in `sw.js` (currently `luminaac-v0.9.1`) so devices pick up the new copy. To rebuild `guide.html` from `docs/CARETAKER-GUIDE.md`, run `python3 tools/mkguide.py` (needs the Python `markdown` package).
+When you change any shipped file, bump `VERSION` in `sw.js` (currently `luminaac-v0.12.2`) so devices pick up the new copy. When an update takes over, `pwa.js` reloads the Bridge once, and My Voice only while it is out of sight. To rebuild `guide.html` from `docs/CARETAKER-GUIDE.md`, run `python3 tools/mkguide.py` (needs the Python `markdown` package).
 
 ### Backend (optional)
 
@@ -118,16 +125,19 @@ cd backend
 node server.js      # Node 18+, no npm install; listens on :3001
 ```
 
-Then in the Bridge go to Privacy, then "Sync, alerts and share links", enter `http://localhost:3001`, make a family key and connect. Mail settings and environment variables are in [`backend/README.md`](backend/README.md).
+Then in the Bridge go to Account and devices, keep `http://localhost:3001` as the server address, and create an account (or connect a family key under Privacy, then "Sync, alerts and share links"). Mail settings and environment variables are in [`backend/README.md`](backend/README.md).
 
 ### Tests
 
 ```bash
 cd backend
-node test.mjs       # 119 API tests: accounts, passkeys, pairing, mail, reset, alerts, federated learning with dropouts
+node test.mjs       # 155 API tests: accounts, passkeys, pairing, mail, alerts, federated learning, chat, sensors, YouTube, Redis mirror
 cd ..
-node tests/geo-water.test.mjs   # 34 tests: Overpass parsing, clipping, polygon distance, danger alerts
+node tests/geo-water.test.mjs         # 45 tests: Overpass parsing and racing, map-tile water scan, clipping, danger alerts
 node tests/interests-games.test.mjs   # 44 tests: YouTube links, embed lock-down, interest scoring, growth, digest, report, pitch, games
+node tests/potty.test.mjs             # 89 tests: Potty Path logic
+node tests/sound.test.mjs             # 35 tests: Sound Path ladder and practice engine
+node tests/nav.test.mjs               # 23 tests: redesign hubs, old links, the switch, Now/Next, back to Caregiver
 ```
 
 ## Project structure
@@ -138,16 +148,19 @@ node tests/interests-games.test.mjs   # 44 tests: YouTube links, embed lock-down
 | `bridge.html`, `bridge.js`, `bridge.css` | The Bridge caregiver portal |
 | `access.js` | Access modes, board size, dwell and switch scanning for My Voice |
 | `bridge-plus.js` | Bridge phase 2: alert bar, Stories tab, access settings, extra insights, sync and share links |
-| `backend/` | Zero-dependency Node API (sync, share, alerts, predictions, accounts, passkeys, devices, federated learning) |
+| `backend/` | Zero-dependency Node API (sync, share, alerts, chat, sensors, predictions, accounts, passkeys, devices, federated learning); `mirror.js` keeps its files in Redis when hosted, `youtube.js` looks up channels |
+| `api/index.js`, `package.json` | The family server as a Vercel function at `/api` |
+| `bridge-chat.js`, `bridge-iot.js`, `bridge-yt.js` | v0.12: team chat, sensors and wearable trackers, YouTube channels |
+| `nav-core.js`, `bridge-hubs.js`, `myvoice-redesign.js`, `redesign.css` | Redesign R1 behind `?redesign=1`: hubs, Now/Next, Play, back to Caregiver |
 | `bridge-p3.js`, `phase3.css` | Bridge phase 3: Safety and Account tabs, feeling estimates, shared learning |
 | `myvoice-p3.js` | My Voice phase 3: safe-zone watching, pairing by QR or code, child-scoped pull |
 | `geo.js`, `emotion.js`, `fl-core.js` | Geofence maths, on-device prosody and face estimates, federated learning core (shared with the backend) |
-| `water.js`, `bridge-p6.js`, `phase6.css`, `vendor/simplify.js` | Phase 6: water lookup and clipping, freehand drawing and shape editing, Water card |
+| `water.js`, `water-tiles.js`, `bridge-p6.js`, `phase6.css`, `vendor/simplify.js` | Phase 6: water lookup (map-tile colour scan, then Overpass), clipping, freehand drawing and shape editing, Water card |
 | `interests.js`, `games.js`, `bridge-p7.js`, `myvoice-p7.js`, `phase7.css` | Phase 7: interest and history maths, sound games and pitch, Videos and games tab and Insights section, My videos and Sound games |
 | `sound-core.js`, `sound-store.js`, `myvoice-sound.js`, `bridge-sound.js`, `sound.css` | Phase 9 (Sound Path): the ladder and practice engine, the local practice log, the child games, the Bridge tab and styles |
 | `potty-core.js`, `potty-store.js`, `potty-icons.js`, `potty.js`, `bridge-potty.js`, `potty.css`, `backend/potty.js` | Phase 8 (Potty Path): event-log logic, local store and sync, step icons and companions, the child screen, the Bridge tab, styles, and the server relay |
 | `guide.html`, `guide.css`, `tools/mkguide.py` | In-app caretaker guide, built from `docs/CARETAKER-GUIDE.md` |
-| `vercel.json`, `.vercelignore` | Static hosting setup for the live app |
+| `vercel.json`, `.vercelignore` | Hosting setup for the live app and its `/api` function |
 | `motion-lite.js` | Restrained motion wrapper around Motion that respects reduced motion |
 | `vendor/` | Leaflet, qrcode-generator, jsQR, Motion and OpenMoji (see `THIRD-PARTY.md`) |
 | `ai.js`, `ai-worker.js` | Phase 4: transformers.js speech-emotion model and Kokoro voices in a Web Worker (lazy, cached, WebGPU or WASM) |
@@ -161,14 +174,15 @@ node tests/interests-games.test.mjs   # 44 tests: YouTube links, embed lock-down
 | `screenshots/` | Headless Chromium captures (desktop 1440×960, mobile 390×844) |
 | Docs | `PRIVACY.md`, `RESEARCH-OSS.md`, `THIRD-PARTY.md`, `PRODUCT-SPEC.md`, `TECH-DESIGN.md`, `DESIGN-SYSTEM.md`, `ACCESSIBILITY.md`, `GO-TO-MARKET.md`, `ROADMAP.md` |
 
-Documentation: [Caretaker guide](docs/CARETAKER-GUIDE.md), [Product spec](PRODUCT-SPEC.md), [Tech design](TECH-DESIGN.md), [Design system](DESIGN-SYSTEM.md), [Accessibility](ACCESSIBILITY.md), [Privacy](PRIVACY.md), [Open-source research](RESEARCH-OSS.md), [Go to market](GO-TO-MARKET.md), [Roadmap](ROADMAP.md).
+Documentation: [Caretaker guide](docs/CARETAKER-GUIDE.md), [Redesign proposal](docs/REDESIGN.md), [Product spec](PRODUCT-SPEC.md), [Tech design](TECH-DESIGN.md), [Design system](DESIGN-SYSTEM.md), [Accessibility](ACCESSIBILITY.md), [Privacy](PRIVACY.md), [Open-source research](RESEARCH-OSS.md), [Go to market](GO-TO-MARKET.md), [Roadmap](ROADMAP.md).
 
 ## Privacy
 
-- **Local first.** Settings and learned signals live in `localStorage` (`luminaac:*`); recordings live in IndexedDB (`luminaac-media`). Nothing leaves the device unless a caregiver turns on sync.
+- **Local first.** Settings and learned signals live in `localStorage` (`luminaac:*`); recordings live in IndexedDB (`luminaac-media`). Nothing leaves the device unless a caregiver turns on sync or creates a family account.
+- **The hosted family server.** Synced documents, alerts, team chat and sensor records are stored in Upstash Redis through the Vercel integration. Sensor links and share links are stored only as SHA-256 hashes. Recordings, the toilet log and watch history never go to the server, and team chat is never sent to the child's device.
 - **Caregivers decide.** Every feeling estimate and every learned signal needs a caregiver's confirmation before it counts.
 - **Opt-in everything.** Safe zones need explicit consent, the speech model and face estimate are off by default, and federated learning sends only clipped, noised and masked weight deltas with a per-device privacy budget.
-- **Videos and games.** Only caregiver-added videos play, through the privacy-enhanced YouTube player with no autoplay or suggestions. Watch history and game turns stay on the device where they happened; only the video list and game settings sync. The game microphone is optional and never records.
+- **Videos and games.** Only caregiver-added videos and linked channels play, through the privacy-enhanced YouTube player with no autoplay or suggestions. Watch history and game turns stay on the device where they happened; only the video list and game settings sync. The game microphone is optional and never records.
 - **Patterns, not diagnosis.** Insights and the therapist summary describe what happened; they never assess or diagnose.
 - **Retention and control.** 7, 30 or 90 days or forever, with export, restore and delete-all (moments, signals and video and game history) under Bridge, then Privacy.
 
@@ -187,20 +201,21 @@ See [ACCESSIBILITY.md](ACCESSIBILITY.md).
 
 Vanilla JavaScript ES modules, Web Audio, IndexedDB, Service Workers, WebAuthn and Web Crypto; a zero-dependency Node 18 backend.
 
-- [Leaflet](https://leafletjs.com) (BSD-2-Clause) and map data &copy; OpenStreetMap contributors (ODbL)
+- [Leaflet](https://leafletjs.com) (BSD-2-Clause), and map data and tiles &copy; OpenStreetMap contributors (ODbL), used for the map and the water-colour scan
+- [Upstash Redis](https://upstash.com) through the Vercel Marketplace, for the hosted server's storage
 - [OpenMoji](https://openmoji.org) fallback pictures (CC BY-SA 4.0)
 - [ARASAAC](https://arasaac.org) pictograms by Sergio Palao, Government of Aragón (CC BY-NC-SA 4.0, optional, loaded from the network)
 - [Human](https://github.com/vladmandic/human) by Vladimir Mandic (MIT)
 - [Motion](https://motion.dev) (MIT), [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) (MIT), [jsQR](https://github.com/cozmo/jsQR) (Apache-2.0)
 - [transformers.js](https://github.com/huggingface/transformers.js) and [kokoro-js](https://github.com/hexgrad/kokoro) (Apache-2.0), loaded only when turned on
-- YouTube IFrame Player API with the privacy-enhanced host, only for caregiver-chosen videos (YouTube API Services Terms)
+- YouTube IFrame Player API with the privacy-enhanced host, only for caregiver-chosen videos and channels, and YouTube's public channel feed or Data API v3 for channel lookups (YouTube API Services Terms)
 - Atkinson Hyperlegible Next by the Braille Institute (SIL OFL)
 
 Versions, files and licence notes are in [THIRD-PARTY.md](THIRD-PARTY.md).
 
 ## Roadmap
 
-Next up: a word strip during videos, topic word pages from interests, opt-in weekly summaries for the care team, word-level sound games on the device, photo symbols and recorded caregiver voices, two-switch and row/column scanning, end-to-end encryption of synced data, Web Push alerts, shipping the Capacitor apps for background geofencing, and validating the speech-emotion model with real caregivers. Longer term: on-device audio embeddings, gesture keypoints and a small per-child classifier. See [ROADMAP.md](ROADMAP.md).
+Next up: phone notifications for alerts and chat (Web Push), email from the hosted server, redesign R2 (a Log button, role views and a handoff card), a word strip during videos, topic word pages from interests, opt-in weekly summaries for the care team, word-level sound games on the device, photo symbols and recorded caregiver voices, two-switch and row/column scanning, end-to-end encryption of synced data, shipping the Capacitor apps for background geofencing, and validating the speech-emotion model with real caregivers. Longer term: on-device audio embeddings, gesture keypoints and a small per-child classifier. See [ROADMAP.md](ROADMAP.md).
 
 ## Contributing
 
