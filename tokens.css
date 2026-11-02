@@ -67,6 +67,24 @@
   --t-ui: 180ms;
   --t-glow: 420ms;
 
+  /* v0.13 direction (DESIGN.md): quiet sky behind words, dark bands frame, lit = chosen.
+     Defined here first; the redesign shell adopts them one surface at a time. */
+  --sky-top: #e4edf1;      /* background top */
+  --sky-low: #eef1ec;      /* background bottom, faint warm horizon */
+  --grain: 0.035;          /* static paper grain opacity */
+  --band-ink: var(--dusk-ink);   /* resting icon/label on a band */
+  --lit: var(--lumen);     /* the chosen item; never decoration */
+  --lit-ink: #1c2630;      /* text on lit, 8.3:1 */
+  --nav-h: 72px;           /* phone bottom bar */
+  --rail-w: 96px;          /* tablet side rail */
+  --indicator: 4px;        /* hub indicator bar */
+  --t-ambient: 40s;        /* slowest scene drift (Play, games only) */
+  --t-breath-in: 4s;
+  --t-breath-out: 6s;
+  /* Game scenes: mid-value, low-chroma, so tiles and OpenMoji sit on top */
+  --scene-dawn: #f1dcc9;   --scene-day: #d6e6ee;   --scene-dusk: #c9c3d9;
+  --scene-night: #26303f;  --scene-sea: #cfe3e2;   --scene-rails: #dcd6c8;
+
   color-scheme: light;
 }
 
@@ -94,6 +112,9 @@
   --ok: #5cc27e;
   --alert: #ec6d64;
   --lift: 0 1px 0 rgba(0, 0, 0, 0.4), 0 8px 20px rgba(0, 0, 0, 0.35);
+  --sky-top: #141c24; --sky-low: #182019; --grain: 0.05;
+  --scene-dawn: #3a2f2a; --scene-day: #22313b; --scene-dusk: #2c2838;
+  --scene-night: #10161e; --scene-sea: #1d2e2e; --scene-rails: #2e2b25;
   color-scheme: dark;
 }
 
@@ -113,6 +134,9 @@
     --wc-folder: #c8d3dc; --wc-folder-tint: #26323c;
     --ok: #5cc27e; --alert: #ec6d64;
     --lift: 0 1px 0 rgba(0, 0, 0, 0.4), 0 8px 20px rgba(0, 0, 0, 0.35);
+    --sky-top: #141c24; --sky-low: #182019; --grain: 0.05;
+    --scene-dawn: #3a2f2a; --scene-day: #22313b; --scene-dusk: #2c2838;
+    --scene-night: #10161e; --scene-sea: #1d2e2e; --scene-rails: #2e2b25;
     color-scheme: dark;
   }
 }
@@ -136,5 +160,6 @@
   --wc-negate: #ff5a50; --wc-little: #ffffff; --wc-folder: #ffffff;
   --band: 10px;
   --lift: none;
+  --sky-top: #000; --sky-low: #000; --grain: 0; --lit-ink: #000;
   color-scheme: dark;
 }
