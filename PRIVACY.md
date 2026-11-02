@@ -43,6 +43,15 @@ LuminAAC is used by children who can't easily tell us what they're comfortable w
 - Run the server over HTTPS.
 - End-to-end encryption of the synced document is on the roadmap.
 
+## New in v0.14
+- **Push alerts**: the server stores your browser's push address and sends only short alert texts. With encryption on, chat alerts say only "New message".
+- **Email summaries**: off by default. A weekly summary goes to the addresses you add, through the email provider the server is set up with. Families with encryption on get no summary, because the server can't read their data.
+- **Photos and recorded voices**: kept on the device. They're added to sync only as part of your family's data, and are encrypted when encryption is on.
+- **End-to-end encryption**: optional. Data is locked with AES-GCM on your devices before it's sent. The server stores only scrambled data and short-lived device requests, which are deleted after hand-over or after 24 hours. There's no recovery key.
+- **Listening ("Say the word")**: "On this device" keeps audio on the phone. "Browser listening" sends audio to Google or Apple's speech service, and the settings say so. Only the heard word is saved, never audio.
+- **Agreement check**: labels stay in your family data. The download has scrambled ids and rater letters, with no names, notes, places or times.
+- **Native app**: location in the background is used only for the geofences you draw. Microphone and camera are used only on the screens that ask for them.
+
 ## Sound Path practice data (v0.11)
 - No sound is ever recorded or stored. If you allow the microphone in Videos and games, it is only measured for loudness and pitch on the device, during a game.
 - The practice log (that a try happened, the game, and a grown-up's "got it / close / tried") lives under its own key (`luminaac:sound`) on the device that played. It is kept for a year, never synced, and never in share links or backups. **Delete practice data** removes it.

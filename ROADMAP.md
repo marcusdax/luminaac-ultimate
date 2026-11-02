@@ -1,5 +1,9 @@
 # Roadmap
 
+## v0.14: Reach, privacy and research
+- Done: push alerts (VAPID) and weekly email summaries; photo symbols and recorded caregiver voice; one- and two-switch scanning; optional end-to-end encryption with device approval; "Say the word" with on-device listening; Capacitor 8 native shell with background geofences (unsigned CI builds); blind caregiver agreement check with Cohen's kappa.
+- Next: run the validation study with 10–20 families; signed store builds; Open Board Format import and export; sound tags and sign learning behind flags (see docs/ML-CONCEPTS.md).
+
 ## v0.13: The simpler layout becomes the standard
 - The five-hub Bridge and the Talk · Calm · My day · Play My Voice from R1 are now on for every device. `?redesign=0` keeps the older tabs on a device that needs them.
 - The older Bridge header fits a phone, and its tab strip keeps the open tab in view.

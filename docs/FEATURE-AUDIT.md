@@ -60,6 +60,17 @@ Every feature the documents call built or available, checked against the running
 
 **Counts:** 38 features checked as built: 29 verified as they were and 9 fixed (doc claims corrected, plus the layout switch, the server error reply and the health version). 0 had to be newly implemented: everything the docs call built exists and works. 11 concept, roadmap or skipped rows, all labelled honestly.
 
+## v0.14 additions (checked November 2, 2026)
+| Feature | Where | Checked by |
+|---|---|---|
+| Photo symbols and recorded voice | Vocabulary, then **Photos and recorded voices** | symbols.test (6), browser check pf.py |
+| Switch scanning | Access | scan.test (19), pg/pg2/pg3 browser checks |
+| End-to-end encryption | Privacy | e2ee.test (19), backend tests, ph.py with two devices |
+| Say the word | Sound Path | asr.test (12), pi.py |
+| Native shell | `native/` | mobile-config.test (7), local `cap add android` |
+| Agreement check | Insights | labels.test (11), browser check at desktop and phone sizes |
+| Sound tags, sign learning | concept only | docs/ML-CONCEPTS.md |
+
 ## Other docs corrected
 - ROADMAP: "Now (this build, v0.6)" renamed "v0.6 (phase 4)"; polygon zones marked shipped (v0.8); v0.13 entry added.
 - README: the version table listed v0.10 after v0.11; reordered, v0.13 row added, redesign described as the default.

@@ -5,7 +5,7 @@
 <h3 align="center">An AAC app for nonverbal children that learns the child's own language from the people who love them.</h3>
 
 <p align="center">
-  Version 0.13 &middot; vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
+  Version 0.14 &middot; vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
 </p>
 
 <p align="center">
@@ -58,6 +58,7 @@ A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as 
 | 10 | v0.11.1 to v0.11.4 | **Redesign R1** (on by default since v0.13; `?redesign=0` for the older tabs). Five Bridge hubs (Home, Programs, Progress, Circle, Safety) over the 12 tabs, a scrolling bottom bar on phones and a left rail on larger screens, and old links still work. My Voice gets Talk · Calm · My day · Play, a Now/Next ribbon and the Bridge link inside the Caregiver area. Fast water search reads the water colour from OpenStreetMap tiles in seconds, then swaps in named Overpass results, asking all mirrors at once. See [the redesign proposal](docs/REDESIGN.md) |
 | 11 | v0.12 | **Family server on Vercel** (`api/index.js`, data mirrored to Upstash Redis by `backend/mirror.js`). **Team chat** for parents, teachers, therapists and family. **Sensors and wearables**: private webhook links for door, gate, pool and bed sensors (IFTTT, Home Assistant) with urgent alerts, plus one-tap tracker buttons. **YouTube channels** next to single videos, playing a channel's uploads in the privacy-enhanced player. Self-reloading updates |
 | 12 | v0.13 | **The simpler layout becomes the standard.** Hubs on the Bridge and Talk · Calm · My day · Play on My Voice for every device, the older header fits phones, and a full audit of the docs against the app ([FEATURE-AUDIT.md](docs/FEATURE-AUDIT.md)) |
+| 13 | v0.14 | **Reach, privacy and research.** Push alerts and email summaries, family photos and recorded voices on tiles, one- and two-switch scanning, optional end-to-end encryption with device approval codes, a "Say the word" game with on-device listening, a Capacitor 8 native shell with background geofences ([STORE-CHECKLIST.md](docs/STORE-CHECKLIST.md)), and a blind caregiver agreement check with kappa ([VALIDATION-STUDY.md](docs/VALIDATION-STUDY.md)). Sound tags and sign learning are concepts only ([ML-CONCEPTS.md](docs/ML-CONCEPTS.md)) |
 
 ## Architecture
 
@@ -117,7 +118,7 @@ The live app at <https://luminaac-web.vercel.app> is deployed on Vercel from `ma
 - `.vercelignore` keeps `native/`, `tests/`, `docs/`, `backend/test.mjs`, `backend/data/` and Markdown files (except `PRIVACY.md` and `THIRD-PARTY.md`) off public hosting. `screenshots/` is served because the in-app guide shows them.
 - Any static host works for the front end alone. Serve over HTTPS and don't cache `sw.js` long-term. Point the Bridge at your own server under Account and devices.
 
-When you change any shipped file, bump `VERSION` in `sw.js` (currently `luminaac-v0.13.0`) so devices pick up the new copy. When an update takes over, `pwa.js` reloads the Bridge once, and My Voice only while it is out of sight. To rebuild `guide.html` from `docs/CARETAKER-GUIDE.md`, run `python3 tools/mkguide.py` (needs the Python `markdown` package).
+When you change any shipped file, bump `VERSION` in `sw.js` (currently `luminaac-v0.14.0`) so devices pick up the new copy. When an update takes over, `pwa.js` reloads the Bridge once, and My Voice only while it is out of sight. To rebuild `guide.html` from `docs/CARETAKER-GUIDE.md`, run `python3 tools/mkguide.py` (needs the Python `markdown` package).
 
 ### Backend (optional)
 

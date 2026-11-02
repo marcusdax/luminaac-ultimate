@@ -2,7 +2,7 @@
 
 A friendly guide for parents, grandparents, carers, teachers and therapists. You don't need to be technical. Read the [quick start](#quick-start) if you only have five minutes, and come back to the rest when you need it.
 
-*This guide covers LuminAAC version 0.13 (November 2026). Open the app at [luminaac-web.vercel.app](https://luminaac-web.vercel.app): My Voice for your child, [the Bridge](https://luminaac-web.vercel.app/bridge.html) for you.*
+*This guide covers LuminAAC version 0.14 (November 2026). Open the app at [luminaac-web.vercel.app](https://luminaac-web.vercel.app): My Voice for your child, [the Bridge](https://luminaac-web.vercel.app/bridge.html) for you.*
 
 ## Contents
 
@@ -40,7 +40,7 @@ LuminAAC is a talker (an AAC app, short for augmentative and alternative communi
 
 You are your child's best translator. LuminAAC helps you share what you already know with the device and with the people around your child.
 
-**What's new in 0.13:** the simpler layout is now the standard on every device (Bridge pages grouped under Home, Programs, Progress, Circle and Safety; My Voice gets Talk, Calm, My day and Play), and the older layout's header fits a phone. **New in 0.12:** **team chat** for everyone in your child's circle (see [section 16](#inviting-your-team)), **sensors and wearable trackers** that can alert you (see [section 11](#sensors-and-wearables)), **YouTube channels** next to single videos, with Ms Rachel already linked (see [section 12](#videos-games-insights)), and water search that finds water from the map picture in seconds (see [section 10](#drawing-and-water)). The family server that makes chat, sync and alerts work now comes with the app, so there's nothing to install. **New in 0.11:** **Sound Path**, short voice games that build new sounds and words (see [Sound Path](#sound-path)), and Potty Path stages, a "Next: toilet" card, calm things to do while sitting and fairer rewards for telling (see [section 13](#potty-path)). **New in 0.10:** Potty Path, a calm toilet routine that teaches your child a way to say "I need to go" (see [section 13](#potty-path)). **New in 0.9:** a video board you choose, four gentle sound games, and an **Interests and history** section on Insights with a printable therapist summary (see [section 12](#videos-games-insights)). Version 0.8 added hand-drawn zones and water danger zones (see [section 10](#drawing-and-water)).
+**What's new in 0.14:** alerts on your phone and a weekly email summary, your own photos and recorded voice on any word, switch scanning for one or two switches, optional end-to-end encryption (Privacy page), a "Say the word" game in Sound Path, and a **Check how well we agree** card on Insights where each caregiver labels moments on their own. **New in 0.13:** the simpler layout is now the standard on every device (Bridge pages grouped under Home, Programs, Progress, Circle and Safety; My Voice gets Talk, Calm, My day and Play), and the older layout's header fits a phone. **New in 0.12:** **team chat** for everyone in your child's circle (see [section 16](#inviting-your-team)), **sensors and wearable trackers** that can alert you (see [section 11](#sensors-and-wearables)), **YouTube channels** next to single videos, with Ms Rachel already linked (see [section 12](#videos-games-insights)), and water search that finds water from the map picture in seconds (see [section 10](#drawing-and-water)). The family server that makes chat, sync and alerts work now comes with the app, so there's nothing to install. **New in 0.11:** **Sound Path**, short voice games that build new sounds and words (see [Sound Path](#sound-path)), and Potty Path stages, a "Next: toilet" card, calm things to do while sitting and fairer rewards for telling (see [section 13](#potty-path)). **New in 0.10:** Potty Path, a calm toilet routine that teaches your child a way to say "I need to go" (see [section 13](#potty-path)). **New in 0.9:** a video board you choose, four gentle sound games, and an **Interests and history** section on Insights with a printable therapist summary (see [section 12](#videos-games-insights)). Version 0.8 added hand-drawn zones and water danger zones (see [section 10](#drawing-and-water)).
 
 Everything works on your own device. You don't need an account, and nothing leaves the device unless you choose to connect it. Team chat and sensors are the two things that need a free family account (see [section 15](#accounts)).
 
@@ -573,3 +573,16 @@ The **Privacy** page puts you in control.
 *Remember: feeling guesses are only estimates, and you are the expert on your child.*
 
 </div>
+
+
+## New in 0.14, step by step
+
+**Photos and your voice on a word.** Open Vocabulary, then **Photos and recorded voices**. Type the word, choose or take a photo, and use the sliders to frame it. Press **Record** and say the word (up to 5 seconds). My Voice then shows your photo and plays your voice, and falls back to the computer voice if there's no recording. Use **Remove** to undo.
+
+**Switch scanning.** On Access, choose one switch (the app moves through rows by itself) or two switches (one moves, one picks). You can set the speed, extra time on the first item, how many rounds before it pauses, and whether each item is spoken quietly.
+
+**End-to-end encryption.** On Privacy, under sync, press **Turn on encryption**. Each new device asks to join, and you approve it on a device that already has the key once the six-digit codes match on both screens. The server then stores only scrambled data. There's no recovery: if every device loses the key, the synced copy can't be read, though each device keeps its own copy.
+
+**Say the word.** In Sound Path settings, choose how listening works: off, on this device (you add a speech model address), or the browser's own listening, which sends audio to Google or Apple. The game shows what it heard and never marks a try as wrong.
+
+**Check how well we agree.** On Insights, each caregiver types a name, presses **Start labelling** and picks what each moment meant, without seeing anyone else's answers. When you're done, you see how often you agreed. The download has no names, notes or times. See the study plan in docs/VALIDATION-STUDY.md.

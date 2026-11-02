@@ -260,3 +260,44 @@ Checked October 31, 2026 with the GitHub API (stars, licence, last push). Fit: *
 | Visual schedule, social story and articulation-game repos | tiny | mostly unlicensed | **Avoid**; ours are already richer. |
 
 **Takeaway:** nothing needed to be vendored for v0.9. Next candidates: Vosk-browser or transformers.js Moonshine for word-level games, Meyda for voice-vs-noise, Mulberry for topic pictures and lite-youtube for lighter tiles.
+
+## Round 4: push, email, switches, privacy, on-device listening and native (November 2, 2026)
+
+Stars and last push dates come from the GitHub API on November 2, 2026. LuminAAC is MIT, so GPL and AGPL code is used for **ideas only**.
+
+**For the child (My Voice)**
+| Repo | Stars | Licence | Fit |
+|---|---|---|---|
+| [ccoreilly/vosk-browser](https://github.com/ccoreilly/vosk-browser) | 531 | Apache-2.0 | **Used** (optional, loaded only when a family turns it on) for on-device "Say the word". Last push December 2025, so it may be going stale. |
+| [huggingface/transformers.js](https://github.com/huggingface/transformers.js) | 16.4k | Apache-2.0 | **Next**: Whisper or Moonshine in the browser as a replacement for Vosk if it stops being maintained. The download is large. |
+| [ggml-org/whisper.cpp](https://github.com/ggml-org/whisper.cpp) | large | MIT | **Idea**: a WASM build is possible, but it's heavier than Vosk for single words. |
+| [cboard-org/cboard](https://github.com/cboard-org/cboard) | 766 | GPL-3.0 | **Idea only**: scanning and OBF import UX. |
+| [OptiKey/OptiKey](https://github.com/OptiKey/OptiKey) | 4.4k | GPL-3.0 | **Idea only**: dwell and scanning timings. |
+| AsTeRICS Grid | — | AGPL-3.0 | **Idea only**: row-column scanning options. Our scan-core.js was written from scratch. |
+| [hfg-gmuend/openmoji](https://github.com/hfg-gmuend/openmoji) | 4.6k | CC-BY-SA-4.0 | **Maybe**: it would need attribution and share-alike for the images. Family photos are the main path instead. |
+| [mulberrysymbols/mulberry-symbols](https://github.com/mulberrysymbols/mulberry-symbols) | 62 | CC BY-SA 2.0 UK | **Maybe**: same share-alike note. |
+| Global Symbols API and Open Board Format | — | open spec; check each symbol set's licence | **Next**: OBF import and export, so boards can move to and from other AAC apps. |
+
+**For caregivers (The Bridge)**
+| Repo | Stars | Licence | Fit |
+|---|---|---|---|
+| [web-push-libs/web-push](https://github.com/web-push-libs/web-push) | 3.6k | MPL-2.0 | **Idea**: our backend signs VAPID itself, so there's no dependency. MPL would be fine to use as a dependency if we need it later. |
+| [nodemailer/nodemailer](https://github.com/nodemailer/nodemailer) | 17.7k | MIT-0 | **Option** for SMTP. The backend currently sends through an HTTP email API or a local outbox. |
+| [jedisct1/libsodium.js](https://github.com/jedisct1/libsodium.js) | 1.2k | ISC | **Not needed**: WebCrypto covers AES-GCM, ECDH and HKDF without extra code. |
+| [signalapp/libsignal](https://github.com/signalapp/libsignal) | 6.1k | AGPL-3.0 | **Avoid** the code. Its safety-number idea inspired our device codes. |
+
+**For the model and validation (research)**
+| Repo | Stars | Licence | Fit |
+|---|---|---|---|
+| [tensorflow/models](https://github.com/tensorflow/models) (YAMNet) | 77.6k | Apache-2.0 | **Concept** ([docs/ML-CONCEPTS.md](docs/ML-CONCEPTS.md)): tag sounds as voice, laughter or crying, on the device only. |
+| [LAION-AI/CLAP](https://github.com/LAION-AI/CLAP) | 2.3k | CC0-1.0 | **Concept**: zero-shot sound labels. Too large for phones today. |
+| [google-ai-edge/mediapipe](https://github.com/google-ai-edge/mediapipe) | 37.5k | Apache-2.0 | **Concept**: hand and gesture landmarks, so the app could learn a child's own signs. |
+| [tensorflow/tfjs-models](https://github.com/tensorflow/tfjs-models) (knn-classifier) | 14.8k | Apache-2.0 | **Concept**: a few-shot classifier on top of landmark or YAMNet embeddings. |
+
+**Native shell**
+| Repo | Stars | Licence | Fit |
+|---|---|---|---|
+| [capacitor-community/background-geolocation](https://github.com/capacitor-community/background-geolocation) | 251 | MIT | **Used** in native/ (1.3.x, Capacitor 8). |
+| [transistorsoft/capacitor-background-geolocation](https://github.com/transistorsoft/capacitor-background-geolocation) | 144 | MIT repo, but Android release builds need a paid licence key | **Avoid** for now. |
+
+**Takeaway:** none of the new features needed GPL code. Next candidates are OBF import and export, and transformers.js as the fallback for Vosk.

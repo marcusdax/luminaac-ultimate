@@ -27,6 +27,14 @@ These files are vendored in `vendor/` and served from the app itself. There is n
 - **YouTube IFrame Player API** (`www.youtube.com/iframe_api`) with the privacy-enhanced host `www.youtube-nocookie.com`, only when a child opens a video a caregiver added. Governed by the YouTube API Services Terms and Developer Policies, not an open-source licence. We keep YouTube's player and branding, don't download, cache or alter videos, and don't hide ads. Thumbnails (`i.ytimg.com`) load only if a caregiver turns them on. The service worker never caches YouTube.
 - **Capacitor** 7 (MIT) and `@capacitor-community/background-geolocation` (MIT). These are only in the `native/` scaffold and aren't installed or vendored.
 
+## Added in v0.14
+| Component | Licence | How it's used |
+|---|---|---|
+| [vosk-browser](https://github.com/ccoreilly/vosk-browser) 0.0.8 | Apache-2.0 | Loaded from jsDelivr only when a family chooses on-device listening. The speech model is hosted by the family, under its own licence. |
+| [Capacitor](https://github.com/ionic-team/capacitor) 8 and @capacitor/local-notifications | MIT | Native shell in `native/` only, not in the web app. |
+| [@capacitor-community/background-geolocation](https://github.com/capacitor-community/background-geolocation) 1.3 | MIT | Background geofences in the native shell. |
+| WebCrypto, Push API, MediaRecorder, Web Speech API | browser built-ins | Encryption, alerts, voice recording, browser listening. |
+
 ## Written for LuminAAC (no third-party code)
 - `backend/webauthn.js`: CBOR and passkey verification, following the WebAuthn Level 2 spec.
 - `fl-core.js`: logistic regression, differential-privacy clipping and noise, Bonawitz-style secure aggregation (ECDH masks, self-masks, Shamir sharing over GF(2^521−1)) and zCDP accounting.
