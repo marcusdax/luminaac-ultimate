@@ -77,5 +77,13 @@ t("streak survives not-yet-played today", G.streak([{ t: now - DAY }], now) === 
 t("praise is kind for a quiet try", ["Nice trying!", "Thank you for playing.", "Let's do it together.", "Good listening."].includes(G.praise({ heard: false })));
 t("stickers cycle", G.stickerFor(0) === G.stickerFor(G.STICKERS.length));
 
+
+// word strip and topic pages
+const sw2 = I.stripWords({ words: ["choo choo"], topics: ["vehicles"] });
+t("strip: video words first, core words last", sw2[0] === "choo choo" && sw2.includes("train") && sw2.includes("stop") && sw2.length === 8);
+t("strip: works for a channel video with no topics", I.stripWords({}).join() === I.STRIP_CORE.join());
+const tp = I.topicPages([{ topic: "animals", score: 3 }, { topic: "space", score: 0 }], [{ topics: ["animals"], words: ["Moo"] }]);
+t("topic pages: only watched topics", tp.length === 1 && tp[0].label === "Animals");
+t("topic pages: video words join the page", tp[0].words.includes("moo") && tp[0].words.length <= 12);
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

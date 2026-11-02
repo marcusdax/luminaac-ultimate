@@ -2,7 +2,7 @@
 // player, no autoplay or suggestions, then "talk about it") and gentle sound games.
 // Engagement and game turns are written to this device only (db.videos, db.games).
 import { load, persist } from "./shared.js";
-import { TOPICS, NOCOOKIE, PLAYER_VARS, closeSession } from "./interests.js";
+import { TOPICS, NOCOOKIE, PLAYER_VARS, closeSession, stripWords, topicPages, videoStats, topicInterest } from "./interests.js";
 import { SOUND_PICS, FIRST_SOUNDS, ECHO_SOUNDS, matchRound, firstRound, level, pitch, judgeTry, stickerFor, praise, streak, shuffle } from "./games.js";
 
 const mv = document.querySelector(".mv");
@@ -15,6 +15,10 @@ function init() {
     <summary><span aria-hidden="true">🎬</span> My videos</summary>
     <div class="mv-ptiles" id="mvVideos" role="group" aria-label="My videos"></div>
   </details>
+  <details class="mv-personality mv-topics" id="mvTopicsBox" hidden>
+    <summary><span aria-hidden="true">⭐</span> My topics</summary>
+    <div class="mv-ptiles" id="mvTopics" role="group" aria-label="My topics"></div>
+  </details>
   <details class="mv-personality mv-games">
     <summary><span aria-hidden="true">🎶</span> Sound games</summary>
     <div class="mv-ptiles" id="mvGames" role="group" aria-label="Sound games"></div>
@@ -22,10 +26,16 @@ function init() {
   <dialog class="mv-player mv-video" id="mvVideo" aria-labelledby="mvVideoTitle">
     <h2 id="mvVideoTitle"></h2>
     <div class="mv-frame" id="mvFrame"><div id="mvYT"></div><div class="mv-end" id="mvEnd" hidden><p class="mv-end-text">All done. What did you think?</p></div></div>
+    <div class="mv-strip" id="mvStrip" role="group" aria-label="Words to say while watching"></div>
     <p class="mv-vstatus" id="mvVStatus" role="status"></p>
     <div class="mv-player-row" id="mvVRow"></div>
     <div class="mv-talk" id="mvTalk" hidden><h3 id="mvTalkH">Talk about it</h3><div class="mv-talk-grid" id="mvTalkGrid" role="group" aria-labelledby="mvTalkH"></div></div>
     <button class="mv-close" type="button" id="mvVClose">Close</button>
+  </dialog>
+  <dialog class="mv-player mv-topic" id="mvTopic" aria-labelledby="mvTopicTitle">
+    <h2 id="mvTopicTitle"></h2>
+    <div class="mv-talk-grid" id="mvTopicGrid" role="group" aria-labelledby="mvTopicTitle"></div>
+    <button class="mv-close" type="button" id="mvTClose">Close</button>
   </dialog>
   <dialog class="mv-player mv-game" id="mvGame" aria-labelledby="mvGameTitle">
     <h2 id="mvGameTitle"></h2>
@@ -38,8 +48,9 @@ function init() {
   </dialog>`;
   const stories = mv.querySelector(".mv-stories");
   (stories || mv.lastElementChild).after(...host.children);
-  renderVideos(); renderGames();
-  addEventListener("storage", (e) => { if (e.key === "luminaac:bridge") { renderVideos(); renderGames(); } });
+  renderVideos(); renderGames(); renderTopics();
+  addEventListener("storage", (e) => { if (e.key === "luminaac:bridge") { renderVideos(); renderGames(); renderTopics(); } });
+  $("mvTClose").addEventListener("click", () => $("mvTopic").close());
   $("mvVClose").addEventListener("click", closeVideo);
   $("mvVideo").addEventListener("close", closeVideo);
   $("mvGClose").addEventListener("click", () => $("mvGame").close());
@@ -85,6 +96,30 @@ function renderVideos() {
   }
 }
 
+// Topic word pages: one page for each of the child's favourite topics, built from what they watch.
+function renderTopics() {
+  const d = load(), v = d.videos || {}, list = allVideos(v);
+  const pages = v.on ? topicPages(topicInterest(videoStats(list, v.sessions || [], v.talk || [])), list) : [];
+  $("mvTopicsBox").hidden = !pages.length;
+  const box = $("mvTopics"); box.textContent = "";
+  for (const p of pages) box.append(tile(p.e, p.label, () => openTopic(p)));
+}
+function openTopic(p) {
+  $("mvTopicTitle").textContent = p.label;
+  const g = $("mvTopicGrid"); g.textContent = "";
+  for (const w of p.words) { const b = document.createElement("button"); b.type = "button"; b.className = "mv-word"; b.textContent = w; b.addEventListener("click", () => { say(w); const d = load(); (d.videos.talk ||= []).push({ t: Date.now(), v: "topic:" + p.topic, word: w, spoken: true }); d.videos.talk = d.videos.talk.slice(-2000); persist(d); }); g.append(b); }
+  $("mvTopic").showModal();
+}
+// The word strip stays under the video while it plays, so the child can comment without stopping it.
+function renderStrip() {
+  const g = $("mvStrip"); g.textContent = "";
+  for (const w of stripWords(cur)) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "mv-word mv-sword"; b.textContent = w;
+    b.addEventListener("click", () => { say(w === "like" ? `I like ${cur.title}` : w); logTalk(w); if (w === "stop") player?.pauseVideo?.(); if (w === "again") again(); });
+    g.append(b);
+  }
+}
+
 let ytLoading = null;
 function loadYT() {
   if (window.YT?.Player) return Promise.resolve(window.YT);
@@ -106,6 +141,7 @@ async function openVideo(id) {
   $("mvEnd").hidden = true; $("mvTalk").hidden = true; $("mvFrame").hidden = false;
   $("mvVStatus").textContent = "Getting the video ready…";
   sess = { t: Date.now(), v: cur.id, w: 0, d: 0, r: 0, e: false };
+  renderStrip();
   controls("loading");
   $("mvVideo").showModal();
   try {

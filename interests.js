@@ -83,6 +83,26 @@ export function suggestWords(interest, counts = {}, extra = [], n = 8) {
   return out.slice(0, n);
 }
 
+// Words to show beside a playing video: the video's own words, then its topics', then a few core words.
+export const STRIP_CORE = ["more", "stop", "again", "like", "look", "funny"];
+export function stripWords(video = {}, n = 8) {
+  const out = [];
+  const add = (w) => { w = String(w || "").toLowerCase().trim(); if (w && !out.includes(w)) out.push(w); };
+  (video.words || []).forEach(add);
+  for (const k of video.topics || []) (TOPICS[k]?.words || []).slice(0, 4).forEach(add);
+  const core = STRIP_CORE.filter((w) => !out.includes(w));
+  return [...out.slice(0, Math.max(0, n - 3)), ...core].slice(0, n);
+}
+// A word page for each favourite topic (up to `max`): the topic's words plus words
+// a caregiver added to videos on that topic. Only topics the child actually watched.
+export function topicPages(interest = [], videos = [], max = 3, n = 12) {
+  return interest.filter((it) => it.score > 0).slice(0, max).map((it) => {
+    const extra = videos.filter((v) => (v.topics || []).includes(it.topic)).flatMap((v) => v.words || []);
+    const words = [...new Set([...(TOPICS[it.topic]?.words || []), ...extra.map((w) => String(w).toLowerCase())])].slice(0, n);
+    return { topic: it.topic, e: TOPICS[it.topic]?.e || "⭐", label: TOPICS[it.topic]?.label || it.topic, words };
+  });
+}
+
 // ---------- History ----------
 export const wordsOf = (text) => String(text || "").toLowerCase().replace(/[^a-z' ]+/g, " ").split(/\s+/).filter((w) => w.length > 0);
 export function topWords(counts = {}, n = 10) {
