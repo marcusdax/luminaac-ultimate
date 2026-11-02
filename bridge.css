@@ -227,3 +227,13 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { border-color
 .iot-link code { display: block; overflow-wrap: anywhere; font-size: var(--fs-xs); }
 .iot-help li { margin-bottom: var(--s2); }
 .yt-card { margin-top: var(--s5); }
+
+/* v0.13: the classic layout's header also fits a phone (short labels, no wrapping). */
+.top .rd-short { display: none; }
+@media (max-width: 760px) {
+  .top .rd-long { display: none; }
+  .top .rd-short { display: inline; }
+  .top .pill-link { padding: 8px 14px; white-space: nowrap; flex: none; }
+  .top .who { display: none; }
+  .top .logo-word { white-space: nowrap; }
+}

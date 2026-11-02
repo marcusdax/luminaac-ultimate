@@ -5,7 +5,7 @@
 <h3 align="center">An AAC app for nonverbal children that learns the child's own language from the people who love them.</h3>
 
 <p align="center">
-  Version 0.12 &middot; vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
+  Version 0.13 &middot; vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
 </p>
 
 <p align="center">
@@ -53,10 +53,11 @@ A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as 
 | 5 | v0.7 | Caretaker guide (Markdown and printable web page with a quick-start one-pager), open-source repository files |
 | 6 | v0.8 | Water danger zones from OpenStreetMap (Overpass) with a tunable buffer and urgent alerts, freehand safe and danger zones drawn by finger or stylus (pressure, palm rejection, simplification), shape editing with keyboard support |
 | 7 | v0.9 | Caregiver-chosen video board with a locked-down privacy-enhanced YouTube player and a "Talk about it" board, four gentle sound games (copy my sound with an on-device loudness and pitch meter, sound-to-picture, first sounds, turn-taking) with stickers, streaks, sensory settings and weekly goals, Interests and history insights (interest map, word growth, words to try, mood links) and a printable therapist summary. See [the concept](docs/CONCEPT-INTERESTS-INSIGHTS.md) |
-| 9 | v0.11 | **Sound Path and Potty Path mechanics.** Sound Path: a research-checked voice ladder (any voice → long sounds → syllables → words → two words), three games (Sing and Tap, Word Train, Sound World), "Say it with me" after board taps, a grown-up judge bar, an adaptive practice engine (blocked then mixed, fading praise, challenge point), a sound inventory and an SLP sheet. Potty Path: six stages with recommend-then-confirm, signal timing (telling first earns most; late tellings are thanked but never paid better), a pure session planner, a "Next: toilet" card and offer, calm sit activities, token phases with reward choice, and fading (World book, progress sheet). See [Sound Path](docs/SOUND-PATH.md) and [the mechanics review](docs/POTTY-PATH-MECHANICS.md) |
-| 10 | v0.11.1 to v0.11.4 | **Redesign R1, behind a switch** (`?redesign=1`). Five Bridge hubs (Home, Programs, Progress, Circle, Safety) over the 12 tabs, a scrolling bottom bar on phones and a left rail on larger screens, and old links still work. My Voice gets Talk · Calm · My day · Play, a Now/Next ribbon and the Bridge link inside the Caregiver area. Fast water search reads the water colour from OpenStreetMap tiles in seconds, then swaps in named Overpass results, asking all mirrors at once. See [the redesign proposal](docs/REDESIGN.md) |
-| 11 | v0.12 | **Family server on Vercel** (`api/index.js`, data mirrored to Upstash Redis by `backend/mirror.js`). **Team chat** for parents, teachers, therapists and family. **Sensors and wearables**: private webhook links for door, gate, pool and bed sensors (IFTTT, Home Assistant) with urgent alerts, plus one-tap tracker buttons. **YouTube channels** next to single videos, playing a channel's uploads in the privacy-enhanced player. Self-reloading updates |
 | 8 | v0.10 | **Potty Path**: a toilet-learning and communication module. An always-working "I need the toilet" button, a calm Now/Next step path with a companion, a silent sit timer with a body check and hard caps, add-only tokens and a World that only grows, a one-handed caregiver console with coaching scripts, medical red flags that pause the plan, explainable hints, printable schedule, school and doctor sheets, calendar reminders, QR handoff and opt-in end-to-end encrypted sync. See [the blueprint](docs/POTTY-PATH.md) |
+| 9 | v0.11 | **Sound Path and Potty Path mechanics.** Sound Path: a research-checked voice ladder (any voice → long sounds → syllables → words → two words), three games (Sing and Tap, Word Train, Sound World), "Say it with me" after board taps, a grown-up judge bar, an adaptive practice engine (blocked then mixed, fading praise, challenge point), a sound inventory and an SLP sheet. Potty Path: six stages with recommend-then-confirm, signal timing (telling first earns most; late tellings are thanked but never paid better), a pure session planner, a "Next: toilet" card and offer, calm sit activities, token phases with reward choice, and fading (World book, progress sheet). See [Sound Path](docs/SOUND-PATH.md) and [the mechanics review](docs/POTTY-PATH-MECHANICS.md) |
+| 10 | v0.11.1 to v0.11.4 | **Redesign R1** (on by default since v0.13; `?redesign=0` for the older tabs). Five Bridge hubs (Home, Programs, Progress, Circle, Safety) over the 12 tabs, a scrolling bottom bar on phones and a left rail on larger screens, and old links still work. My Voice gets Talk · Calm · My day · Play, a Now/Next ribbon and the Bridge link inside the Caregiver area. Fast water search reads the water colour from OpenStreetMap tiles in seconds, then swaps in named Overpass results, asking all mirrors at once. See [the redesign proposal](docs/REDESIGN.md) |
+| 11 | v0.12 | **Family server on Vercel** (`api/index.js`, data mirrored to Upstash Redis by `backend/mirror.js`). **Team chat** for parents, teachers, therapists and family. **Sensors and wearables**: private webhook links for door, gate, pool and bed sensors (IFTTT, Home Assistant) with urgent alerts, plus one-tap tracker buttons. **YouTube channels** next to single videos, playing a channel's uploads in the privacy-enhanced player. Self-reloading updates |
+| 12 | v0.13 | **The simpler layout becomes the standard.** Hubs on the Bridge and Talk · Calm · My day · Play on My Voice for every device, the older header fits phones, and a full audit of the docs against the app ([FEATURE-AUDIT.md](docs/FEATURE-AUDIT.md)) |
 
 ## Architecture
 
@@ -116,7 +117,7 @@ The live app at <https://luminaac-web.vercel.app> is deployed on Vercel from `ma
 - `.vercelignore` keeps `native/`, `tests/`, `docs/`, `backend/test.mjs`, `backend/data/` and Markdown files (except `PRIVACY.md` and `THIRD-PARTY.md`) off public hosting. `screenshots/` is served because the in-app guide shows them.
 - Any static host works for the front end alone. Serve over HTTPS and don't cache `sw.js` long-term. Point the Bridge at your own server under Account and devices.
 
-When you change any shipped file, bump `VERSION` in `sw.js` (currently `luminaac-v0.12.2`) so devices pick up the new copy. When an update takes over, `pwa.js` reloads the Bridge once, and My Voice only while it is out of sight. To rebuild `guide.html` from `docs/CARETAKER-GUIDE.md`, run `python3 tools/mkguide.py` (needs the Python `markdown` package).
+When you change any shipped file, bump `VERSION` in `sw.js` (currently `luminaac-v0.13.0`) so devices pick up the new copy. When an update takes over, `pwa.js` reloads the Bridge once, and My Voice only while it is out of sight. To rebuild `guide.html` from `docs/CARETAKER-GUIDE.md`, run `python3 tools/mkguide.py` (needs the Python `markdown` package).
 
 ### Backend (optional)
 
@@ -137,7 +138,7 @@ node tests/geo-water.test.mjs         # 45 tests: Overpass parsing and racing, m
 node tests/interests-games.test.mjs   # 44 tests: YouTube links, embed lock-down, interest scoring, growth, digest, report, pitch, games
 node tests/potty.test.mjs             # 89 tests: Potty Path logic
 node tests/sound.test.mjs             # 35 tests: Sound Path ladder and practice engine
-node tests/nav.test.mjs               # 23 tests: redesign hubs, old links, the switch, Now/Next, back to Caregiver
+node tests/nav.test.mjs               # 24 tests: redesign hubs, old links, the switch, Now/Next, back to Caregiver
 ```
 
 ## Project structure
@@ -151,7 +152,7 @@ node tests/nav.test.mjs               # 23 tests: redesign hubs, old links, the 
 | `backend/` | Zero-dependency Node API (sync, share, alerts, chat, sensors, predictions, accounts, passkeys, devices, federated learning); `mirror.js` keeps its files in Redis when hosted, `youtube.js` looks up channels |
 | `api/index.js`, `package.json` | The family server as a Vercel function at `/api` |
 | `bridge-chat.js`, `bridge-iot.js`, `bridge-yt.js` | v0.12: team chat, sensors and wearable trackers, YouTube channels |
-| `nav-core.js`, `bridge-hubs.js`, `myvoice-redesign.js`, `redesign.css` | Redesign R1 behind `?redesign=1`: hubs, Now/Next, Play, back to Caregiver |
+| `nav-core.js`, `bridge-hubs.js`, `myvoice-redesign.js`, `redesign.css` | Redesign R1, the default layout (`?redesign=0` for the older tabs): hubs, Now/Next, Play, back to Caregiver |
 | `bridge-p3.js`, `phase3.css` | Bridge phase 3: Safety and Account tabs, feeling estimates, shared learning |
 | `myvoice-p3.js` | My Voice phase 3: safe-zone watching, pairing by QR or code, child-scoped pull |
 | `geo.js`, `emotion.js`, `fl-core.js` | Geofence maths, on-device prosody and face estimates, federated learning core (shared with the backend) |

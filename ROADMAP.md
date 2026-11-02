@@ -1,5 +1,10 @@
 # Roadmap
 
+## v0.13: The simpler layout becomes the standard
+- The five-hub Bridge and the Talk · Calm · My day · Play My Voice from R1 are now on for every device. `?redesign=0` keeps the older tabs on a device that needs them.
+- The older Bridge header fits a phone, and its tab strip keeps the open tab in view.
+- A feature audit of every document against the app (`docs/FEATURE-AUDIT.md`), with stale doc claims corrected.
+
 ## v0.12.0: Family server, team chat, sensors and wearables, YouTube channels
 - **Family server on Vercel** at the app's own address (`/api`, `api/index.js`), with its files kept in Upstash Redis (`backend/mirror.js`). Pages check `/api/updates` every 30 seconds while visible, for alerts and chat.
 - **Team chat** in Circle → Team for parents, teachers, therapists and family. Never on the child's device.
@@ -30,7 +35,7 @@ Sound Path increment A from `docs/SOUND-PATH.md` (ladder, practice engine, Sing 
 ## v0.10: Potty Path (phase 8)
 A toilet-learning and communication module built from the expert-reviewed blueprint in `docs/POTTY-PATH.md`, with all three increments shipped behind `access.potty` (off by default). It covers the one-device core, then assessment and hints, then two devices (QR and end-to-end encrypted server sync). Next: a 5-family pilot with a paid autistic-adult advisory panel and an SLP/BCBA safety review before the guide promotes it. Sensors and prediction stay deferred.
 
-## Now (this build, v0.6, phase 4)
+## v0.6 (phase 4)
 Phase 4 adds:
 - an opt-in speech-emotion model (transformers.js, WebGPU with WASM fallback) fused with prosody, still confirmed by a caregiver
 - Kokoro natural voices with preview, falling back to device voices
@@ -60,11 +65,11 @@ v0.3 base: Magic-moment rolling buffer, annotation studio, signal library with c
 - Pediatric, clinical, and senior modes
 - End-to-end encryption of the synced document (sync itself is done)
 - Live invites for teachers/therapists, shared notes in real time
-- Push notifications for alerts (Web Push), 
+- Push notifications for alerts (Web Push)
 - Account deletion endpoint, per-child data partitions (child profiles exist; the synced document is still per family)
 - Validate the speech-emotion model with caregivers (it's trained on adult acted speech) and fine-tune on confirmed moments
 - Build and ship the Capacitor apps (store review, real-device geofence testing); Web Push for alerts
-- Mulberry symbol pack for older users; polygon zones (Turf)
+- Mulberry symbol pack for older users (hand-drawn polygon zones shipped in v0.8)
 
 ## Later (v1)
 - On-device audio embeddings (wav2vec2 / HuBERT, WebGPU) for unsupervised clustering of vocalizations

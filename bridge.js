@@ -29,6 +29,9 @@ let current = "today";
 function show(tab) {
   $$(".panel").forEach((p) => (p.hidden = p.id !== `tab-${tab}`));
   $$("button.tab").forEach((b) => (b.dataset.tab === tab ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current")));
+  // On a phone the classic tab strip scrolls sideways; keep the open tab in view.
+  const strip = $(".tabs"), cur = $(`button.tab[data-tab="${tab}"]`);
+  if (strip && cur && strip.scrollWidth > strip.clientWidth) strip.scrollTo({ left: cur.offsetLeft - (strip.clientWidth - cur.offsetWidth) / 2, behavior: "instant" });
   ({ today: renderToday, signals: renderSignals, vocab: renderVocab, insights: renderInsights, team: renderTeam, privacy: renderPrivacy })[tab]?.();
   current = tab;
   window.dispatchEvent(new CustomEvent("bridge:show", { detail: tab }));

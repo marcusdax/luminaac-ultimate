@@ -32,16 +32,17 @@ export function tabForHub(hubId, last = {}, isShown = () => true) {
   return shown[0] || hub.tabs[0];
 }
 
-// "?redesign=1" turns the new layout on for this device, "?redesign=0" turns it off.
+// The hub layout is the default since v0.13. "?redesign=0" switches a device
+// back to the classic tabs, "?redesign=1" returns it to the hubs.
 export function readFlag(search, stored) {
   const m = /[?&]redesign=([01])\b/.exec(search || "");
-  return m ? m[1] === "1" : stored === "1";
+  return m ? m[1] === "1" : stored !== "0";
 }
 export function redesignOn() {
   let stored = null;
   try { stored = localStorage.getItem(FLAG); } catch {}
   const on = readFlag(location.search, stored);
-  try { on ? localStorage.setItem(FLAG, "1") : localStorage.removeItem(FLAG); } catch {}
+  try { on ? localStorage.removeItem(FLAG) : localStorage.setItem(FLAG, "0"); } catch {}
   return on;
 }
 

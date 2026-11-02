@@ -32,7 +32,7 @@ Source: Google Doc "LuminAAC: The Empathic Guardian". This maps every feature th
 | Exploration & learning mode (no speech, taps logged) | ✅ | "Explore quietly"; reviewed in Bridge → Vocabulary |
 | Calming, low-clutter, color schemes | ✅ | Calm view, day/night/contrast themes, "keep the screen still" |
 | Multi-modal input: touch, switch, eye-gaze, vocalization | 🟡 | Touch, keyboard, dwell selection, one-switch auto-scanning; eye-gaze via dwell; vocalization input future |
-| Guardian safety: emergency alert, "Go home" | ✅ / 🟡 | "I need help" and "Take me home" buttons speak, show an undo, raise an alert in every open Bridge, and push it to the backend (SSE) when sync is on. Geofencing/location is future |
+| Guardian safety: emergency alert, "Go home" | ✅ | "I need help" and "Take me home" buttons speak, show an undo, raise an alert in every open Bridge, and push it to the family server when sync is on. "Take me home" carries location, and safe zones alert on arrive and leave (Phase 3) |
 | Pediatric / Clinical / Senior modes | 🟡 | Large, Playful and Focus modes + board size to 300% (Bridge → Vocabulary); full age modes in roadmap |
 | AR-assisted communication (point camera at an apple) | 🔭 | Roadmap |
 
@@ -84,6 +84,8 @@ Source: Google Doc "LuminAAC: The Empathic Guardian". This maps every feature th
 - The face estimate is vendored and tested.
 
 ## Phase 8: Potty Path (v0.10)
+Everything in this table is behind a switch (`access.potty`, Bridge → Potty Path) that is off by default.
+
 | Feature | Status | Where |
 |---|---|---|
 | "I need the toilet" button: always speaks, always works (even when paused), alerts every Bridge | ✅ | My Voice Talk page; board words *toilet/bathroom/potty* also count as asking |
@@ -99,6 +101,27 @@ Source: Google Doc "LuminAAC: The Empathic Guardian". This maps every feature th
 | QR handoff, opt-in server sync with end-to-end encryption | ✅ | Two devices |
 | Wetness sensors, predictive ML | 🔭 | Deferred: would move toward regulated medical software |
 
+## Phase 7: Videos, sound games and insights (v0.9)
+| Feature | Status | Where |
+|---|---|---|
+| Caregiver-chosen video board, privacy-enhanced YouTube player, "Talk about it" board | ✅ | Bridge → Videos and games; My Voice → My videos |
+| Four sound games (copy my sound, sound to picture, first sounds, turn-taking), stickers, weekly goals, sensory settings | ✅ | My Voice → Sound games; settings in Videos and games |
+| Interests and history, word growth, words to try, mood links, therapist summary | ✅ | Bridge → Insights |
+| Water danger zones, hand-drawn safe and danger zones | ✅ (v0.8) | Bridge → Safety |
+
+## Phase 9 and later (v0.11–v0.13)
+| Feature | Status | Where |
+|---|---|---|
+| Sound Path increment A (ladder, three games, "Say it with me", judge bar, inventory, SLP sheet) | ✅ behind a switch (off by default) | Bridge → Sound Path; My Voice → Play |
+| Sound Path increment B (family video models, Mouth Mirror) | 🔭 | `docs/SOUND-PATH.md` |
+| Simpler layout: five Bridge hubs, My Voice Talk · Calm · My day · Play, Now/Next line | ✅ default since v0.13 (`?redesign=0` for the older tabs) | `nav-core.js`, `bridge-hubs.js`, `myvoice-redesign.js` |
+| Redesign R2–R5 (Log button, role views, handoff card) | 🔭 | `docs/REDESIGN.md` |
+| Family server on Vercel with Upstash Redis | ✅ | `api/index.js`, `backend/mirror.js` |
+| Team chat | ✅ (needs an account) | Bridge → Team |
+| Sensor webhooks and tracker buttons | ✅ (needs an account) | Bridge → Safety |
+| YouTube channels | ✅ (needs the family server) | Bridge → Videos and games |
+| Live push alerts on hosted server, Web Push, sending reset emails from the hosted server | 🔭 | Hosted alerts arrive by polling every 30 s; mail stays in the outbox until SMTP is set |
+
 ## AI / platform (from technical sections)
 | Doc feature | Status |
 |---|---|
@@ -106,8 +129,8 @@ Source: Google Doc "LuminAAC: The Empathic Guardian". This maps every feature th
 | LuminatingCore supervised fine-tuning, LLM annotation understanding | 🔭 |
 | Gemini predictive assistance / Gemini Audio Switch | 🔭 |
 | Luminall pattern recognition stack, neuromorphic core, LiDAR, IoT context | 🔭 |
-| Local processing, encrypted backup, on-device training, federated learning | 🟡 local-only today; backup toggle shown as coming soon |
-| Emotional state recognition, frustration detection | 🔭 |
+| Local processing, encrypted backup, on-device training, federated learning | 🟡 Local processing, on-device training and opt-in federated learning are built (Phase 3–4). Encrypted cloud backup is not built; its switch is shown disabled as "coming soon" |
+| Emotional state recognition, frustration detection | 🟡 Feeling *estimates* from voice (and optional face) are built, unvalidated and always confirmed by a caregiver (Phase 3–4). Validated recognition and frustration detection are 🔭 |
 
 ## Onboarding
 Conversational, three short steps (child's name → who you are → the loop explained). Re-runnable from Privacy. ✅

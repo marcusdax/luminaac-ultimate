@@ -20,7 +20,8 @@ t("hub skips hidden tabs when nothing is remembered", N.tabForHub("programs", {}
 
 t("flag: ?redesign=1 turns it on", N.readFlag("?redesign=1", null));
 t("flag: ?redesign=0 wins over stored", !N.readFlag("?a=b&redesign=0", "1"));
-t("flag: stored value used without a query", N.readFlag("", "1") && !N.readFlag("", null));
+t("flag: on by default, a stored 0 keeps the classic tabs", N.readFlag("", null) && N.readFlag("", "1") && !N.readFlag("", "0"));
+t("flag: ?redesign=1 wins over a stored 0", N.readFlag("?redesign=1", "0"));
 
 const P = [
   { id: "a", steps: [{ t: "A1" }, { t: "A2" }, { t: "A3" }] },

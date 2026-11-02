@@ -24,7 +24,7 @@ export default function handler(req, res) {
   const run = chain.then(async () => {
     if (!mirror.hosted()) { res.statusCode = 503; res.setHeader("Content-Type", "application/json"); return res.end(JSON.stringify({ error: "The family server isn't connected to its database yet." })); }
     try { if (await mirror.pull(DIR)) srv.reload(); }
-    catch (e) { res.statusCode = 503; res.setHeader("Content-Type", "application/json"); return res.end(JSON.stringify({ error: "Database unavailable. Try again in a minute.", details: e.message })); }
+    catch (e) { console.error("mirror pull failed:", e.message); res.statusCode = 503; res.setHeader("Content-Type", "application/json"); return res.end(JSON.stringify({ error: "Database unavailable. Try again in a minute." })); }
     try { srv.checkDeadman(); } catch {}
     await srv.handle(req, res);
     await mirror.push(DIR).catch((e) => console.error("mirror push failed:", e.message));

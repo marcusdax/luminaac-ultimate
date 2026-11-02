@@ -77,5 +77,5 @@ body.still .mv-chip.is-top { animation: none; }
 @keyframes dwellFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @media (prefers-reduced-motion: reduce) { .dwelling::after { animation-duration: var(--dwell-ms, 1000ms); } }
 .mv > * { min-width: 0; } .mv-bar { min-width: 0; max-width: 100%; }
-@media (max-width: 760px) { .mv-none { position: sticky; right: 0; z-index: 1; background: var(--paper-raised); border-style: solid; } }
+@media (max-width: 760px) { .mv-none { position: sticky; right: 0; z-index: 1; background: var(--paper-raised); border-style: solid; box-shadow: -14px 0 12px -4px var(--fog, #e9edea); } }
 @media (max-width: 760px) { .mv-suggest { width: 100%; max-width: 100%; } }

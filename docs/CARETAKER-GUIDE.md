@@ -2,7 +2,7 @@
 
 A friendly guide for parents, grandparents, carers, teachers and therapists. You don't need to be technical. Read the [quick start](#quick-start) if you only have five minutes, and come back to the rest when you need it.
 
-*This guide covers LuminAAC version 0.12 (November 2026). Open the app at [luminaac-web.vercel.app](https://luminaac-web.vercel.app): My Voice for your child, [the Bridge](https://luminaac-web.vercel.app/bridge.html) for you.*
+*This guide covers LuminAAC version 0.13 (November 2026). Open the app at [luminaac-web.vercel.app](https://luminaac-web.vercel.app): My Voice for your child, [the Bridge](https://luminaac-web.vercel.app/bridge.html) for you.*
 
 ## Contents
 
@@ -40,7 +40,7 @@ LuminAAC is a talker (an AAC app, short for augmentative and alternative communi
 
 You are your child's best translator. LuminAAC helps you share what you already know with the device and with the people around your child.
 
-**What's new in 0.12:** **team chat** for everyone in your child's circle (see [section 16](#inviting-your-team)), **sensors and wearable trackers** that can alert you (see [section 11](#sensors-and-wearables)), **YouTube channels** next to single videos, with Ms Rachel already linked (see [section 12](#videos-games-insights)), and water search that finds water from the map picture in seconds (see [section 10](#drawing-and-water)). The family server that makes chat, sync and alerts work now comes with the app, so there's nothing to install. **New in 0.11:** **Sound Path**, short voice games that build new sounds and words (see [Sound Path](#sound-path)), and Potty Path stages, a "Next: toilet" card, calm things to do while sitting and fairer rewards for telling (see [section 13](#potty-path)). **New in 0.10:** Potty Path, a calm toilet routine that teaches your child a way to say "I need to go" (see [section 13](#potty-path)). **New in 0.9:** a video board you choose, four gentle sound games, and an **Interests and history** section on Insights with a printable therapist summary (see [section 12](#videos-games-insights)). Version 0.8 added hand-drawn zones and water danger zones (see [section 10](#drawing-and-water)).
+**What's new in 0.13:** the simpler layout is now the standard on every device (Bridge pages grouped under Home, Programs, Progress, Circle and Safety; My Voice gets Talk, Calm, My day and Play), and the older layout's header fits a phone. **New in 0.12:** **team chat** for everyone in your child's circle (see [section 16](#inviting-your-team)), **sensors and wearable trackers** that can alert you (see [section 11](#sensors-and-wearables)), **YouTube channels** next to single videos, with Ms Rachel already linked (see [section 12](#videos-games-insights)), and water search that finds water from the map picture in seconds (see [section 10](#drawing-and-water)). The family server that makes chat, sync and alerts work now comes with the app, so there's nothing to install. **New in 0.11:** **Sound Path**, short voice games that build new sounds and words (see [Sound Path](#sound-path)), and Potty Path stages, a "Next: toilet" card, calm things to do while sitting and fairer rewards for telling (see [section 13](#potty-path)). **New in 0.10:** Potty Path, a calm toilet routine that teaches your child a way to say "I need to go" (see [section 13](#potty-path)). **New in 0.9:** a video board you choose, four gentle sound games, and an **Interests and history** section on Insights with a printable therapist summary (see [section 12](#videos-games-insights)). Version 0.8 added hand-drawn zones and water danger zones (see [section 10](#drawing-and-water)).
 
 Everything works on your own device. You don't need an account, and nothing leaves the device unless you choose to connect it. Team chat and sensors are the two things that need a free family account (see [section 15](#accounts)).
 
@@ -58,7 +58,7 @@ The first time, LuminAAC loads some sample moments so the pages aren't empty. Yo
 
 **Tip:** you can open the welcome again from the Bridge any time if someone new is setting up.
 
-**Try the new layout.** A simpler layout is being tested. To switch it on for a device, open the app once with `?redesign=1` at the end of the address (for example `luminaac-web.vercel.app/bridge.html?redesign=1`). Use `?redesign=0` to go back. Each device remembers its choice.
+**How the app is laid out.** Since version 0.13 every device uses the simpler layout below. If you prefer the older one with a long row of tabs, open the app once with `?redesign=0` at the end of the address (for example `luminaac-web.vercel.app/bridge.html?redesign=0`). Use `?redesign=1` to come back. Each device remembers its choice. The page names in this guide (Vocabulary, Insights, Safety and so on) are the same in both.
 
 - **The Bridge** groups its pages into five buttons: **Home**, **Programs** (vocabulary, stories, Sound Path, Potty Path, videos and games), **Progress** (signals and insights), **Circle** (team and chat, account and devices, privacy) and **Safety**. Small tabs under the title switch pages inside a group, and each group remembers where you were. On a phone the buttons sit along the bottom; swipe them left and right if they don't all fit.
 - **My Voice** gets **Talk**, **Calm**, **My day** (plans), **Play** (stories, videos, sound games and Sound Path in one place) and **Caregiver**. While a plan is under way, a **Now / Next** line at the top of Talk shows the step to do now and the one after.
@@ -73,10 +73,10 @@ The first time, LuminAAC loads some sample moments so the pages aren't empty. Yo
 - **Quick phrases and next words.** Common phrases sit near the top, and ideas for the next word appear as your child builds a message.
 - **Folders.** Words are grouped (people, actions, food, places and more). Colours stay the same everywhere, so your child can learn where things live.
 - **Calm.** A feelings scale and a slow breathing guide, plus short notes for the person helping.
-- **Plans** (**My day** in the new layout). Picture steps for the day, such as getting ready for school.
+- **My day** (called **Plans** in the older layout). Picture steps for the day, such as getting ready for school.
 - **My things.** Your child's own buttons. A button can even play back a recorded moment.
-- **My videos and Sound games.** Further down the Talk page. **My videos** shows only the videos you added. **Sound games** has four short games. See [section 12](#videos-games-insights).
-- **Caregiver area.** Press and hold **Caregiver** for two seconds to open it. Children can't open it by accident. Choose **Lock and return to Talk** when you're done. In the new layout the Bridge is opened from here, with **Open the Bridge**, and the Bridge's **Back to My Voice** brings you straight back to the Caregiver area (not Talk), so you can lock it before handing the device back.
+- **My videos and Sound games.** On **Play** (further down the Talk page in the older layout). **My videos** shows only the videos you added. **Sound games** has four short games. See [section 12](#videos-games-insights).
+- **Caregiver area.** Press and hold **Caregiver** for two seconds to open it. Children can't open it by accident. Choose **Lock and return to Talk** when you're done. The Bridge is opened from here, with **Open the Bridge**, so your child can't leave the board by accident, and the Bridge's **Back to My Voice** brings you straight back to the Caregiver area (not Talk), so you can lock it before handing the device back.
 
 Words stay in the same place on the board. That's on purpose: it lets your child build muscle memory, so please don't worry if the board looks "busy" at first.
 
@@ -126,7 +126,7 @@ On the **Vocabulary** page you can shape what your child sees.
 
 The **Stories** page helps with routines and practice.
 
-- **Write a story or routine.** Give it a title, then write one step per line. Start a line with an emoji to give it a picture, for example "🦷 Brush teeth". Choose **Save to My Voice** and it appears in Plans.
+- **Write a story or routine.** Give it a title, then write one step per line. Start a line with an emoji to give it a picture, for example "🦷 Brush teeth". Choose **Save to My Voice** and it appears under **My stories and practice** on **Play** (on Talk in the older layout).
 - **Sound practice.** Add a sound, a word that starts with it, and a picture. Your child can practise at their own pace.
 - **Reward after a try.** Pick a gentle reward, such as stars and "Great trying!". It celebrates effort, not getting it perfect.
 
@@ -400,7 +400,7 @@ Your child's device only receives what it needs (their words, rules and plans), 
 
 You don't need an account to use LuminAAC on one device. An account helps when several people or devices are involved.
 
-- **Create an account** on **Account and devices** with your email and a password of at least 10 characters. A short sentence works well. The server address is already filled in. You can also add a passkey (fingerprint or face unlock) later.
+- Choose **Create account** on **Account and devices** with your email and a password of at least 10 characters. A short sentence works well. The server address is already filled in. You can also add a passkey (fingerprint or face unlock) later.
 - **Check your email.** We send a link to confirm it's really you. Open it within 24 hours. *For now, the hosted server can't send email yet, so these emails don't arrive. Add a passkey and keep your password somewhere safe.*
 - **Forgot your password?** Choose it on the sign-in form. We email a reset link that works once, for 30 minutes. After you choose a new password you're signed out everywhere, then you can sign in again.
 
@@ -493,7 +493,7 @@ Ask your child's speech and language therapist or occupational therapist which m
 
 The **Privacy** page puts you in control.
 
-- **Keep recordings for** 7, 30 or 90 days, or forever.
+- **Keep moments for** 7, 30 or 90 days, or **Until I delete them**.
 - **Export** saves everything to a file you keep. Use it as a backup or to move to a new device.
 - **Restore** loads a file you exported earlier.
 - **Video and game history** (watch time, replays, **Talk about it** taps and game turns) stays on the device where it happened. It is never synced and never sent to YouTube. The server only carries your video list and game settings.

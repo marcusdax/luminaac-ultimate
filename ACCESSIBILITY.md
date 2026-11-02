@@ -36,3 +36,8 @@
 - The camera preview has a label, and the face result is announced. No-camera and permission-denied cases explain what to do next in plain language.
 - Natural voices sit beside device voices, and failures fall back to speech without leaving the user silent.
 - Tested at 1440×960 and 390×844.
+
+## v0.13 audit
+- An automated sweep of all 12 Bridge pages and every My Voice view, in both layouts, at 1440×960 and 390×844, found no control under 24×24 px, no control without an accessible name, no ALL-CAPS text and no sideways scrolling, with motion reduced.
+- The simpler layout is now the default, so the child's screen has no Bridge link: the only ways out are Calm and the press-and-hold Caregiver door.
+- The older layout's Bridge header no longer wraps into three-line buttons on a phone, and the tab strip keeps the open tab in view.

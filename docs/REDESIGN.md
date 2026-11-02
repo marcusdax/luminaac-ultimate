@@ -1,6 +1,6 @@
 # LuminAAC redesign: layout, flow and look (v0.12 proposal)
 
-Status: R1 built behind a switch (v0.11.1, 1 November 2026). R2–R5 are proposals.
+Status: R1 built (v0.11.1, 1 November 2026) and on by default since v0.13 (2 November 2026); `?redesign=0` returns a device to the older tabs. R2–R5 are proposals.
 
 **Try R1:** open `bridge.html?redesign=1` or `index.html?redesign=1` once on a device. The choice is remembered on that device; `?redesign=0` turns it off again. With it off, nothing looks or works differently. Code: `nav-core.js` (hub map, old-link aliases, Now/Next; tested in `tests/nav.test.mjs`), `bridge-hubs.js`, `myvoice-redesign.js`, `redesign.css`.
 
