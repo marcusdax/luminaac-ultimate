@@ -5,7 +5,7 @@
 <h3 align="center">An AAC app for nonverbal children that learns the child's own language from the people who love them.</h3>
 
 <p align="center">
-  Version 0.14 &middot; vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
+  Version 0.15 &middot; vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
 </p>
 
 <p align="center">
@@ -59,6 +59,7 @@ A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as 
 | 11 | v0.12 | **Family server on Vercel** (`api/index.js`, data mirrored to Upstash Redis by `backend/mirror.js`). **Team chat** for parents, teachers, therapists and family. **Sensors and wearables**: private webhook links for door, gate, pool and bed sensors (IFTTT, Home Assistant) with urgent alerts, plus one-tap tracker buttons. **YouTube channels** next to single videos, playing a channel's uploads in the privacy-enhanced player. Self-reloading updates |
 | 12 | v0.13 | **The simpler layout becomes the standard.** Hubs on the Bridge and Talk · Calm · My day · Play on My Voice for every device, the older header fits phones, and a full audit of the docs against the app ([FEATURE-AUDIT.md](docs/FEATURE-AUDIT.md)) |
 | 13 | v0.14 | **Reach, privacy and research.** Push alerts and email summaries, family photos and recorded voices on tiles, one- and two-switch scanning, optional end-to-end encryption with device approval codes, a "Say the word" game with on-device listening, a Capacitor 8 native shell with background geofences ([STORE-CHECKLIST.md](docs/STORE-CHECKLIST.md)), and a blind caregiver agreement check with kappa ([VALIDATION-STUDY.md](docs/VALIDATION-STUDY.md)). Sound tags and sign learning are concepts only ([ML-CONCEPTS.md](docs/ML-CONCEPTS.md)) |
+| 14 | v0.14.2 to v0.15 | **Lock-up fix and shared boards.** Sound games, stories and Sound Path no longer freeze the page after one go (their pop-ups opened inside the hidden Talk view); the microphone is let go when a game closes. **Open Board Format** import and export (.obf and .obz) in the Caregiver area, so boards move to and from CoughDrop, Cboard, AsTeRICS Grid and other AAC apps. |
 
 ## Architecture
 
@@ -118,7 +119,7 @@ The live app at <https://luminaac-web.vercel.app> is deployed on Vercel from `ma
 - `.vercelignore` keeps `native/`, `tests/`, `docs/`, `backend/test.mjs`, `backend/data/` and Markdown files (except `PRIVACY.md` and `THIRD-PARTY.md`) off public hosting. `screenshots/` is served because the in-app guide shows them.
 - Any static host works for the front end alone. Serve over HTTPS and don't cache `sw.js` long-term. Point the Bridge at your own server under Account and devices.
 
-When you change any shipped file, bump `VERSION` in `sw.js` (currently `luminaac-v0.14.2`) so devices pick up the new copy. When an update takes over, `pwa.js` reloads the Bridge once, and My Voice only while it is out of sight. To rebuild `guide.html` from `docs/CARETAKER-GUIDE.md`, run `python3 tools/mkguide.py` (needs the Python `markdown` package).
+When you change any shipped file, bump `VERSION` in `sw.js` (currently `luminaac-v0.15.0`) so devices pick up the new copy. When an update takes over, `pwa.js` reloads the Bridge once, and My Voice only while it is out of sight. To rebuild `guide.html` from `docs/CARETAKER-GUIDE.md`, run `python3 tools/mkguide.py` (needs the Python `markdown` package).
 
 ### Backend (optional)
 
@@ -140,6 +141,11 @@ node tests/interests-games.test.mjs   # 44 tests: YouTube links, embed lock-down
 node tests/potty.test.mjs             # 89 tests: Potty Path logic
 node tests/sound.test.mjs             # 35 tests: Sound Path ladder and practice engine
 node tests/nav.test.mjs               # 24 tests: redesign hubs, old links, the switch, Now/Next, back to Caregiver
+node tests/obf.test.mjs               # 17 tests: Open Board Format export, .obz zip, import from other apps
+node tests/dialog-guard.test.mjs      # 11 tests: pop-ups can never lock the page
+# Browser checks (Playwright, with a static server on :8765):
+python3 tests/browser/talk-games.py   # plays every game, story and Sound Path game 3 times; nav must stay tappable
+python3 tests/browser/obf.py          # board export and import in the Caregiver area
 ```
 
 ## Project structure
@@ -154,6 +160,8 @@ node tests/nav.test.mjs               # 24 tests: redesign hubs, old links, the 
 | `api/index.js`, `package.json` | The family server as a Vercel function at `/api` |
 | `bridge-chat.js`, `bridge-iot.js`, `bridge-yt.js` | v0.12: team chat, sensors and wearable trackers, YouTube channels |
 | `nav-core.js`, `bridge-hubs.js`, `myvoice-redesign.js`, `redesign.css` | Redesign R1, the default layout (`?redesign=0` for the older tabs): hubs, Now/Next, Play, back to Caregiver |
+| `obf-core.js` | Open Board Format (.obf, .obz) import and export, with a tiny zip reader and writer |
+| `dialog-guard.js` | Keeps pop-ups visible and closes any that would lock the page (v0.14.2) |
 | `bridge-p3.js`, `phase3.css` | Bridge phase 3: Safety and Account tabs, feeling estimates, shared learning |
 | `myvoice-p3.js` | My Voice phase 3: safe-zone watching, pairing by QR or code, child-scoped pull |
 | `geo.js`, `emotion.js`, `fl-core.js` | Geofence maths, on-device prosody and face estimates, federated learning core (shared with the backend) |

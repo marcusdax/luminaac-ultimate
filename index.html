@@ -188,6 +188,22 @@
             <ul class="custom-list" id="customList"></ul>
           </article>
 
+          <article class="panel" id="obfPanel">
+            <h2 class="h2">Share boards with other AAC apps</h2>
+            <p class="soft">Open Board Format (.obf and .obz) works with CoughDrop, Cboard, AsTeRICS Grid and others. Nothing is uploaded.</p>
+            <button class="solid-btn" type="button" id="btnObfExport">Save my boards (.obz)</button>
+            <form class="word-form" id="obfForm">
+              <label>Board file
+                <input name="file" type="file" accept=".obf,.obz,application/json,application/zip" required />
+              </label>
+              <label>Put the words in
+                <select name="f" id="obfFolder"></select>
+              </label>
+              <button class="solid-btn" type="submit">Add words from the board</button>
+            </form>
+            <p class="soft" id="obfStatus" role="status" aria-live="polite"></p>
+          </article>
+
           <article class="panel">
             <h2 class="h2">Settings</h2>
             <form class="settings" id="settings">

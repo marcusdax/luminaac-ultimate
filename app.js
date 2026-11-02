@@ -3,6 +3,7 @@
 import { CORE, FOLDERS, QUICK, SCALE, CALM_NEEDS, PLANS } from "./vocab.js";
 import { KOKORO_VOICES } from "./ai.js";
 import { hasVoice, hasPhoto, playVoice, applyPhoto } from "./symbols.js";
+import { buildOBZ, readOBZ, wordsFromBoard, mergeWords } from "./obf-core.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -643,6 +644,7 @@ renderFolders();
 renderGrid();
 renderCalm();
 bindCareForms();
+bindOBF();
 bindCareLock();
 loadVoices();
 if ("speechSynthesis" in window) speechSynthesis.onvoiceschanged = loadVoices;
@@ -653,3 +655,41 @@ $("#btnBack").addEventListener("click", () => { state.words.pop(); renderStrip()
 $("#btnClear").addEventListener("click", () => { state.words = []; renderStrip(); renderNext(); });
 $("#breatheToggle").addEventListener("click", () => (state.breathing ? stopBreathing() : startBreathing()));
 $$(".nav-btn[data-view]").forEach((b) => b.addEventListener("click", () => show(b.dataset.view)));
+
+// ---------- Open Board Format import and export (v0.15) ----------
+function myBoards() {
+  const mine = (id) => data.custom.filter((x) => x.f === id).map(({ w, e, c }) => ({ w, e, c }));
+  return [{ id: "core", name: "Core words", words: [...CORE, ...mine("core")].map(({ w, e, c }) => ({ w, e, c })), cols: 6 },
+    ...FOLDERS.map((f) => ({ id: f.id, name: f.label, e: f.e, words: [...f.words, ...mine(f.id)].map(({ w, e, c }) => ({ w, e, c })), cols: 4 }))];
+}
+async function inflateRaw(u8) {
+  const s = new Blob([u8]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+function bindOBF() {
+  const sel = $("#obfFolder"), status = $("#obfStatus");
+  if (!sel) return;
+  [{ id: "core", label: "Core words" }, ...FOLDERS].forEach((f) => sel.add(new Option(f.label, f.id)));
+  $("#btnObfExport").addEventListener("click", () => {
+    const url = URL.createObjectURL(new Blob([buildOBZ(myBoards())], { type: "application/zip" }));
+    const a = Object.assign(document.createElement("a"), { href: url, download: `luminaac-boards-${new Date().toISOString().slice(0, 10)}.obz` });
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+    status.textContent = "Saved your boards as an .obz file.";
+  });
+  $("#obfForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target), file = f.get("file");
+    if (!file?.size) return;
+    if (file.size > 30e6) { status.textContent = "That file is too big (over 30 MB)."; return; }
+    try {
+      const u8 = new Uint8Array(await file.arrayBuffer());
+      const isZip = u8[0] === 0x50 && u8[1] === 0x4b;
+      const words = isZip ? (await readOBZ(u8, inflateRaw)).flatMap((b) => b.words) : wordsFromBoard(JSON.parse(new TextDecoder().decode(u8)));
+      const existing = [...CORE, ...FOLDERS.flatMap((x) => x.words)].map((x) => x.w);
+      const add = mergeWords(data.custom, existing, words, f.get("f")).slice(0, 300);
+      data.custom.push(...add); save("custom"); rebuildLexicon(); renderCare(); renderGrid();
+      status.textContent = add.length ? `Added ${add.length} word${add.length > 1 ? "s" : ""}. Words you already had were skipped.` : "No new words. You already have every word on that board.";
+      e.target.reset();
+    } catch (err) { status.textContent = err?.message?.startsWith("This") || err?.message?.startsWith("No ") ? err.message : "That file couldn't be read as a board."; }
+  });
+}

@@ -121,6 +121,15 @@ On the **Vocabulary** page you can shape what your child sees.
 - **How My Voice responds.** Change layout, button size and access options (see [Access modes](#access-modes)).
 - **What they explored quietly.** If your child uses *Explore quietly* mode (tapping without speaking), you can see which words caught their interest.
 
+### Sharing boards with other AAC apps (new in 0.15)
+
+In My Voice, open the Caregiver area and find **Share boards with other AAC apps**. It uses Open Board Format (.obf and .obz files), which CoughDrop, Cboard, AsTeRICS Grid and many other AAC apps understand.
+
+- **Save my boards (.obz)** saves your core words and every folder, including words you added, as one file. Each button keeps its picture and its word colour.
+- **Add words from the board** reads a .obf or .obz file from another app. Choose which folder the words go into. Words you already have are skipped, and at most 300 words come in at a time.
+- Nothing is uploaded. The file stays on your device until you choose to share it.
+- Pictures from other apps that aren't emoji come in as a star. You can change the picture under **Add a word**.
+
 <a id="stories-routines-and-speech-practice"></a>
 ## 7. Stories, routines and speech practice
 
@@ -472,6 +481,8 @@ Open [luminaac-web.vercel.app](https://luminaac-web.vercel.app) (My Voice) or [t
 - **iPhone or iPad (Safari):** tap Share, then **Add to Home Screen**.
 
 **Updates.** The app updates itself the next time it's opened online. The Bridge reloads itself once when an update arrives. My Voice waits until it's out of sight, so your child is never interrupted mid-sentence. If a page still looks out of date, close every LuminAAC tab and open it again.
+
+**If buttons stop working.** Before version 0.14.2, playing a sound game, a story or a Sound Path game from Play could leave an invisible pop-up open: the page still scrolled, but no button worked. Version 0.14.2 fixes this. If you still see it, the old version is still saved on the device: close the app fully (swipe it away) and open it again while online. If that doesn't help, open the app in the browser and reload twice, or remove it from the home screen and add it again.
 
 **Running your own copy.** The public app is hosted on Vercel, and its family server (for accounts, sync, alerts, chat and sensors) runs at the same address. Schools or families who want their own copy can host the files themselves, with or without the server (see the project README).
 
