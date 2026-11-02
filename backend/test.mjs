@@ -470,6 +470,34 @@ t("youtube: @name without a key explains how to paste the channel link", /channe
   delete process.env.CRON_SECRET;
 }
 
+// ---- End-to-end encryption: ciphertext only, key exchange mailbox ----
+{
+  const E = await import("../e2ee-core.js");
+  const KEY2 = "e2ee-family-key-0123456789";
+  const fk = E.newFamilyKey(), doc = { version: 2, notes: [{ text: "private note" }], profile: { child: "Robin" }, signals: [] };
+  const wire = await E.sealDoc(fk, doc);
+  const put = await call("PUT", "/api/sync", { doc: wire, baseVersion: 0 }, KEY2);
+  t("e2ee: sealed doc accepted", put.status === 200);
+  const raw = JSON.stringify((await call("GET", "/api/sync", null, KEY2)).json.data);
+  t("e2ee: server holds ciphertext only", !raw.includes("private note") && !raw.includes("Robin") && raw.includes("e2ee:v1:"));
+  t("e2ee: decrypts on the device", (await E.openDoc(fk, (await call("GET", "/api/sync", null, KEY2)).json.data.doc)).notes[0].text === "private note");
+  const phone = await E.newDeviceKeys(), parent = await E.newDeviceKeys();
+  t("e2ee: private key refused", (await call("POST", "/api/e2ee/requests", { pub: phone.priv }, KEY2)).status === 400);
+  const rq = await call("POST", "/api/e2ee/requests", { pub: phone.pub, name: "Kitchen tablet" }, KEY2);
+  const list = (await call("GET", "/api/e2ee/requests", null, KEY2)).json.data;
+  t("e2ee: request listed with public key only", list.length === 1 && list[0].name === "Kitchen tablet" && !("d" in list[0].pub));
+  t("e2ee: no grant yet", (await call("GET", `/api/e2ee/requests/${rq.json.data.id}`, null, KEY2)).json.data.grant === null);
+  const wrapped = await E.wrapFor(fk, parent, list[0].pub, list[0].id);
+  t("e2ee: grant stored", (await call("PUT", `/api/e2ee/requests/${list[0].id}`, { wrapped, from: parent.pub }, KEY2)).status === 200);
+  const g = (await call("GET", `/api/e2ee/requests/${rq.json.data.id}`, null, KEY2)).json.data.grant;
+  t("e2ee: device unwraps the family key", (await E.unwrapFrom(g.wrapped, phone, g.from, rq.json.data.id)) === fk);
+  t("e2ee: grant handed over once", (await call("GET", `/api/e2ee/requests/${rq.json.data.id}`, null, KEY2)).status === 404);
+  t("e2ee: safety codes match", (await E.safetyCode(phone.pub, g.from)) === (await E.safetyCode(parent.pub, list[0].pub)));
+  const sealedMsg = await E.seal(fk, "see you at 3", "chat");
+  const c = await call("POST", "/api/chat", { text: sealedMsg }, KEY2);
+  t("e2ee: sealed chat stored as is", c.status === 200 && c.json.data.text === sealedMsg && (await E.open(fk, c.json.data.text, "chat")) === "see you at 3");
+}
+
 console.log(`\n${pass} passed, ${failN} failed`);
 
 server.close(); process.exit(failN ? 1 : 0);

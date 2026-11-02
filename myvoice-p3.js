@@ -1,6 +1,7 @@
 // My Voice, Phase 3: safe-zone watching (only after parent consent), device
 // pairing by QR or code, and pulling the child-scoped settings from the server.
 import { load, persist, raiseAlert, api, defaultServer } from "./shared.js";
+import * as X from "./e2ee-store.js";
 import { watch, allZones, eventText } from "./geo.js";
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -120,6 +121,11 @@ async function pull() {
   const d = load(); if (!d.device || !d.sync.key) return;
   try {
     const r = await api(d, "GET", "/api/sync");
+    if (r?.doc?.e2eeChild) { // end-to-end encrypted: open it here, or ask a parent for the key
+      const opened = await X.openDoc(r.doc);
+      if (!opened) { await askForKey(d); return; }
+      r.doc = opened;
+    }
     if (!r?.doc) return;
     const x = load();
     for (const k of ["signals", "stories", "practice", "safety"]) if (r.doc[k]) x[k] = r.doc[k];
@@ -130,6 +136,18 @@ async function pull() {
     if (r.doc.profile?.child) x.profile.child = r.doc.profile.child;
     x.sync.version = r.version; x.sync.last = Date.now(); persist(x); syncWatch();
   } catch (e) { if (e.status === 401) { const x = load(); x.device = null; x.sync.key = ""; persist(x); renderPair(); note("This device was switched off by your family."); } }
+}
+// Encrypted family: this device asks for the key once; a parent approves it in the Bridge
+// after checking the 6-digit code shown here matches the one on their screen.
+async function askForKey(d) {
+  try {
+    if (!X.get().pending) await X.request(d, d.device?.name || "My Voice");
+    const r = await X.check(d);
+    if (r.done) { note(`Encryption key received. Safety code ${r.code}. It should match the code your family saw.`); return pull(); }
+    const code = await X.deviceCode();
+    note(`Your family uses end-to-end encryption. Ask a parent to open the Bridge, Account, End-to-end encryption, and approve "${d.device?.name || "My Voice"}" when it shows the code ${code}.`);
+    setTimeout(() => pull(), 15000);
+  } catch {}
 }
 // Opened from the pairing QR: index.html#pair=123456&u=https://server
 (function fromHash() {

@@ -3,6 +3,7 @@
 // through bridge-plus.js (live stream locally, a 30-second check when hosted).
 // A copy of the last 200 messages stays on this device so the thread shows offline.
 import { api } from "./shared.js";
+import * as X from "./e2ee-store.js";
 
 const B = window.__bridge;
 const $ = (s, el = document) => el.querySelector(s);
@@ -40,11 +41,16 @@ function render() {
   $("#chatState").textContent = on ? `${list.length} message${list.length === 1 ? "" : "s"}` : "Off";
   if (!on) return;
   const ol = $("#chatList"), atEnd = ol.scrollHeight - ol.scrollTop - ol.clientHeight < 40;
-  ol.innerHTML = list.length ? list.map((c) => `<li class="chat-msg${mine(c) ? " is-mine" : ""}"><p class="chat-who"><b>${esc(c.from)}</b> <span class="soft">${c.from === ROLE[c.role] ? "" : `${esc(ROLE[c.role] || c.role)} · `}${fmt(c.t)}</span>${db().account?.role === "parent" || !db().account ? ` <button class="link-btn small" type="button" data-cdel="${esc(c.id)}" aria-label="Delete message from ${esc(c.from)}">Delete</button>` : ""}</p><p class="chat-text">${esc(c.text)}</p></li>`).join("")
+  ol.innerHTML = list.length ? list.map((c) => `<li class="chat-msg${mine(c) ? " is-mine" : ""}"><p class="chat-who"><b>${esc(c.from)}</b> <span class="soft">${c.from === ROLE[c.role] ? "" : `${esc(ROLE[c.role] || c.role)} · `}${fmt(c.t)}</span>${db().account?.role === "parent" || !db().account ? ` <button class="link-btn small" type="button" data-cdel="${esc(c.id)}" aria-label="Delete message from ${esc(c.from)}">Delete</button>` : ""}</p><p class="chat-text">${esc(shown(c))}</p></li>`).join("")
     : `<li class="soft">No messages yet. Say hello to the team.</li>`;
   if (atEnd || !lastLoad) ol.scrollTop = ol.scrollHeight;
 }
+// End-to-end encrypted messages are opened here, on the device; the server only has ciphertext.
+const plain = new Map();
+const shown = (c) => (X.isSealed(c.text) ? plain.get(c.id) ?? "Encrypted message. This device doesn't have the family key yet." : c.text);
+async function openAll() { let n = 0; for (const c of list) if (X.isSealed(c.text) && !plain.has(c.id)) { const t = await X.openText(c.text); if (t != null) { plain.set(c.id, t); n++; } } if (n) render(); }
 function merge(items) {
+  setTimeout(openAll);
   const ids = new Set(list.map((c) => c.id)); let added = 0;
   for (const c of items) if (!ids.has(c.id)) { list.push(c); added++; }
   list.sort((a, b) => a.t - b.t); keep(list); return added;
@@ -63,7 +69,7 @@ $("#formChat").addEventListener("submit", async (e) => {
   e.preventDefault();
   const ta = $("#chatText"), text = ta.value.trim(); if (!text) return;
   const btn = e.currentTarget.querySelector("button"); btn.disabled = true;
-  try { const c = await api(db(), "POST", "/api/chat", { text, from: db().profile.caregiver || undefined }); merge([c]); ta.value = ""; render(); $("#chatList").scrollTop = 1e9; }
+  try { const c = await api(db(), "POST", "/api/chat", { text: await X.sealText(text), from: db().profile.caregiver || undefined }); merge([c]); ta.value = ""; render(); $("#chatList").scrollTop = 1e9; }
   catch (err) { B.toast(err.status === 403 ? "Your role can't use team chat." : "Couldn't send. Check the connection and try again."); }
   finally { btn.disabled = false; ta.focus(); }
 });

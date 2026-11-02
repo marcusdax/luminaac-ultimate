@@ -88,6 +88,8 @@ const can = (w, perm) => (w.role === "child" ? w.scopes || PERMS.child : PERMS[w
 // What a paired My Voice device may read: only what it needs to run (no notes, team, audit, alerts).
 function childView(doc) {
   if (!doc) return null;
+  if (doc.e2ee) return { version: 2, scope: "child", e2eeChild: doc.e2eeChild || null }; // end-to-end encrypted: the server can't read it
+
   const { profile = {}, signals = [], stories = [], practice, access, safety, videos, games, potty: pp } = doc;
   return { version: 2, scope: "child", profile: { child: profile.child, place: profile.place }, signals: signals.map(({ id, name, phrase, cues, contexts, confirmations, rejections, moods }) => ({ id, name, phrase, cues, contexts, confirmations, rejections, moods })), stories, practice, access, safety: safety && { consent: safety.consent, zones: safety.zones, sendLocation: safety.sendLocation, water: safety.water },
     // Phase 7: the video list and game settings only. Watch history and game turns stay on each device.
@@ -149,6 +151,7 @@ const SCOPES = {
 };
 function scopedView(doc, role) {
   const s = SCOPES[role] || SCOPES.family;
+  if (doc?.e2ee) return { child: "", role, encrypted: true, generated: new Date().toISOString() };
   const out = { child: doc?.profile?.child || "", role, generated: new Date().toISOString() };
   if (s.signals) out.signals = (doc?.signals || []).map(({ name, cues, meaning, phrase, confirmations, rejections }) => ({ name, cues, meaning, phrase, confidence: Math.round(((confirmations + 1) / (confirmations + rejections + 2)) * 100) }));
   if (s.meanings) out.moments = (doc?.moments || []).filter((m) => m.meaning).map(({ t, context, meaning, intent }) => ({ t, context, meaning, intent }));
@@ -214,7 +217,7 @@ export async function sendWeekly(now = Date.now(), base = process.env.APP_URL ||
   let sent = 0;
   for (const fam of store.list()) {
     const d = store.read(fam);
-    if (!summary.due(d.summaryCfg, now)) continue;
+    if (!summary.due(d.summaryCfg, now) || d.doc?.e2ee) continue; // encrypted families: the server can't count anything, so no summary
     const s = summary.build(d, now);
     store.update(fam, (x) => { x.summaryCfg.last = now; });
     const r = await notify(fam, { type: "summary", topic: "weekly", payload: { kind: "summary", title: s.title, body: s.short, tag: "weekly", url: "bridge.html#insights" } }).catch(() => []);
@@ -545,12 +548,12 @@ async function route(req, res, url) {
     if (!can(w, "chat")) return deny();
     if (M === "GET") { const since = Number(url.searchParams.get("since") || 0); return ok(res, (store.read(key).chat || []).filter((c) => c.t > since).slice(-200)); }
     if (M === "POST") {
-      const b = await body(req), text = String(b.text || "").trim().slice(0, 1000);
+      const b = await body(req), sealed = /^e2ee:v1:[\w-]+$/.test(String(b.text || "")), text = String(b.text || "").trim().slice(0, sealed ? 6000 : 1000);
       if (!text) return fail(res, 400, "Validation failed", "text is required");
       const c = { id: String(b.id || randomUUID()).slice(0, 64), t: Date.now(), text, role: w.role, from: String(w.user?.name || b.from || ROLE_NAME[w.role] || "Parent").slice(0, 60), ...(w.user && { uid: w.user.id }) };
       store.update(key, (d) => { if ((d.chat ||= []).some((x) => x.id === c.id)) return; d.chat = [...d.chat, c].slice(-500); });
       broadcast(key, "chat", c);
-      await soon(notify(key, { type: "chat", excludeUid: w.user?.id, topic: "chat", payload: { kind: "chat", title: `${c.from} in team chat`, body: text.slice(0, 120), tag: "chat", url: "bridge.html#team" } }));
+      await soon(notify(key, { type: "chat", excludeUid: w.user?.id, topic: "chat", payload: { kind: "chat", title: `${c.from} in team chat`, body: sealed ? "New message. Open the Bridge to read it." : text.slice(0, 120), tag: "chat", url: "bridge.html#team" } }));
       return ok(res, c);
     }
   }
@@ -588,6 +591,39 @@ async function route(req, res, url) {
     if (!sn) return fail(res, 404, "Sensor not found");
     hookIndex.delete(sn.tokenHash); saveHooks();
     return ok(res, undefined, "Sensor removed. Its link no longer works.");
+  }
+
+  // ---- End-to-end encryption key exchange (the server only relays public keys and wrapped keys) ----
+  if (p === "/api/e2ee/requests" && M === "POST") {
+    const b = await body(req), pub = b.pub;
+    if (!isObj(pub) || pub.kty !== "EC" || pub.crv !== "P-256" || typeof pub.x !== "string" || typeof pub.y !== "string" || "d" in pub) return fail(res, 400, "Validation failed", "pub must be a public P-256 key");
+    const r = { id: randomUUID(), t: Date.now(), name: String(b.name || (w.kind === "device" ? w.device?.name : w.user?.name) || "A device").slice(0, 60), role: w.role, pub: { kty: "EC", crv: "P-256", x: pub.x.slice(0, 64), y: pub.y.slice(0, 64) }, grant: null };
+    store.update(key, (d) => { d.e2eeReq = [...(d.e2eeReq || []).filter((x) => Date.now() - x.t < 864e5), r].slice(-20); audit(d, `Encryption key requested by ${r.name}`); });
+    return ok(res, { id: r.id });
+  }
+  if (p === "/api/e2ee/requests" && M === "GET") {
+    if (!can(w, "devices")) return deny();
+    return ok(res, (store.read(key).e2eeReq || []).filter((x) => !x.grant && Date.now() - x.t < 864e5).map(({ grant, ...x }) => x));
+  }
+  if ((m = /^\/api\/e2ee\/requests\/([\w-]+)$/.exec(p))) {
+    if (M === "PUT") {
+      if (!can(w, "devices")) return deny();
+      const b = await body(req);
+      if (!/^e2ee:v1:[\w-]+$/.test(String(b.wrapped || "")) || !isObj(b.from)) return fail(res, 400, "Validation failed", "wrapped and from are required");
+      const done = store.update(key, (d) => { const x = (d.e2eeReq || []).find((y) => y.id === m[1]); if (!x) return false; x.grant = { wrapped: String(b.wrapped).slice(0, 2000), from: { kty: "EC", crv: "P-256", x: String(b.from.x).slice(0, 64), y: String(b.from.y).slice(0, 64) } }; audit(d, `Encryption key shared with ${x.name}`); return true; });
+      return done ? ok(res, undefined, "Shared") : fail(res, 404, "Request not found");
+    }
+    if (M === "GET") {
+      const x = (store.read(key).e2eeReq || []).find((y) => y.id === m[1]);
+      if (!x) return fail(res, 404, "Request not found");
+      if (x.grant) store.update(key, (d) => { d.e2eeReq = (d.e2eeReq || []).filter((y) => y.id !== m[1]); }); // hand over once
+      return ok(res, { grant: x.grant });
+    }
+    if (M === "DELETE") {
+      if (!can(w, "devices")) return deny();
+      store.update(key, (d) => { d.e2eeReq = (d.e2eeReq || []).filter((y) => y.id !== m[1]); });
+      return ok(res, undefined, "Declined");
+    }
   }
 
   // ---- Sync ----

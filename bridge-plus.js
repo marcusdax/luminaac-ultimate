@@ -2,6 +2,7 @@
 // access settings for My Voice, extra insights, and the optional server
 // (sync, live alerts, share links). Edits the same in-memory document as bridge.js.
 import { uid, confidence, api, INTENTS, partOfDay } from "./shared.js";
+import * as X from "./e2ee-store.js";
 
 const B = window.__bridge;
 const $ = (s, el = document) => el.querySelector(s);
@@ -135,7 +136,8 @@ async function syncNow() {
   const d = db();
   status("Syncing…");
   const { media, account, device, ...rest } = d; void media; void account; void device;
-  const body = { doc: { ...rest, sync: { ...d.sync, key: "" } }, baseVersion: d.sync.version };
+  const plain = { ...rest, sync: { ...d.sync, key: "" } };
+  const body = { doc: X.on() ? await X.sealDoc(plain) : plain, baseVersion: d.sync.version };
   try {
     const r = await api(d, "PUT", "/api/sync", body);
     d.sync.version = r.version; d.sync.last = Date.now();
@@ -143,13 +145,14 @@ async function syncNow() {
     if (e.status !== 409) { status(`Couldn't reach the server (${e.message}). Your data is safe here.`); return; }
     // Conflict: another device synced first. Take theirs, keep our local-only items, and push again.
     const server = e.body.details;
+    if (server.doc?.e2ee) { server.doc = await X.openDoc(server.doc); if (!server.doc) { status("The server copy is encrypted and this device doesn't have the family key yet. See End-to-end encryption below."); return; } }
     const mine = { alerts: d.alerts, feedback: d.feedback, sync: d.sync, account: d.account, device: d.device };
     const merged = { ...server.doc, ...mine };
     merged.moments = mergeById(server.doc.moments, d.moments);
     merged.signals = mergeById(server.doc.signals, d.signals, (a, b) => ({ ...b, confirmations: Math.max(a.confirmations, b.confirmations), rejections: Math.max(a.rejections, b.rejections) }));
     merged.sync.version = server.serverVersion;
     B.db = merged;
-    try { const r = await api(merged, "PUT", "/api/sync", { doc: { ...merged, sync: { ...merged.sync, key: "" } }, baseVersion: server.serverVersion }); merged.sync.version = r.version; merged.sync.last = Date.now(); }
+    try { const mp = { ...merged, sync: { ...merged.sync, key: "" } }; const r = await api(merged, "PUT", "/api/sync", { doc: X.on() ? await X.sealDoc(mp) : mp, baseVersion: server.serverVersion }); merged.sync.version = r.version; merged.sync.last = Date.now(); }
     catch (e2) { status(`Merged, but couldn't save to the server (${e2.message}).`); }
   }
   B.save("Synced with server"); renderSync(); connectStream();
