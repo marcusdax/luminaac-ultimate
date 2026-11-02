@@ -80,3 +80,20 @@
 .rd-bridge svg { width: 22px; height: 22px; }
 .rd .care-head .rd-bridge { margin-left: auto; margin-right: var(--s2); }
 :root[data-theme="contrast"] .rd-bridge { outline: 2px solid var(--ink); }
+
+/* R2: role view picker, Log button and sheet, handoff card */
+.rd-view { display: flex; flex-direction: column; gap: 4px; margin-bottom: var(--s3); font-size: .9rem; color: var(--ink-soft); }
+.rd-view select { min-height: 44px; border-radius: 12px; border: 1px solid var(--line); padding: 0 10px; background: var(--paper-raised); color: var(--ink); font: inherit; }
+.rd-log { position: fixed; right: 20px; bottom: 24px; z-index: 30; display: inline-flex; align-items: center; gap: 8px; min-height: 56px; padding: 0 22px 0 18px; border: 0; border-radius: 999px; background: var(--dusk); color: #fff; font-family: var(--font); font-weight: 700; font-size: 1.05rem; box-shadow: 0 8px 24px rgba(0,0,0,.22); cursor: pointer; }
+.rd-log svg { width: 22px; height: 22px; }
+.rd-log:focus-visible { outline: 3px solid var(--lumen); outline-offset: 3px; }
+.rd-logchoices { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--s2); margin: var(--s3) 0; }
+.rd-logchoices .btn { min-height: 56px; justify-content: center; }
+.rd-hand { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--s3); margin: 0; }
+.rd-hand dt { font-size: .85rem; color: var(--ink-soft); }
+.rd-hand dd { margin: 2px 0 0; font-weight: 600; }
+html:not(.rd) .rd-log { display: none; }
+@media (max-width: 760px) {
+  .rd-view { flex-direction: row; align-items: center; gap: var(--s2); margin: calc(-1 * var(--s2)) 0 var(--s3); }
+  .rd-log { bottom: 88px; right: 14px; }
+}

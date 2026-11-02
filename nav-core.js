@@ -65,3 +65,42 @@ export function nowNext(plans, done = {}, prefer = null) {
   const i = plan.steps.findIndex((_, k) => !d.has(k));
   return { plan, now: plan.steps[i], next: plan.steps[i + 1] || null };
 }
+
+// ---- Redesign R2: role views, the Log sheet, and the handoff card ----
+// A role view only changes what is shown first; access.js and the server still
+// decide what each person may see. "all" shows every hub.
+export const ROLE_VIEWS = {
+  parent: { label: "Parent", hubs: ["home", "programs", "progress", "circle", "safety"], log: ["moment", "potty", "note", "meal", "word", "behaviour", "sound"] },
+  teacher: { label: "Teacher", hubs: ["home", "programs", "circle"], log: ["note", "word", "behaviour", "meal", "potty", "moment"] },
+  therapist: { label: "Therapist", hubs: ["progress", "programs", "home", "circle"], log: ["sound", "word", "note", "behaviour", "moment"] },
+  aide: { label: "Aide", hubs: ["home", "programs", "circle"], log: ["potty", "meal", "behaviour", "note", "word"] },
+  family: { label: "Family", hubs: ["home", "circle"], log: ["note", "moment", "meal"] },
+};
+export const LOG_KINDS = {
+  moment: "Moment", note: "Note", meal: "Ate or drank", word: "Word or sound heard", behaviour: "Behaviour", potty: "Toilet", sound: "Sound try",
+};
+export const viewFor = (role) => ROLE_VIEWS[role] || ROLE_VIEWS.parent;
+// Up to six choices: the ones this person uses most first, then the role's defaults.
+export function logChoices(role, counts = {}, avail = () => true) {
+  const base = viewFor(role).log.filter(avail);
+  return [...base].sort((a, b) => (counts[b] || 0) - (counts[a] || 0) || base.indexOf(a) - base.indexOf(b)).slice(0, 6);
+}
+export function hubsFor(role, all = false) {
+  return all ? ["home", "programs", "progress", "circle", "safety"] : viewFor(role).hubs;
+}
+// Handoff: what the next person needs at drop-off or pick-up, from data already logged.
+export function handoff({ notes = [], potty = [], mood = null, alerts = [], moments = [] } = {}, now = Date.now(), within = 12 * 3600e3) {
+  const recent = (x) => x && now - x.t < within;
+  const meal = notes.find((n) => n.kind === "meal");
+  const toilet = potty.filter((e) => e.kind === "void" || e.kind === "wet").sort((a, b) => b.t - a.t)[0];
+  const watch = [
+    ...alerts.filter((a) => !a.ack && recent(a)).map((a) => a.message || a.kind),
+    ...notes.filter((n) => n.kind === "behaviour" && recent(n)).slice(0, 2).map((n) => n.text),
+  ].slice(0, 3);
+  const said = moments.filter((m) => m.meaning && recent(m)).slice(0, 3).map((m) => m.meaning);
+  return {
+    ate: recent(meal) ? { t: meal.t, text: meal.text } : null,
+    toilet: recent(toilet) ? { t: toilet.t, text: toilet.kind === "wet" ? "Accident" : (toilet.data?.where || "toilet") === "toilet" ? "Used the toilet" : "Went, not in the toilet" } : null,
+    mood, watch, said,
+  };
+}

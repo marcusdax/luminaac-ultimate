@@ -40,5 +40,20 @@ t("back to care: no stamp stays on Talk", !N.backToCare("#care", null, now));
 t("back to care: old stamp stays on Talk", !N.backToCare("#care", String(now - 10 * 60e3), now));
 t("back to care: stamp without #care stays on Talk", !N.backToCare("", String(now), now));
 
+// R2
+t("roles: teacher hides Safety and Progress", N.hubsFor("teacher").join() === "home,programs,circle");
+t("roles: everything shows all five hubs", N.hubsFor("family", true).length === 5);
+t("roles: unknown role falls back to parent", N.viewFor("x").label === "Parent");
+t("log: role defaults order the sheet", N.logChoices("teacher")[0] === "note");
+t("log: most used moves up", N.logChoices("teacher", { potty: 5 })[0] === "potty");
+t("log: never more than six", N.logChoices("parent").length === 6);
+t("log: unavailable choices drop out", !N.logChoices("parent", {}, (k) => k !== "potty").includes("potty"));
+const H = N.handoff({ notes: [{ kind: "meal", t: now - 3600e3, text: "Toast" }, { kind: "behaviour", t: now - 60e3, text: "Upset at the bell" }], potty: [{ kind: "void", t: now - 7200e3, data: {} }, { kind: "wet", t: now - 9000e3, data: {} }], mood: "calm", alerts: [{ t: now - 1, ack: null, message: "Needs help" }], moments: [{ t: now - 5, meaning: "Park" }] }, now);
+t("handoff: last ate", H.ate.text === "Toast");
+t("handoff: last toilet is the newest", H.toilet.text === "Used the toilet");
+t("handoff: things to watch", H.watch.length === 2 && H.watch[0] === "Needs help");
+t("handoff: old things drop off", N.handoff({ notes: [{ kind: "meal", t: now - 20 * 3600e3, text: "x" }] }, now).ate === null);
+t("handoff: said recently", H.said[0] === "Park" && H.mood === "calm");
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
