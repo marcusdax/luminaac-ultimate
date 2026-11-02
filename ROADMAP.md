@@ -1,5 +1,12 @@
 # Roadmap
 
+## v0.12.0: Family server, team chat, sensors and wearables, YouTube channels
+- **Family server on Vercel** at the app's own address (`/api`, `api/index.js`), with its files kept in Upstash Redis (`backend/mirror.js`). Pages check `/api/updates` every 30 seconds while visible, for alerts and chat.
+- **Team chat** in Circle → Team for parents, teachers, therapists and family. Never on the child's device.
+- **Sensors and wearables** in Safety: private webhook links for door, gate, window, pool, bed and motion sensors (IFTTT, Home Assistant). Urgent ones chime like water alerts. Quick "Open" buttons for AngelSense, AirTag, SmartTag, Google Find Hub, Jiobit and Life360.
+- **YouTube channels** next to single videos: a linked channel plays its uploads in the privacy-enhanced player. Ms Rachel is linked once on every device.
+- **Limits:** no live stream (up to 30 s delay), the silent-device check runs only on requests, reset emails are not sent yet, and per-video channel tiles and @names need `YOUTUBE_API_KEY`.
+
 ## v0.11.4: Bridge fits Android phones
 On phones the Bridge hub bar is a strip that scrolls left and right (each hub at least 76 px, current hub kept in view), and the header uses short labels ("Help", "My Voice") so the page is exactly the screen width down to 360 px. Before, the header pushed the page to 411 px and phones zoomed out.
 
