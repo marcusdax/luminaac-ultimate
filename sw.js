@@ -6,12 +6,12 @@
 //  • Model weights from the Hugging Face hub are cached by Transformers.js itself
 //    ("transformers-cache"); Human's models are vendored locally under vendor/human.
 //  • The backend API (/api/…) and map tiles are never cached here.
-const VERSION = "luminaac-v0.13.0";
+const VERSION = "luminaac-v0.14.0";
 const SHELL = `${VERSION}-shell`, CDN = `${VERSION}-cdn`;
 const FILES = [
   "./", "index.html", "bridge.html", "guide.html", "guide.css", "manifest.webmanifest", "bridge.webmanifest", "favicon.svg",
   "tokens.css", "app.css", "myvoice.css", "bridge.css", "phase3.css", "phase4.css", "phase6.css", "phase7.css", "potty.css", "sound.css", "redesign.css", "brand/brand-tokens.css",
-  "app.js", "myvoice.js", "access.js", "shared.js", "vocab.js", "myvoice-p3.js", "myvoice-p4.js", "myvoice-p7.js", "potty.js", "potty-core.js", "potty-store.js", "potty-icons.js", "sound-core.js", "sound-store.js", "myvoice-sound.js", "bridge-sound.js", "nav-core.js", "myvoice-redesign.js", "bridge-hubs.js", "bridge-chat.js", "bridge-iot.js", "bridge-yt.js",
+  "app.js", "myvoice.js", "access.js", "shared.js", "vocab.js", "myvoice-p3.js", "myvoice-p4.js", "myvoice-p7.js", "potty.js", "potty-core.js", "potty-store.js", "potty-icons.js", "sound-core.js", "sound-store.js", "myvoice-sound.js", "bridge-sound.js", "nav-core.js", "myvoice-redesign.js", "bridge-hubs.js", "bridge-chat.js", "bridge-iot.js", "bridge-yt.js", "bridge-notify.js",
   "bridge.js", "bridge-plus.js", "bridge-p3.js", "bridge-p4.js", "bridge-p6.js", "bridge-p7.js", "bridge-potty.js", "interests.js", "games.js", "water.js", "water-tiles.js", "emotion.js", "geo.js", "fl-core.js", "motion-lite.js",
   "ai.js", "ai-worker.js", "pwa.js",
   "vendor/motion.js", "vendor/qrcode.js", "vendor/simplify.js", "vendor/jsQR.js", "vendor/leaflet/leaflet.js", "vendor/leaflet/leaflet.css",
@@ -49,3 +49,22 @@ async function cacheFirst(req, name, revalidate) {
   if (hit) { if (revalidate) refresh.catch(() => {}); return hit; }
   return refresh.catch(() => Response.error());
 }
+
+// Web Push: the server sends a short, encrypted { title, body, tag, url, urgent }.
+self.addEventListener("push", (e) => {
+  let d = {}; try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data?.text() }; }
+  const title = d.title || "LuminAAC";
+  e.waitUntil(self.registration.showNotification(title, {
+    body: d.body || "", tag: d.tag || "luminaac", renotify: !!d.urgent, requireInteraction: !!d.urgent,
+    icon: "icons/icon-192.png", badge: "icons/icon-192.png", data: { url: d.url || "bridge.html" },
+  }));
+});
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const target = new URL(e.notification.data?.url || "bridge.html", self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((cs) => {
+    const c = cs.find((x) => x.url.split("#")[0] === target.split("#")[0]);
+    if (c) { c.navigate(target).catch(() => {}); return c.focus(); }
+    return self.clients.openWindow(target);
+  }));
+});

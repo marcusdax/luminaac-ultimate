@@ -20,6 +20,7 @@ import * as fl from "./flserver.js";
 import * as mailer from "./mailer.js";
 import * as potty from "./potty.js";
 import * as yt from "./youtube.js";
+import * as wp from "./webpush.js";
 
 const PORT = Number(process.env.PORT || 3001);
 const ORIGINS = (process.env.ALLOWED_ORIGINS || "*").split(",").map((s) => s.trim());
@@ -161,6 +162,30 @@ function broadcast(key, event, data) {
   for (const res of listeners.get(key) || []) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 }
 
+// ---------- Web Push ----------
+const URGENT_KINDS = ["help", "home", "danger-enter", "silent"];
+const ALERT_TITLE = { help: "Help needed", home: "Wants to go home", "danger-enter": "Entered a danger area", "danger-leave": "Left a danger area", "zone-enter": "Arrived", "zone-leave": "Left a place", silent: "Device went quiet", back: "Sharing again", sensor: "Sensor", potty: "Toilet", custom: "Message" };
+const isUrgent = (a) => !!a.urgent || URGENT_KINDS.includes(a.kind);
+const pushLog = []; // last few results, for tests and the status route
+// Send to everyone in the family whose preferences allow it. Only short text goes
+// in the payload, never a location. Dead subscriptions are removed.
+async function notify(key, ev) {
+  const d = store.read(key), subs = wp.recipients(d.push, ev);
+  if (!subs.length) return [];
+  const k = wp.keys(store.DIR);
+  const out = await Promise.all(subs.map(async (s) => ({ id: s.id, ...(await wp.send(s, ev.payload, k, { urgency: ev.urgent ? "high" : "normal", ttl: ev.urgent ? 600 : 3600, topic: ev.topic })) })));
+  const gone = out.filter((r) => r.gone).map((r) => r.id);
+  if (gone.length) store.update(key, (x) => { x.push = (x.push || []).filter((s) => !gone.includes(s.id)); });
+  pushLog.unshift(...out.map((r) => ({ ...r, type: ev.type, t: Date.now() }))); pushLog.length = Math.min(pushLog.length, 50);
+  return out;
+}
+const soon = (pr, ms = 2500) => Promise.race([pr.catch(() => []), new Promise((r) => setTimeout(() => r([]), ms))]);
+function alertEvent(a) {
+  const urgent = isUrgent(a);
+  return { type: "alert", urgent, topic: a.kind, payload: { kind: "alert", title: `${urgent ? "Urgent: " : ""}${ALERT_TITLE[a.kind] || "Alert"}`, body: (a.message || `${a.from || "My Voice"}: ${ALERT_TITLE[a.kind] || a.kind}`).slice(0, 140), tag: "alert-" + a.id, url: "bridge.html#today", urgent } };
+}
+export { notify, pushLog };
+
 // ---------- routes ----------
 async function route(req, res, url) {
   const p = url.pathname.replace(/\/+$/, "") || "/";
@@ -198,6 +223,7 @@ async function route(req, res, url) {
   }
 
   // ---- YouTube channel lookup (public, read-only, youtube.com only) ----
+  if (p === "/api/push/key" && M === "GET") return ok(res, { publicKey: wp.keys(store.DIR).publicKey });
   if (p === "/api/youtube" && M === "GET") {
     try { return ok(res, await yt.channel(url.searchParams.get("channel"))); }
     catch (e) { return fail(res, e.status || 502, e.message); }
@@ -409,6 +435,40 @@ async function route(req, res, url) {
     if ((m = /^\/api\/fl\/round\/([\w-]+)\/reveal$/.exec(p)) && M === "POST") { const b = await body(req); return R(await fl.reveal(m[1], b.client, b, P)); }
   }
 
+  // ---- Web Push subscriptions (one per browser; preferences are per person) ----
+  if (p === "/api/push" || p.startsWith("/api/push/")) {
+    if (!can(w, "alerts:read") && !can(w, "chat")) return deny();
+    const mine = (s) => (w.user ? s.uid === w.user.id : !s.uid) || w.role === "parent";
+    const QUIET = (q) => isObj(q) ? { on: !!q.on, from: /^\d\d:\d\d$/.test(q.from) ? q.from : "21:00", to: /^\d\d:\d\d$/.test(q.to) ? q.to : "07:00", tz: String(q.tz || "UTC").slice(0, 60) } : { on: false, from: "21:00", to: "07:00", tz: "UTC" };
+    const PREFS = (b = {}) => ({ alerts: b.alerts !== false, urgentOnly: !!b.urgentOnly, chat: b.chat !== false, summary: !!b.summary, emailFallback: b.emailFallback !== false, quiet: QUIET(b.quiet) });
+    const out = (s) => ({ id: s.id, name: s.name, role: s.role, prefs: s.prefs, created: s.created, mine: w.user ? s.uid === w.user.id : !s.uid });
+    if (p === "/api/push" && M === "GET") return ok(res, (store.read(key).push || []).filter(mine).map(out));
+    if (p === "/api/push" && M === "POST") {
+      const b = await body(req), sub = b.subscription || {};
+      let ep; try { ep = new URL(sub.endpoint); } catch { return fail(res, 400, "Validation failed", "subscription.endpoint must be a URL"); }
+      if (ep.protocol !== "https:" && !process.env.PUSH_ALLOW_HTTP) return fail(res, 400, "Validation failed", "endpoint must be https");
+      if (!/^[A-Za-z0-9_-]{80,100}$/.test(sub.keys?.p256dh || "") || !/^[A-Za-z0-9_-]{16,32}$/.test(sub.keys?.auth || "")) return fail(res, 400, "Validation failed", "subscription.keys are missing");
+      const s = store.update(key, (d) => {
+        d.push = (d.push || []).filter((x) => x.endpoint !== sub.endpoint);
+        const x = { id: randomUUID(), endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth }, name: String(b.name || "This browser").slice(0, 60), role: w.role, canChat: can(w, "chat"), canAlerts: can(w, "alerts:read"), ...(w.user && { uid: w.user.id }), prefs: PREFS(b.prefs), created: Date.now() };
+        d.push = [...d.push, x].slice(-50); audit(d, "Notifications turned on for a browser"); return x;
+      });
+      return ok(res, out(s), "Notifications are on for this browser");
+    }
+    if (p === "/api/push/test" && M === "POST") {
+      const b = await body(req), d = store.read(key), s = (d.push || []).find((x) => x.id === b.id && mine(x));
+      if (!s) return fail(res, 404, "Subscription not found");
+      const r = await wp.send(s, { kind: "test", title: "LuminAAC test", body: "Notifications are working.", tag: "test", url: "bridge.html" }, wp.keys(store.DIR), { ttl: 60 });
+      return r.status >= 200 && r.status < 300 ? ok(res, r, "Test sent") : fail(res, 502, "The push service did not accept it", String(r.status || r.error));
+    }
+    if ((m = /^\/api\/push\/([\w-]+)$/.exec(p)) && (M === "PUT" || M === "DELETE")) {
+      const b = M === "PUT" ? await body(req) : {};
+      const s = store.update(key, (d) => { const x = (d.push || []).find((y) => y.id === m[1] && mine(y)); if (!x) return null; if (M === "DELETE") d.push = d.push.filter((y) => y !== x); else x.prefs = PREFS({ ...x.prefs, ...b.prefs, quiet: { ...x.prefs.quiet, ...(b.prefs?.quiet || {}) } }); return x; });
+      if (!s) return fail(res, 404, "Subscription not found");
+      return M === "DELETE" ? ok(res, undefined, "Notifications are off for this browser") : ok(res, out(s), "Saved");
+    }
+  }
+
   // ---- Team chat (parents, teachers, therapists, family; never the child's device) ----
   if (p === "/api/chat") {
     if (!can(w, "chat")) return deny();
@@ -419,6 +479,7 @@ async function route(req, res, url) {
       const c = { id: String(b.id || randomUUID()).slice(0, 64), t: Date.now(), text, role: w.role, from: String(w.user?.name || b.from || ROLE_NAME[w.role] || "Parent").slice(0, 60), ...(w.user && { uid: w.user.id }) };
       store.update(key, (d) => { if ((d.chat ||= []).some((x) => x.id === c.id)) return; d.chat = [...d.chat, c].slice(-500); });
       broadcast(key, "chat", c);
+      await soon(notify(key, { type: "chat", excludeUid: w.user?.id, topic: "chat", payload: { kind: "chat", title: `${c.from} in team chat`, body: text.slice(0, 120), tag: "chat", url: "bridge.html#team" } }));
       return ok(res, c);
     }
   }
@@ -559,7 +620,7 @@ async function route(req, res, url) {
     if (b.loc && !loc) return fail(res, 400, "Validation failed", "loc must be { lat, lng, acc }");
     const a = { id: String(b.id || randomUUID()).slice(0, 64), kind: b.kind, message: String(b.message || "").slice(0, 200), t: Number(b.t) || Date.now(), ack: null, from: String(b.from || w.device?.name || "My Voice").slice(0, 60), ...(loc && { loc }), ...(b.zone && { zone: String(b.zone).slice(0, 60) }), ...(b.water === true && { water: true }), ...(b.kind === "danger-enter" && { urgent: true }) };
     const dup = store.update(key, (d) => { if (d.alerts.some((x) => x.id === a.id)) return true; d.alerts = [a, ...d.alerts].slice(0, 500); audit(d, `Alert: ${a.kind}`); return false; });
-    if (!dup) broadcast(key, "alert", a);
+    if (!dup) { broadcast(key, "alert", a); await soon(notify(key, alertEvent(a))); }
     return ok(res, a);
   }
   if ((m = /^\/api\/alerts\/([\w-]+)\/ack$/.exec(p)) && M === "POST") {
@@ -626,6 +687,7 @@ function raise(family, x) {
   const a = { id: randomUUID(), t: Date.now(), ack: null, message: "", ...x };
   store.update(family, (d) => { d.alerts = [a, ...d.alerts].slice(0, 500); audit(d, `Alert: ${a.kind}`); });
   broadcast(family, "alert", a);
+  notify(family, alertEvent(a)).catch(() => {});
   return a;
 }
 export function checkDeadman(now = Date.now()) {

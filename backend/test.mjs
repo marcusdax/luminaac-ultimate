@@ -5,6 +5,7 @@ import { join } from "node:path";
 process.env.LUMINAAC_DATA = mkdtempSync(join(tmpdir(), "luminaac-"));
 process.env.LUMINAAC_NO_LISTEN = "1";
 process.env.LUMINAAC_QUIET = "1";
+process.env.PUSH_ALLOW_HTTP = "1";
 process.env.FL_PHASE_MS = "1500";
 process.env.FL_EPSILON_CAP = "1000";
 const { server, checkDeadman } = await import("./server.js");
@@ -364,6 +365,52 @@ t("youtube: @name without a key explains how to paste the channel link", /channe
   rm(join(A, "fam.json")); await mirror.push(A, fake);
   t("mirror: a deleted family is deleted from the database", !("fam.json" in R["lum:files"]));
   delete process.env.KV_REST_API_URL; delete process.env.KV_REST_API_TOKEN;
+}
+
+// ---- Web Push (VAPID + aes128gcm), against a fake push service ----
+{
+  const wp = await import("./webpush.js");
+  const { createECDH, randomBytes } = await import("node:crypto");
+  const http = await import("node:http");
+  const got = [];
+  const ps = http.createServer((q, r) => { const ch = []; q.on("data", (c) => ch.push(c)); q.on("end", () => { got.push({ path: q.url, h: q.headers, body: Buffer.concat(ch) }); r.writeHead(q.url.includes("gone") ? 410 : 201); r.end(); }); });
+  await new Promise((r) => ps.listen(0, r));
+  const pbase = `http://127.0.0.1:${ps.address().port}`;
+  const ua = createECDH("prime256v1"); ua.generateKeys(); const auth = randomBytes(16);
+  const sub = (path) => ({ endpoint: pbase + path, keys: { p256dh: ua.getPublicKey().toString("base64url"), auth: auth.toString("base64url") } });
+  const k = wp.makeKeys();
+  t("push: encrypt then decrypt round-trips", wp.decrypt(wp.encrypt('{"a":"hello"}', sub("/x")), ua, auth) === '{"a":"hello"}');
+  t("push: VAPID JWT verifies with the public key", wp.verifyVapid(wp.vapidAuth(pbase + "/x", k), k.publicKey));
+  t("push: VAPID JWT fails with another key", !wp.verifyVapid(wp.vapidAuth(pbase + "/x", k), wp.makeKeys().publicKey));
+  t("push: quiet hours across midnight", wp.inQuiet({ on: true, from: "21:00", to: "07:00", tz: "UTC" }, Date.UTC(2026, 0, 1, 23)) && !wp.inQuiet({ on: true, from: "21:00", to: "07:00", tz: "UTC" }, Date.UTC(2026, 0, 1, 12)));
+  t("push: quiet hours use the person's time zone", wp.inQuiet({ on: true, from: "21:00", to: "07:00", tz: "America/Chicago" }, Date.UTC(2026, 0, 2, 4)));
+  const subsList = [{ id: "a", canAlerts: true, canChat: true, prefs: { quiet: { on: true, from: "00:00", to: "23:59", tz: "UTC" } } }, { id: "b", canAlerts: true, canChat: false, prefs: { urgentOnly: true } }];
+  t("push: urgent alerts ignore quiet hours", wp.recipients(subsList, { type: "alert", urgent: true }).length === 2);
+  t("push: non-urgent skips quiet and urgent-only", wp.recipients(subsList, { type: "alert", urgent: false }, Date.UTC(2026, 0, 1, 12)).length === 0);
+  t("push: chat only to people who can chat", wp.recipients(subsList, { type: "chat", urgent: true }).map((x) => x.id).join() === "a");
+  t("push: public key route", (await call("GET", "/api/push/key", null, null)).json.data.publicKey.length > 80);
+  t("push: bad subscription → 400", (await call("POST", "/api/push", { subscription: { endpoint: "nope" } })).status === 400);
+  const s1 = await call("POST", "/api/push", { subscription: sub("/sub1"), name: "Test phone", prefs: { quiet: { on: false } } });
+  t("push: subscribe", s1.json.data.id && s1.json.data.prefs.alerts === true && !("keys" in s1.json.data));
+  t("push: the child device cannot subscribe", (await call("POST", "/api/push", { subscription: sub("/c") }, "nokey")).status === 401);
+  got.length = 0;
+  await call("POST", "/api/alerts", { kind: "help", message: "Sam needs help", loc: { lat: 1, lng: 2, acc: 5 } });
+  const g = got.find((x) => x.path === "/sub1");
+  t("push: a help alert is pushed", !!g && g.h["content-encoding"] === "aes128gcm" && g.h.urgency === "high" && wp.verifyVapid(g.h.authorization, (await call("GET", "/api/push/key", null, null)).json.data.publicKey));
+  const pl = g && JSON.parse(wp.decrypt(g.body, ua, auth));
+  t("push: payload decrypts, says urgent, has no location", pl && pl.urgent === true && /Sam needs help/.test(pl.body) && !JSON.stringify(pl).includes("lat"));
+  await call("PUT", "/api/push/" + s1.json.data.id, { prefs: { chat: false } });
+  got.length = 0; await call("POST", "/api/chat", { text: "hello team" });
+  t("push: chat switched off is not pushed", !got.some((x) => x.path === "/sub1"));
+  await call("PUT", "/api/push/" + s1.json.data.id, { prefs: { chat: true } });
+  got.length = 0; await call("POST", "/api/chat", { text: "hello team" });
+  t("push: chat is pushed when on", got.some((x) => x.path === "/sub1"));
+  t("push: test route", (await call("POST", "/api/push/test", { id: s1.json.data.id })).json.success);
+  await call("POST", "/api/push", { subscription: sub("/gone") });
+  await call("POST", "/api/alerts", { kind: "help" });
+  t("push: dead subscriptions are removed", (await call("GET", "/api/push")).json.data.length === 1);
+  t("push: unsubscribe", (await call("DELETE", "/api/push/" + s1.json.data.id)).json.success && (await call("GET", "/api/push")).json.data.length === 0);
+  ps.close();
 }
 
 console.log(`\n${pass} passed, ${failN} failed`);
