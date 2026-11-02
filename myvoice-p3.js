@@ -1,6 +1,6 @@
 // My Voice, Phase 3: safe-zone watching (only after parent consent), device
 // pairing by QR or code, and pulling the child-scoped settings from the server.
-import { load, persist, raiseAlert, api } from "./shared.js";
+import { load, persist, raiseAlert, api, defaultServer } from "./shared.js";
 import { watch, allZones, eventText } from "./geo.js";
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -77,7 +77,7 @@ $("#btnPairMV").addEventListener("click", async () => {
     try { await api(d, "DELETE", `/api/devices/${d.device.id}`); } catch {}
     d.device = null; d.sync = { url: "", key: "", version: 0, last: 0 }; persist(d); renderPair(); return;
   }
-  form.url.value ||= d.sync.url || "http://localhost:3001"; dlg.showModal();
+  form.url.value ||= d.sync.url || defaultServer(); dlg.showModal();
 });
 let scanStream = null;
 async function stopScan() { scanStream?.getTracks().forEach((t) => t.stop()); scanStream = null; $("#mvScan").hidden = true; }

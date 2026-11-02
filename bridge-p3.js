@@ -1,7 +1,7 @@
 // Bridge, Phase 3: safe zones (geofencing), accounts and passkeys, device pairing,
 // on-device feeling estimates, and opt-in federated learning.
 // Same in-memory document as bridge.js (window.__bridge).
-import { getMedia, confidence, partOfDay, moodAV } from "./shared.js";
+import { getMedia, confidence, partOfDay, moodAV, defaultServer } from "./shared.js";
 import { currentPosition, mapLink } from "./geo.js";
 import * as emo from "./emotion.js";
 import * as fc from "./fl-core.js";
@@ -113,7 +113,7 @@ function renderAccount() {
   const a = db().account;
   $("#acctOut").hidden = !!a; $("#acctIn").hidden = !a;
   $("#acctState").textContent = a ? `Signed in · ${a.role}` : db().device ? `Paired device · ${db().device.kind === "bridge" ? "caregiver" : "My Voice"}` : "Not signed in";
-  const f = $("#formAcct"); if (!f.url.value) f.url.value = db().sync.url || "http://localhost:3001";
+  const f = $("#formAcct"); if (!f.url.value) f.url.value = db().sync.url || defaultServer();
   if (a) {
     $("#acctWho").innerHTML = `<b>${esc(a.name || a.email)}</b> <span class="soft">${esc(a.email)} · ${esc(roleName(a.role))} for ${esc(a.family?.name || "your family")}</span>`;
     const v = $("#acctVerify"); v.hidden = false;
@@ -121,7 +121,7 @@ function renderAccount() {
     $("#passkeyList").innerHTML = (a.passkeys || []).map((k) => `<li>🔑 ${esc(k.name)} <span class="soft">added ${B.fmtDay(k.created)}</span></li>`).join("");
     renderFamily(); renderDevices();
   } else { $("#famBox").innerHTML = `<p class="soft">Sign in to see your family's members and children.</p>`; }
-  $("#formJoin").url.value ||= db().sync.url || "http://localhost:3001";
+  $("#formJoin").url.value ||= db().sync.url || defaultServer();
 }
 const roleName = (r) => ({ parent: "Parent / admin", teacher: "Teacher", therapist: "Therapist", family: "Family" })[r] || r;
 $("#formAcct").addEventListener("submit", async (e) => {
@@ -151,7 +151,7 @@ $("#formForgot").addEventListener("submit", async (e) => {
   try { await call("POST", "/api/auth/reset/request", { email: e.currentTarget.email.value }, { auth: false, url }); status("If that email has an account, a reset link is on its way. It works once, for 30 minutes."); }
   catch (err) { status(err.message); }
 });
-const linkServer = () => db().sync.url || $("#formAcct").url.value || "http://localhost:3001";
+const linkServer = () => db().sync.url || $("#formAcct").url.value || defaultServer();
 async function handleLinkHash() {
   const m = /^#(verify|reset)=([\w-]{20,})$/.exec(location.hash); if (!m) return;
   history.replaceState(null, "", location.pathname); // keep the token out of history and screenshots

@@ -1,7 +1,8 @@
-# Vercel serves the static web app only. The backend runs separately,
-# and tests and planning docs stay out of public hosting.
+# Vercel serves the static web app plus the family server (api/index.js,
+# which bundles backend/). Tests, data and planning docs stay out.
 # screenshots/ is served because guide.html shows them.
-backend/
+backend/test.mjs
+backend/data/
 native/
 tests/
 docs/

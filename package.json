@@ -1,0 +1,6 @@
+{
+  "name": "luminaac-web",
+  "private": true,
+  "type": "module",
+  "description": "Static app plus the family server function in api/ (see backend/README.md)."
+}

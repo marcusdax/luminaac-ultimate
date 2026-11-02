@@ -63,13 +63,24 @@ function tile(e, label, go, extra = "") {
 }
 
 // =============== My videos ===============
+// Single videos, then each linked channel: one tile that plays the channel's
+// uploads in order, and tiles for its newest videos when the Bridge has their titles.
+function allVideos(v) {
+  const out = [...(v.list || [])];
+  for (const c of v.channels || []) {
+    if (!c.on) continue;
+    out.push({ id: `c-${c.id}`, playlist: c.playlist, title: `All of ${c.name}`, e: c.e || "📺", topics: [], words: [] });
+    for (const x of (c.videos || []).slice(0, 6)) out.push({ id: `c-${c.id}-${x.yt}`, yt: x.yt, title: x.title, e: c.e || "📺", topics: [], words: [] });
+  }
+  return out;
+}
 function renderVideos() {
-  const d = load(), v = d.videos || { list: [] }, box = $("mvVideos");
-  $("mvVideosBox").hidden = !v.on || !v.list.length;
+  const d = load(), v = d.videos || { list: [] }, box = $("mvVideos"), all = allVideos(v);
+  $("mvVideosBox").hidden = !v.on || !all.length;
   box.textContent = "";
-  for (const x of v.list) {
+  for (const x of all) {
     const t = tile(esc(x.e || "🎬"), x.title, () => openVideo(x.id), "mv-vtile");
-    if (v.thumbs) { const pic = t.querySelector(".pic"); pic.innerHTML = `<img src="https://i.ytimg.com/vi/${encodeURIComponent(x.yt)}/mqdefault.jpg" alt="" loading="lazy" referrerpolicy="no-referrer" />`; }
+    if (v.thumbs && x.yt) { const pic = t.querySelector(".pic"); pic.innerHTML = `<img src="https://i.ytimg.com/vi/${encodeURIComponent(x.yt)}/mqdefault.jpg" alt="" loading="lazy" referrerpolicy="no-referrer" />`; }
     box.append(t);
   }
 }
@@ -90,7 +101,7 @@ function loadYT() {
 
 let player = null, sess = null, tick = null, cur = null;
 async function openVideo(id) {
-  const d = load(); cur = d.videos.list.find((x) => x.id === id); if (!cur) return;
+  const d = load(); cur = allVideos(d.videos || {}).find((x) => x.id === id); if (!cur) return;
   $("mvVideoTitle").textContent = cur.title;
   $("mvEnd").hidden = true; $("mvTalk").hidden = true; $("mvFrame").hidden = false;
   $("mvVStatus").textContent = "Getting the video ready…";
@@ -102,8 +113,8 @@ async function openVideo(id) {
     $("mvFrame").querySelector("#mvYT")?.remove();
     const el = document.createElement("div"); el.id = "mvYT"; $("mvFrame").prepend(el);
     player = new YT.Player(el, {
-      host: NOCOOKIE, videoId: cur.yt, width: "100%", height: "100%",
-      playerVars: { ...PLAYER_VARS, origin: location.origin, ...(cur.start ? { start: cur.start } : {}) },
+      host: NOCOOKIE, ...(cur.yt && { videoId: cur.yt }), width: "100%", height: "100%",
+      playerVars: { ...PLAYER_VARS, origin: location.origin, ...(cur.start ? { start: cur.start } : {}), ...(cur.playlist && { listType: "playlist", list: cur.playlist }) },
       events: {
         onReady: () => { $("mvVStatus").textContent = "Ready. Press Play when you want."; controls("paused"); player.getIframe?.().setAttribute("title", `Video: ${cur.title}`); },
         onStateChange: (ev) => onState(ev.data),
@@ -158,12 +169,12 @@ function btnWord(w) {
 }
 function logTalk(word, spoken = true) {
   if (!cur) return;
-  const d = load(); d.videos.talk.push({ t: Date.now(), v: cur.id, word, spoken }); d.videos.talk = d.videos.talk.slice(-2000); persist(d);
+  const d = load(); (d.videos.talk ||= []).push({ t: Date.now(), v: cur.id, word, spoken }); d.videos.talk = d.videos.talk.slice(-2000); persist(d);
 }
 function closeVideo() {
   clearInterval(tick);
   if (sess) {
-    const d = load(); d.videos.sessions.push(closeSession(sess)); d.videos.sessions = d.videos.sessions.slice(-1000); persist(d);
+    const d = load(); (d.videos.sessions ||= []).push(closeSession(sess)); d.videos.sessions = d.videos.sessions.slice(-1000); persist(d);
     sess = null;
   }
   try { player?.destroy?.(); } catch {}

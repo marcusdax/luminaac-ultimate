@@ -9,7 +9,7 @@
 // file named by the key's SHA-256 hash, so the key itself is never written down.
 // Share links use a separate random token that only unlocks a role-scoped view.
 import { createServer } from "node:http";
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomBytes, randomUUID, createHash } from "node:crypto";
 import * as store from "./store.js";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -19,6 +19,7 @@ import { verifyRegistration, verifyAssertion } from "./webauthn.js";
 import * as fl from "./flserver.js";
 import * as mailer from "./mailer.js";
 import * as potty from "./potty.js";
+import * as yt from "./youtube.js";
 
 const PORT = Number(process.env.PORT || 3001);
 const ORIGINS = (process.env.ALLOWED_ORIGINS || "*").split(",").map((s) => s.trim());
@@ -75,10 +76,10 @@ function who(req) {
 }
 // Permissions per role. Share scopes (SCOPES below) decide what a read-only role sees.
 const PERMS = {
-  parent: ["sync:read", "sync:write", "alerts:read", "alerts:write", "share", "devices", "family", "fl:write", "predict", "potty:read", "potty:write"],
-  teacher: ["sync:scoped", "alerts:read", "alerts:write", "fl:write"],
-  therapist: ["sync:scoped", "fl:write", "predict"],
-  family: ["sync:scoped", "alerts:read", "alerts:write", "fl:write"],
+  parent: ["sync:read", "sync:write", "alerts:read", "alerts:write", "share", "devices", "family", "fl:write", "predict", "potty:read", "potty:write", "chat"],
+  teacher: ["sync:scoped", "alerts:read", "alerts:write", "fl:write", "chat"],
+  therapist: ["sync:scoped", "fl:write", "predict", "chat"],
+  family: ["sync:scoped", "alerts:read", "alerts:write", "fl:write", "chat"],
   child: ["sync:child", "alerts:write", "location:write", "fl:write", "potty:read", "potty:write"],
 };
 const can = (w, perm) => (w.role === "child" ? w.scopes || PERMS.child : PERMS[w.role] || []).includes(perm);
@@ -88,7 +89,8 @@ function childView(doc) {
   const { profile = {}, signals = [], stories = [], practice, access, safety, videos, games, potty: pp } = doc;
   return { version: 2, scope: "child", profile: { child: profile.child, place: profile.place }, signals: signals.map(({ id, name, phrase, cues, contexts, confirmations, rejections, moods }) => ({ id, name, phrase, cues, contexts, confirmations, rejections, moods })), stories, practice, access, safety: safety && { consent: safety.consent, zones: safety.zones, sendLocation: safety.sendLocation, water: safety.water },
     // Phase 7: the video list and game settings only. Watch history and game turns stay on each device.
-    videos: videos && { on: videos.on, thumbs: videos.thumbs, list: (videos.list || []).map(({ id, yt, start, title, e, topics, words }) => ({ id, yt, start, title, e, topics, words })) },
+    videos: videos && { on: videos.on, thumbs: videos.thumbs, list: (videos.list || []).map(({ id, yt, start, title, e, topics, words }) => ({ id, yt, start, title, e, topics, words })),
+      channels: (videos.channels || []).map(({ id, playlist, name, e, on, videos: vs }) => ({ id, playlist, name, e, on, videos: vs })) },
     games: games && { settings: games.settings, goals: games.goals },
     // Potty Path: the plan and whether it is paused. Never the toilet log, screening or reasons.
     potty: pp && { protocol: pp.protocol, paused: !!pp.paused } };
@@ -127,6 +129,12 @@ function authOut(u, family, role, token) {
 }
 const LOC = (l) => isObj(l) && Number.isFinite(l.lat) && Number.isFinite(l.lng) && Math.abs(l.lat) <= 90 && Math.abs(l.lng) <= 180 ? { lat: +l.lat.toFixed(5), lng: +l.lng.toFixed(5), acc: Math.min(Math.round(Number(l.acc) || 0), 100000) } : null;
 const LOC_KEEP_MS = 24 * 3600e3; // precise location on alerts is dropped after 24 hours
+const sha = (s) => createHash("sha256").update(String(s)).digest("hex");
+const hookIndex = new Map(); // sha256(sensor link secret) -> family id
+const hookTries = new Map();
+const SENSOR_KINDS = ["door", "gate", "window", "pool", "motion", "bed", "wearable", "other"];
+const SENSOR_SAYS = { door: "door opened", gate: "gate opened", window: "window opened", pool: "pool alarm", motion: "movement seen", bed: "out of bed", wearable: "tracker alert" };
+const ROLE_NAME = { parent: "Parent", teacher: "Teacher", therapist: "Therapist", family: "Family" };
 const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
 const audit = (d, what) => { d.audit = [{ t: Date.now(), what }, ...(d.audit || [])].slice(0, 100); };
 
@@ -158,7 +166,7 @@ async function route(req, res, url) {
   const p = url.pathname.replace(/\/+$/, "") || "/";
   const M = req.method;
 
-  if (p === "/api/health" && M === "GET") return ok(res, { status: "ok", version: "0.4.0", uptime: Math.round(process.uptime()), time: new Date().toISOString() });
+  if (p === "/api/health" && M === "GET") return ok(res, { status: "ok", version: "0.5.0", uptime: Math.round(process.uptime()), time: new Date().toISOString() });
 
   // Public: read a share link (no family key needed)
   let m;
@@ -170,6 +178,29 @@ async function route(req, res, url) {
     if (!sh || sh.revoked) return fail(res, 404, "Share link not found");
     if (sh.expires && sh.expires < Date.now()) return fail(res, 410, "Share link expired");
     return ok(res, scopedView(d.doc, sh.role));
+  }
+
+  // ---- Sensor webhooks (public: the secret is in the URL) ----
+  // Door, gate and pool sensors, smart-home hubs (Home Assistant, SmartThings,
+  // IFTTT, Alexa routines through IFTTT) and trackers that can call a URL post here.
+  if ((m = /^\/api\/hooks\/([A-Za-z0-9_-]{24,})$/.exec(p)) && (M === "POST" || M === "GET")) {
+    const th = sha(m[1]), family = hookIndex.get(th);
+    if (!family) return fail(res, 404, "Unknown sensor link");
+    if (limited(hookTries, th, 30, 10 * 60e3)) return fail(res, 429, "Too many alerts from this sensor. Wait a few minutes.");
+    bump(hookTries, th);
+    const b = M === "POST" ? await body(req).catch(() => ({})) : {};
+    const said = String(b.message ?? b.value1 ?? b.state ?? url.searchParams.get("message") ?? "").slice(0, 140);
+    const sensor = store.read(family).sensors?.find((x) => x.tokenHash === th);
+    if (!sensor) return fail(res, 404, "Unknown sensor link");
+    const a = raise(family, { kind: "sensor", from: sensor.name, message: `${sensor.name}: ${said || SENSOR_SAYS[sensor.kind] || "triggered"}`, sensor: sensor.id, ...(sensor.urgent && { urgent: true }) });
+    store.update(family, (d) => { const x = d.sensors?.find((y) => y.id === sensor.id); if (x) x.last = a.t; });
+    return ok(res, { id: a.id, t: a.t });
+  }
+
+  // ---- YouTube channel lookup (public, read-only, youtube.com only) ----
+  if (p === "/api/youtube" && M === "GET") {
+    try { return ok(res, await yt.channel(url.searchParams.get("channel"))); }
+    catch (e) { return fail(res, e.status || 502, e.message); }
   }
 
   // ---- Accounts (public endpoints) ----
@@ -378,6 +409,55 @@ async function route(req, res, url) {
     if ((m = /^\/api\/fl\/round\/([\w-]+)\/reveal$/.exec(p)) && M === "POST") { const b = await body(req); return R(await fl.reveal(m[1], b.client, b, P)); }
   }
 
+  // ---- Team chat (parents, teachers, therapists, family; never the child's device) ----
+  if (p === "/api/chat") {
+    if (!can(w, "chat")) return deny();
+    if (M === "GET") { const since = Number(url.searchParams.get("since") || 0); return ok(res, (store.read(key).chat || []).filter((c) => c.t > since).slice(-200)); }
+    if (M === "POST") {
+      const b = await body(req), text = String(b.text || "").trim().slice(0, 1000);
+      if (!text) return fail(res, 400, "Validation failed", "text is required");
+      const c = { id: String(b.id || randomUUID()).slice(0, 64), t: Date.now(), text, role: w.role, from: String(w.user?.name || b.from || ROLE_NAME[w.role] || "Parent").slice(0, 60), ...(w.user && { uid: w.user.id }) };
+      store.update(key, (d) => { if ((d.chat ||= []).some((x) => x.id === c.id)) return; d.chat = [...d.chat, c].slice(-500); });
+      broadcast(key, "chat", c);
+      return ok(res, c);
+    }
+  }
+  if ((m = /^\/api\/chat\/([\w-]+)$/.exec(p)) && M === "DELETE") {
+    if (!can(w, "chat")) return deny();
+    const gone = store.update(key, (d) => { const x = (d.chat || []).find((y) => y.id === m[1]); if (!x || (w.role !== "parent" && x.uid !== w.user?.id)) return false; d.chat = d.chat.filter((y) => y !== x); return true; });
+    return gone ? ok(res, undefined, "Message deleted") : fail(res, 404, "Message not found");
+  }
+  // One cheap check for anything new, so pages can poll instead of holding a stream open.
+  if (p === "/api/updates" && M === "GET") {
+    const since = Number(url.searchParams.get("since") || 0), d = store.read(key), cut = Date.now() - LOC_KEEP_MS;
+    return ok(res, { now: Date.now(), version: d.version,
+      alerts: can(w, "alerts:read") ? d.alerts.filter((a) => a.t > since).map((a) => (a.loc && a.t < cut ? { ...a, loc: null } : a)) : [],
+      chat: can(w, "chat") ? (d.chat || []).filter((c) => c.t > since) : [] });
+  }
+
+  // ---- Sensors and wearables (parents set them up) ----
+  if (p === "/api/sensors") {
+    if (!can(w, "devices")) return deny();
+    if (M === "GET") return ok(res, (store.read(key).sensors || []).map(({ tokenHash, ...x }) => x));
+    if (M === "POST") {
+      const b = await body(req), name = String(b.name || "").trim().slice(0, 60);
+      if (!name) return fail(res, 400, "Validation failed", "name is required");
+      const kind = SENSOR_KINDS.includes(b.kind) ? b.kind : "other", token = randomBytes(24).toString("base64url");
+      const sn = { id: randomUUID(), name, kind, urgent: typeof b.urgent === "boolean" ? b.urgent : ["pool", "door", "gate", "wearable"].includes(kind), created: Date.now(), last: null, tokenHash: sha(token) };
+      store.update(key, (d) => { (d.sensors ||= []).push(sn); audit(d, `Sensor added: ${name}`); });
+      hookIndex.set(sn.tokenHash, key); saveHooks();
+      const { tokenHash, ...out } = sn;
+      return ok(res, { ...out, path: `/api/hooks/${token}` }, "Copy this link now. It is shown only once.");
+    }
+  }
+  if ((m = /^\/api\/sensors\/([\w-]+)$/.exec(p)) && M === "DELETE") {
+    if (!can(w, "devices")) return deny();
+    const sn = store.update(key, (d) => { const x = (d.sensors || []).find((y) => y.id === m[1]); if (x) { d.sensors = d.sensors.filter((y) => y !== x); audit(d, `Sensor removed: ${x.name}`); } return x; });
+    if (!sn) return fail(res, 404, "Sensor not found");
+    hookIndex.delete(sn.tokenHash); saveHooks();
+    return ok(res, undefined, "Sensor removed. Its link no longer works.");
+  }
+
   // ---- Sync ----
   if (p === "/api/sync" && M === "GET") {
     const d = store.read(key);
@@ -474,7 +554,7 @@ async function route(req, res, url) {
   }
   if (p === "/api/alerts" && M === "POST") {
     const b = await body(req);
-    if (!["help", "home", "custom", "zone-enter", "zone-leave", "danger-enter", "danger-leave", "potty"].includes(b.kind)) return fail(res, 400, "Validation failed", "kind must be help, home, custom, potty, zone-enter, zone-leave, danger-enter or danger-leave");
+    if (!["help", "home", "custom", "sensor", "zone-enter", "zone-leave", "danger-enter", "danger-leave", "potty"].includes(b.kind)) return fail(res, 400, "Validation failed", "kind must be help, home, custom, potty, zone-enter, zone-leave, danger-enter or danger-leave");
     const loc = b.loc ? LOC(b.loc) : null;
     if (b.loc && !loc) return fail(res, 400, "Validation failed", "loc must be { lat, lng, acc }");
     const a = { id: String(b.id || randomUUID()).slice(0, 64), kind: b.kind, message: String(b.message || "").slice(0, 200), t: Number(b.t) || Date.now(), ack: null, from: String(b.from || w.device?.name || "My Voice").slice(0, 60), ...(loc && { loc }), ...(b.zone && { zone: String(b.zone).slice(0, 60) }), ...(b.water === true && { water: true }), ...(b.kind === "danger-enter" && { urgent: true }) };
@@ -531,13 +611,14 @@ async function route(req, res, url) {
   return fail(res, 404, "Not found", `${M} ${p}`);
 }
 
-export const server = createServer(async (req, res) => {
+export async function handle(req, res) {
   cors(req, res);
   if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
   const url = new URL(req.url, "http://x");
   try { await route(req, res, url); }
   catch (e) { if (!res.headersSent) fail(res, e.status || 500, e.status ? e.message : "Server error", e.status ? undefined : e.message); }
-});
+}
+export const server = createServer(handle);
 
 // ---------- dead-man check ----------
 const DEADMAN_MIN = () => Number(process.env.DEADMAN_MINUTES || 30);
@@ -564,9 +645,15 @@ export function checkDeadman(now = Date.now()) {
 setInterval(() => { try { checkDeadman(); } catch (e) { console.error("dead-man check:", e.message); } }, Number(process.env.DEADMAN_CHECK_MS || 60000)).unref();
 
 // Share tokens map to a family id (a hash), persisted so links survive restarts.
-const IDX = join(store.DIR, "_shares.json");
-try { for (const [t, f] of Object.entries(JSON.parse(readFileSync(IDX, "utf8")))) shareIndex.set(t, f); } catch {}
+const IDX = join(store.DIR, "_shares.json"), HOOKS = join(store.DIR, "_hooks.json");
 const saveIndex = () => writeFileSync(IDX, JSON.stringify(Object.fromEntries(shareIndex)));
+const saveHooks = () => writeFileSync(HOOKS, JSON.stringify(Object.fromEntries(hookIndex)));
+// Hosted mode calls this after another instance changed the files.
+export function reload() {
+  acc.forget(); fl.forget();
+  for (const [file, map] of [[IDX, shareIndex], [HOOKS, hookIndex]]) { map.clear(); try { for (const [k, f] of Object.entries(JSON.parse(readFileSync(file, "utf8")))) map.set(k, f); } catch {} }
+}
+reload();
 
 if (process.env.LUMINAAC_NO_LISTEN !== "1") {
   server.listen(PORT, () => console.log(`LuminAAC backend on http://localhost:${PORT}  (data: ${store.DIR})`));

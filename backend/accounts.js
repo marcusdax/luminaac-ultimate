@@ -17,6 +17,7 @@ function load() {
 }
 export function save() { const tmp = F + ".tmp"; writeFileSync(tmp, JSON.stringify(A)); renameSync(tmp, F); }
 export const db = () => load();
+export function forget() { A = undefined; } // hosted mode: re-read after another instance changed the file
 
 export const ROLES = ["parent", "teacher", "therapist", "family"];
 export const SESSION_DAYS = 30;

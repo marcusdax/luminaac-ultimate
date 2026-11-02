@@ -105,6 +105,8 @@ export function recordFeedback(db, accepted, s) {
 }
 
 // ---------- Optional server (backend/) ----------
+// The family server lives with the app at /api on the hosted site; locally it is backend/server.js on port 3001.
+export const defaultServer = () => (typeof location !== "undefined" && location.protocol === "https:" ? location.origin : "http://localhost:3001");
 export async function api(db, method, path, body) {
   if (!db.sync?.url || !db.sync?.key) throw new Error("Server not set up");
   const r = await fetch(db.sync.url.replace(/\/+$/, "") + path, {

@@ -9,15 +9,15 @@ const esc = B.esc;
 const db = () => B.db;
 
 // ---------- Alerts ----------
-const KIND = { help: { e: "🙋", t: "needs help" }, home: { e: "🏠", t: "wants to go home" }, custom: { e: "🔔", t: "sent an alert" }, "zone-enter": { e: "📍", t: "arrived at" }, "zone-leave": { e: "🚶", t: "left" }, "danger-enter": { e: "⚠️", t: "is in a danger area:" }, "danger-leave": { e: "✅", t: "has left the danger area" }, silent: { e: "📵", t: "'s device stopped checking in" }, back: { e: "📶", t: "'s device is checking in again" }, potty: { e: "🚽", t: "needs the toilet" } };
+const KIND = { help: { e: "🙋", t: "needs help" }, home: { e: "🏠", t: "wants to go home" }, custom: { e: "🔔", t: "sent an alert" }, "zone-enter": { e: "📍", t: "arrived at" }, "zone-leave": { e: "🚶", t: "left" }, "danger-enter": { e: "⚠️", t: "is in a danger area:" }, "danger-leave": { e: "✅", t: "has left the danger area" }, silent: { e: "📵", t: "'s device stopped checking in" }, back: { e: "📶", t: "'s device is checking in again" }, potty: { e: "🚽", t: "needs the toilet" }, sensor: { e: "📡", t: "" } };
 const where = (a) => (a.loc ? ` <a class="soft" href="https://www.openstreetmap.org/?mlat=${a.loc.lat}&amp;mlon=${a.loc.lng}#map=17/${a.loc.lat}/${a.loc.lng}" target="_blank" rel="noopener">See where (within ${a.loc.acc || "?"} m)</a>` : "");
 function renderAlerts() {
   const open = db().alerts.filter((a) => !a.ack);
   const bar = $("#alertBar");
   bar.hidden = !open.length;
   open.sort((x, y) => (y.kind === "danger-enter") - (x.kind === "danger-enter"));
-  bar.innerHTML = open.slice(0, 3).map((a) => `<div class="alert-item${a.kind === "danger-enter" ? " is-urgent" : ""}"><span class="alert-e" aria-hidden="true">${KIND[a.kind]?.e || "🔔"}</span>
-    <p><b>${esc(db().profile.child || a.from || "Your child")}${(KIND[a.kind]?.t || "").startsWith("'") ? "" : " "}${a.water && a.kind === "danger-enter" ? "is near water:" : a.water && a.kind === "danger-leave" ? "has moved away from" : KIND[a.kind]?.t || "sent an alert"}${a.zone ? " " + esc(a.zone) : ""}</b> <span class="soft">at ${B.fmtTime(a.t)}${a.message && !a.zone ? ` · "${esc(a.message)}"` : ""}</span>${where(a)}</p>
+  bar.innerHTML = open.slice(0, 3).map((a) => `<div class="alert-item${a.kind === "danger-enter" || a.urgent ? " is-urgent" : ""}"><span class="alert-e" aria-hidden="true">${KIND[a.kind]?.e || "🔔"}</span>
+    <p>${a.kind === "sensor" ? `<b>${esc(a.message)}</b> <span class="soft">at ${B.fmtTime(a.t)}</span>` : `<b>${esc(db().profile.child || a.from || "Your child")}${(KIND[a.kind]?.t || "").startsWith("'") ? "" : " "}${a.water && a.kind === "danger-enter" ? "is near water:" : a.water && a.kind === "danger-leave" ? "has moved away from" : KIND[a.kind]?.t || "sent an alert"}${a.zone ? " " + esc(a.zone) : ""}</b> <span class="soft">at ${B.fmtTime(a.t)}${a.message && !a.zone ? ` · "${esc(a.message)}"` : ""}</span>`}${where(a)}</p>
     <button class="btn" type="button" data-ack="${esc(a.id)}">I'm on my way</button></div>`).join("");
 }
 $("#alertBar").addEventListener("click", (e) => {
@@ -31,7 +31,7 @@ function chime() {
   try { const c = new AudioContext(), o = c.createOscillator(), g = c.createGain(); o.frequency.value = 660; g.gain.setValueAtTime(0.0001, c.currentTime); g.gain.exponentialRampToValueAtTime(0.2, c.currentTime + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.9); o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + 1); } catch {}
 }
 let lastAlertCount = db().alerts.filter((a) => !a.ack).length;
-function onAlertsChanged() { const n = db().alerts.filter((a) => !a.ack).length; const more = n > lastAlertCount; if (more) { chime(); if (db().alerts.find((a) => !a.ack)?.kind === "danger-enter") { setTimeout(chime, 1100); setTimeout(chime, 2200); navigator.vibrate?.([300, 150, 300, 150, 300]); } } lastAlertCount = n; renderAlerts(); if (more) window.LuminMotion?.arrive($("#alertBar .alert-item")); }
+function onAlertsChanged() { const n = db().alerts.filter((a) => !a.ack).length; const more = n > lastAlertCount; if (more) { chime(); const top = db().alerts.find((a) => !a.ack); if (top?.kind === "danger-enter" || top?.urgent) { setTimeout(chime, 1100); setTimeout(chime, 2200); navigator.vibrate?.([300, 150, 300, 150, 300]); } } lastAlertCount = n; renderAlerts(); if (more) window.LuminMotion?.arrive($("#alertBar .alert-item")); }
 
 // ---------- Stories, routines, sound practice ----------
 function parseSteps(text) {
@@ -170,12 +170,29 @@ $("#btnShareLink").addEventListener("click", async () => {
 });
 
 // Live alerts from other devices over Server-Sent Events (fetch-based so the key stays in a header).
-let stream = null;
+// The hosted server (Vercel) can't hold a stream open, so there the page asks
+// /api/updates every 30 seconds while it is visible, for alerts and team chat.
+let stream = null, pollT = null, since = Date.now() - 864e5;
+function mergeAlerts(list) {
+  if (!list.length) return;
+  for (const a of list) { const all = db().alerts, have = all.find((x) => x.id === a.id); if (have) Object.assign(have, a); else all.unshift(a); }
+  B.save(); onAlertsChanged();
+}
+async function poll() {
+  clearTimeout(pollT); const d = db(); if (!d.sync.url || !d.sync.key) return;
+  if (!document.hidden) {
+    try { const u = await api(d, "GET", `/api/updates?since=${since}`); since = u.now - 5000; mergeAlerts(u.alerts.filter((a) => a.t > Date.now() - 864e5)); if (u.chat.length) window.dispatchEvent(new CustomEvent("chat:new", { detail: u.chat })); } catch {}
+  }
+  pollT = setTimeout(poll, 30000);
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden && pollT) poll(); });
+B.pollNow = poll;
 async function connectStream() {
   stream?.close(); const d = db(); if (!d.sync.url || !d.sync.key) return;
   const ctrl = new AbortController(); stream = { close: () => ctrl.abort() };
   try {
     const r = await fetch(d.sync.url.replace(/\/+$/, "") + "/api/alerts/stream", { headers: { Authorization: `Bearer ${d.sync.key}` }, signal: ctrl.signal });
+    if (!r.ok) return poll(); // hosted server: poll instead
     const rd = r.body.getReader(), dec = new TextDecoder(); let buf = "";
     for (;;) {
       const { value, done } = await rd.read(); if (done) break;
@@ -185,6 +202,7 @@ async function connectStream() {
         const ev = /event: (\w+)/.exec(chunk)?.[1], data = /data: (.*)/.exec(chunk)?.[1];
         if (!ev || !data) continue;
         if (ev === "potty") { window.dispatchEvent(new CustomEvent("potty:remote")); continue; } // new toilet events: bridge-potty.js pulls them
+        if (ev === "chat") { window.dispatchEvent(new CustomEvent("chat:new", { detail: [JSON.parse(data)] })); continue; }
         const a = JSON.parse(data), list = db().alerts, have = list.find((x) => x.id === a.id);
         if (have) Object.assign(have, a); else list.unshift(a);
         B.save(); onAlertsChanged();

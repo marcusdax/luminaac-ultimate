@@ -30,6 +30,7 @@ function load() {
   S.budget ||= {};
   return S;
 }
+export function forget() { S = undefined; } // hosted mode: re-read after another instance changed the file
 const save = () => { const t = F + ".tmp"; writeFileSync(t, JSON.stringify(S)); renameSync(t, F); };
 const ids = (o) => Object.keys(o).map(Number);
 function abandon(r, reason) {

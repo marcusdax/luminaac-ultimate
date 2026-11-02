@@ -204,3 +204,26 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { border-color
 #shareLinks a { font-weight: 700; color: var(--sky-deep); }
 .lead { max-width: 70ch; }
 .tab-link { display: flex; align-items: center; text-decoration: none; margin-top: var(--s3); border-top: 1px solid var(--line); border-radius: 0 0 12px 12px; }
+
+/* ---------- Team chat ---------- */
+.chat-card { margin-bottom: var(--s5); }
+.chat-list { list-style: none; margin: 0 0 var(--s3); padding: var(--s2); display: flex; flex-direction: column; gap: var(--s2); max-height: 420px; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--r-sheet, 16px); background: var(--paper); }
+.chat-msg { max-width: 85%; padding: var(--s2) var(--s3); border-radius: 14px; background: var(--paper-raised); border: 1px solid var(--line); }
+.chat-msg.is-mine { align-self: flex-end; background: var(--wc-action-tint, #e8f1fb); }
+.chat-who { margin: 0; font-size: var(--fs-xs); }
+.chat-text { margin: 2px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.chat-form { display: flex; gap: var(--s2); align-items: flex-end; }
+.chat-form textarea { flex: 1; min-width: 0; font: inherit; padding: var(--s2) var(--s3); border-radius: 12px; border: 1px solid var(--line); background: var(--paper-raised); color: var(--ink); }
+[data-unread] { position: relative; }
+[data-unread]::after { content: ""; position: absolute; top: 6px; right: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--ember-deep, #c0392b); }
+
+/* ---------- Sensors and wearables ---------- */
+.iot-card { grid-column: 1 / -1; }
+.iot-trackers { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s3); }
+.iot-tracker { display: inline-flex; align-items: center; gap: var(--s2); }
+.iot-add, .iot-help { margin: var(--s2) 0 var(--s4); }
+.iot-add summary, .iot-help summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; }
+.iot-new { margin: var(--s3) 0; padding: var(--s3); border-radius: 12px; border: 2px solid var(--lumen, #f2b33d); background: var(--paper); }
+.iot-link code { display: block; overflow-wrap: anywhere; font-size: var(--fs-xs); }
+.iot-help li { margin-bottom: var(--s2); }
+.yt-card { margin-top: var(--s5); }

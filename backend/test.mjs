@@ -311,6 +311,61 @@ t("zCDP accounting: more clients per round → less ε", fc.epsilon(fc.rhoPerRou
 t("fl rejects malformed update", (await call("POST", `/api/fl/round/${(await call("GET", "/api/fl/round", null, TOK)).json.data.id}/update`, { client: 0, masked: [1, 2] }, TOK)).status >= 400);
 t("teacher cannot delete family data", (await call("DELETE", "/api/sync", null, TT)).status === 403);
 
+// ---- v0.5: team chat, updates, sensors, YouTube ----
+const c1 = await call("POST", "/api/chat", { text: "Good morning team! He slept well." }, TOK);
+t("parent posts to team chat", c1.json.data.role === "parent" && c1.json.data.text.startsWith("Good morning"));
+const c2 = await call("POST", "/api/chat", { text: "Thanks! We'll try the snack board at 10." }, TT);
+t("teacher posts to team chat with their role", c2.json.data.role === "teacher");
+t("everyone in the circle reads the chat", (await call("GET", "/api/chat", null, TT)).json.data.length === 2);
+t("chat since a time only returns newer messages", (await call("GET", `/api/chat?since=${c1.json.data.t}`, null, TOK)).json.data.every((c) => c.t > c1.json.data.t));
+t("empty message refused", (await call("POST", "/api/chat", { text: "  " }, TOK)).status === 400);
+t("teacher can't delete the parent's message", (await call("DELETE", `/api/chat/${c1.json.data.id}`, null, TT)).status === 404);
+const up = (await call("GET", "/api/updates?since=0", null, TOK)).json.data;
+t("updates bundle new chat and alerts in one call", up.chat.length === 2 && Array.isArray(up.alerts) && up.now > 0);
+const sn = (await call("POST", "/api/sensors", { name: "Back door", kind: "door" }, TOK)).json.data;
+t("sensor link created once, urgent for doors", /^\/api\/hooks\/[\w-]{24,}$/.test(sn.path) && sn.urgent === true);
+t("sensor list never shows the secret", !JSON.stringify((await call("GET", "/api/sensors", null, TOK)).json.data).includes(sn.path.split("/").pop()));
+t("teacher can't add sensors", (await call("POST", "/api/sensors", { name: "x" }, TT)).status === 403);
+const hit = await call("POST", sn.path, { message: "opened at night" }, null);
+t("sensor webhook raises an urgent alert", hit.status === 200 && (await call("GET", "/api/alerts", null, TOK)).json.data.some((a) => a.kind === "sensor" && a.urgent && /Back door: opened at night/.test(a.message)));
+t("webhook works as a plain GET too (IFTTT, simple hubs)", (await call("GET", sn.path, null, null)).status === 200);
+t("unknown sensor link is refused", (await call("POST", "/api/hooks/" + "x".repeat(32), {}, null)).status === 404);
+await call("DELETE", `/api/sensors/${sn.id}`, null, TOK);
+t("removed sensor's link stops working", (await call("POST", sn.path, {}, null)).status === 404);
+const ytm = await import("./youtube.js");
+t("youtube: channel link and id parse; other sites don't", ytm.parse("https://www.youtube.com/channel/UCG2CL6EUjG8TVT1Tpl9nJdg").id === "UCG2CL6EUjG8TVT1Tpl9nJdg" && ytm.parse("@MsRachel").handle === "@MsRachel" && ytm.parse("https://evil.example/channel/UCG2CL6EUjG8TVT1Tpl9nJdg") === null);
+const ych = await ytm.channel("UCG2CL6EUjG8TVT1Tpl9nJdg", { key: "", fetchImpl: async () => ({ ok: true, text: async () => `<feed><title>Ms Rachel</title><entry><yt:videoId>abcdefghijk</yt:videoId><title>Songs &amp; rhymes</title><published>2026-10-01T00:00:00Z</published></entry></feed>` }) });
+t("youtube: uploads playlist plus feed videos", ych.playlist === "UUG2CL6EUjG8TVT1Tpl9nJdg" && ych.videos[0].title === "Songs & rhymes");
+const yno = await ytm.channel("UCaaaaaaaaaaaaaaaaaaaaaa", { key: "", fetchImpl: async () => ({ ok: false, status: 404 }) });
+t("youtube: feed down still gives the playable uploads playlist", yno.playlist === "UUaaaaaaaaaaaaaaaaaaaaaa" && yno.videos.length === 0);
+let yerr = ""; try { await ytm.channel("@MsRachel", { key: "" }); } catch (e) { yerr = e.message; }
+t("youtube: @name without a key explains how to paste the channel link", /channel ID/.test(yerr));
+
+// ---- hosted mode mirror (Redis faked in memory) ----
+{
+  const mirror = await import("./mirror.js");
+  const R = { "lum:files": {}, "lum:rev": {} };
+  const fake = async (u, o) => ({ ok: true, json: async () => JSON.parse(o.body).map(([cmd, h, ...a]) => {
+    const H = R[h];
+    if (cmd === "HGETALL") return { result: Object.entries(H).flat() };
+    if (cmd === "HMGET") return { result: a.map((k) => H[k] ?? null) };
+    if (cmd === "HSET") { H[a[0]] = a[1]; return { result: 1 }; }
+    if (cmd === "HINCRBY") { H[a[0]] = String(Number(H[a[0]] || 0) + a[1]); return { result: Number(H[a[0]]) }; }
+    if (cmd === "HDEL") { delete H[a[0]]; return { result: 1 }; }
+  }) });
+  process.env.KV_REST_API_URL = "https://fake"; process.env.KV_REST_API_TOKEN = "t";
+  const { writeFileSync: wf, mkdtempSync: md, readFileSync: rf, rmSync: rm } = await import("node:fs");
+  const A = md(join(tmpdir(), "mirA-")), Bd = md(join(tmpdir(), "mirB-"));
+  wf(join(A, "fam.json"), '{"v":1}');
+  t("mirror: a changed file is written to the database", (await mirror.push(A, fake)) === 1 && R["lum:files"]["fam.json"] === '{"v":1}');
+  t("mirror: nothing changed, nothing written", (await mirror.push(A, fake)) === 0);
+  t("mirror: another instance pulls it", (await mirror.pull(Bd, fake)) === true && rf(join(Bd, "fam.json"), "utf8") === '{"v":1}');
+  t("mirror: pulling again with no change does nothing", (await mirror.pull(Bd, fake)) === false);
+  rm(join(A, "fam.json")); await mirror.push(A, fake);
+  t("mirror: a deleted family is deleted from the database", !("fam.json" in R["lum:files"]));
+  delete process.env.KV_REST_API_URL; delete process.env.KV_REST_API_TOKEN;
+}
+
 console.log(`\n${pass} passed, ${failN} failed`);
 
 server.close(); process.exit(failN ? 1 : 0);
