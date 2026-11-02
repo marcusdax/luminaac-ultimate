@@ -13,6 +13,16 @@ const V = () => (db().videos ||= { on: true, thumbs: false, list: [], sessions: 
 const C = () => (V().channels ||= []);
 const server = () => (db().sync?.url || defaultServer()).replace(/\/+$/, "");
 const REFRESH = 6 * 3600e3;
+// Channels the family asked for, linked once on every device and offered as a
+// one-tap suggestion after that (unlinking one doesn't bring it back).
+const SUGGESTED = [{ id: "UCG2CL6EUjG8TVT1Tpl9nJdg", playlist: "UUG2CL6EUjG8TVT1Tpl9nJdg", name: "Ms Rachel", e: "🎵" }];
+for (const s of SUGGESTED) {
+  const seeded = (V().seeded ||= []);
+  if (seeded.includes(s.id)) continue;
+  seeded.push(s.id);
+  if (!C().some((c) => c.id === s.id)) C().push({ ...s, on: true, videos: [], fetched: 0, added: Date.now() });
+  B.save(`Linked YouTube channel "${s.name}"`);
+}
 
 const card = document.createElement("section");
 card.className = "card yt-card"; card.setAttribute("aria-labelledby", "h-ytc");
@@ -26,7 +36,8 @@ card.innerHTML = `<div class="card-head"><h2 id="h-ytc">YouTube channels</h2><sp
     <label>Picture for the button <input name="e" maxlength="4" placeholder="📺" /></label>
     <button class="btn" type="submit">Link channel</button>
   </form>
-  <ul class="mini-list" id="channelList"></ul>`;
+  <ul class="mini-list" id="channelList"></ul>
+  <p class="row gap" id="ytcSuggest"></p>`;
 $("#tab-play .split").after(card);
 
 async function lookup(q) {
@@ -41,6 +52,8 @@ function render() {
   $("#channelList").innerHTML = list.length ? list.map((c) => `<li><span><span aria-hidden="true">${esc(c.e || "📺")}</span> <b>${esc(c.name)}</b> <span class="soft">${c.videos?.length ? `${c.videos.length} newest videos as buttons` : "plays the channel's videos in order"}${c.on ? "" : " · hidden"}</span></span>
     <span class="row gap"><button class="link-btn small" type="button" data-ytoggle="${esc(c.id)}">${c.on ? "Hide" : "Show"}</button><button class="link-btn small" type="button" data-ydel="${esc(c.id)}" aria-label="Unlink ${esc(c.name)}">Unlink</button></span></li>`).join("")
     : `<li class="soft">No channels linked.</li>`;
+  const missing = SUGGESTED.filter((s) => !list.some((c) => c.id === s.id));
+  $("#ytcSuggest").innerHTML = missing.length ? `<span class="soft small">Suggested:</span> ${missing.map((s) => `<button class="btn quiet small" type="button" data-ysug="${s.id}">${s.e} Add ${esc(s.name)}</button>`).join(" ")}` : "";
 }
 // Newer videos for linked channels, at most every 6 hours.
 async function refresh() {
@@ -74,6 +87,10 @@ $("#channelList").addEventListener("click", (e) => {
   if (t) { c.on = !c.on; B.save(`${c.on ? "Showing" : "Hiding"} channel "${c.name}"`); }
   else { V().channels = C().filter((x) => x !== c); B.save(`Unlinked channel "${c.name}"`); }
   render();
+});
+$("#ytcSuggest").addEventListener("click", (e) => {
+  const s = SUGGESTED.find((x) => x.id === e.target.closest("[data-ysug]")?.dataset.ysug); if (!s) return;
+  C().push({ ...s, on: true, videos: [], fetched: 0, added: Date.now() }); B.save(`Linked YouTube channel "${s.name}"`); render(); refresh();
 });
 addEventListener("bridge:show", (e) => { if (e.detail === "play") { render(); refresh(); } });
 render();
