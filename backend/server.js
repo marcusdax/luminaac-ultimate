@@ -179,12 +179,32 @@ async function notify(key, ev) {
   pushLog.unshift(...out.map((r) => ({ ...r, type: ev.type, t: Date.now() }))); pushLog.length = Math.min(pushLog.length, 50);
   return out;
 }
+// Urgent alerts fall back to email for signed-in members (verified address, alerts role)
+// who have no browser that accepted the push, unless they turned the fallback off.
+// One email per person per alert kind every 10 minutes.
+const mailedAt = new Map();
+async function emailFallback(key, a, results) {
+  if (!isUrgent(a)) return 0;
+  const d = store.read(key), okIds = new Set(results.filter((r) => r.status >= 200 && r.status < 300).map((r) => r.id));
+  let n = 0;
+  for (const u of Object.values(acc.db().users)) {
+    const mem = u.memberships.find((m) => m.family === key);
+    if (!mem || !u.emailVerified || !(PERMS[mem.role] || []).includes("alerts:read")) continue;
+    const subs = (d.push || []).filter((s) => s.uid === u.id);
+    if (subs.some((s) => okIds.has(s.id)) || subs.some((s) => s.prefs?.emailFallback === false)) continue;
+    const k = `${u.id}:${a.kind}`; if (Date.now() - (mailedAt.get(k) || 0) < 10 * 60e3) continue;
+    mailedAt.set(k, Date.now()); n++;
+    await mailer.send({ to: u.email, subject: `Urgent: ${ALERT_TITLE[a.kind] || "alert"} from LuminAAC`, text: `${a.message || ALERT_TITLE[a.kind]}\n\nFrom: ${a.from || "My Voice"}\nTime: ${new Date(a.t).toUTCString()}\n\nOpen the Bridge to see where and to say you're on it: ${process.env.APP_URL || ""}/bridge.html#today\n\nYou get this email because no phone or computer of yours accepted the notification. Turn this off in the Bridge under Account and devices, Notifications.\n` }).catch((e) => console.error("alert mail failed:", e.message));
+  }
+  return n;
+}
+const alertOut = (key, a) => notify(key, alertEvent(a)).then((r) => emailFallback(key, a, r).then(() => r));
 const soon = (pr, ms = 2500) => Promise.race([pr.catch(() => []), new Promise((r) => setTimeout(() => r([]), ms))]);
 function alertEvent(a) {
   const urgent = isUrgent(a);
   return { type: "alert", urgent, topic: a.kind, payload: { kind: "alert", title: `${urgent ? "Urgent: " : ""}${ALERT_TITLE[a.kind] || "Alert"}`, body: (a.message || `${a.from || "My Voice"}: ${ALERT_TITLE[a.kind] || a.kind}`).slice(0, 140), tag: "alert-" + a.id, url: "bridge.html#today", urgent } };
 }
-export { notify, pushLog };
+export { notify, pushLog, emailFallback };
 
 // ---------- routes ----------
 async function route(req, res, url) {
@@ -620,7 +640,7 @@ async function route(req, res, url) {
     if (b.loc && !loc) return fail(res, 400, "Validation failed", "loc must be { lat, lng, acc }");
     const a = { id: String(b.id || randomUUID()).slice(0, 64), kind: b.kind, message: String(b.message || "").slice(0, 200), t: Number(b.t) || Date.now(), ack: null, from: String(b.from || w.device?.name || "My Voice").slice(0, 60), ...(loc && { loc }), ...(b.zone && { zone: String(b.zone).slice(0, 60) }), ...(b.water === true && { water: true }), ...(b.kind === "danger-enter" && { urgent: true }) };
     const dup = store.update(key, (d) => { if (d.alerts.some((x) => x.id === a.id)) return true; d.alerts = [a, ...d.alerts].slice(0, 500); audit(d, `Alert: ${a.kind}`); return false; });
-    if (!dup) { broadcast(key, "alert", a); await soon(notify(key, alertEvent(a))); }
+    if (!dup) { broadcast(key, "alert", a); await soon(alertOut(key, a), 4000); }
     return ok(res, a);
   }
   if ((m = /^\/api\/alerts\/([\w-]+)\/ack$/.exec(p)) && M === "POST") {
@@ -687,7 +707,7 @@ function raise(family, x) {
   const a = { id: randomUUID(), t: Date.now(), ack: null, message: "", ...x };
   store.update(family, (d) => { d.alerts = [a, ...d.alerts].slice(0, 500); audit(d, `Alert: ${a.kind}`); });
   broadcast(family, "alert", a);
-  notify(family, alertEvent(a)).catch(() => {});
+  alertOut(family, a).catch(() => {});
   return a;
 }
 export function checkDeadman(now = Date.now()) {

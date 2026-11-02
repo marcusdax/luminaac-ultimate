@@ -5,6 +5,10 @@
 //                      server offers it; set SMTP_REQUIRE_TLS=0 only for a local test relay.
 //   MAIL_MODE=outbox   (default) append to <data>/_outbox.json and print a short line.
 //   MAIL_MODE=console  print the whole message to stdout.
+//   MAIL_MODE=resend   send through Resend's HTTPS API: RESEND_API_KEY, MAIL_FROM (a verified domain).
+//   MAIL_MODE=postmark send through Postmark's HTTPS API: POSTMARK_TOKEN, MAIL_FROM (a confirmed sender).
+// With MAIL_MODE unset, the first configured provider wins: RESEND_API_KEY, then
+// POSTMARK_TOKEN, then SMTP_HOST, else the outbox. Secrets only ever come from env.
 // If you'd rather use nodemailer, replace send() with transporter.sendMail(msg); the
 // rest of the backend only calls send({ to, subject, text }).
 import net from "node:net";
@@ -15,14 +19,16 @@ import { randomUUID } from "node:crypto";
 import { DIR } from "./store.js";
 
 const OUT = join(DIR, "_outbox.json");
-export const mode = () => (process.env.MAIL_MODE || "outbox").toLowerCase();
+export const mode = (env = process.env) => (env.MAIL_MODE || (env.RESEND_API_KEY ? "resend" : env.POSTMARK_TOKEN ? "postmark" : env.SMTP_HOST ? "smtp" : "outbox")).toLowerCase();
+export const configured = () => mode() !== "outbox" && mode() !== "console";
 export function outbox() { try { return JSON.parse(readFileSync(OUT, "utf8")); } catch { return []; } }
 const clean = (s) => String(s).replace(/[\r\n]+/g, " ").slice(0, 300); // no header injection
 
-export async function send({ to, subject, text }) {
-  const msg = { id: randomUUID(), to: clean(to), subject: clean(subject), text: String(text), t: Date.now(), from: clean(process.env.MAIL_FROM || "LuminAAC <no-reply@localhost>") };
+export async function send({ to, subject, text, headers }) {
+  const msg = { id: randomUUID(), to: clean(to), subject: clean(subject), text: String(text), t: Date.now(), from: clean(process.env.MAIL_FROM || "LuminAAC <no-reply@localhost>"), ...(headers && { headers: Object.fromEntries(Object.entries(headers).map(([k, v]) => [clean(k), clean(v)])) }) };
   const m = mode();
   if (m === "smtp") { await smtp(msg); return { sent: true, via: "smtp", id: msg.id }; }
+  if (m === "resend" || m === "postmark") { await http(m, msg); return { sent: true, via: m, id: msg.id }; }
   if (m === "console") { console.log(`\n--- mail to ${msg.to}: ${msg.subject}\n${msg.text}\n---`); return { sent: true, via: "console", id: msg.id }; }
   const box = [msg, ...outbox()].slice(0, 200);
   const tmp = OUT + ".tmp"; writeFileSync(tmp, JSON.stringify(box, null, 1)); renameSync(tmp, OUT);
@@ -30,10 +36,21 @@ export async function send({ to, subject, text }) {
   return { sent: true, via: "outbox", id: msg.id };
 }
 
+// HTTPS email APIs. `fetchImpl` and `env` are injectable for tests.
+export async function http(provider, msg, env = process.env, fetchImpl = fetch) {
+  const req = provider === "resend"
+    ? { url: env.RESEND_URL || "https://api.resend.com/emails", key: env.RESEND_API_KEY, headers: { Authorization: `Bearer ${env.RESEND_API_KEY}` }, body: { from: msg.from, to: [msg.to], subject: msg.subject, text: msg.text, headers: msg.headers } }
+    : { url: env.POSTMARK_URL || "https://api.postmarkapp.com/email", key: env.POSTMARK_TOKEN, headers: { "X-Postmark-Server-Token": env.POSTMARK_TOKEN, Accept: "application/json" }, body: { From: msg.from, To: msg.to, Subject: msg.subject, TextBody: msg.text, MessageStream: env.POSTMARK_STREAM || "outbound", Headers: Object.entries(msg.headers || {}).map(([Name, Value]) => ({ Name, Value })) } };
+  if (!req.key) throw new Error(`${provider} is selected but its API key is not set`);
+  const r = await fetchImpl(req.url, { method: "POST", headers: { "Content-Type": "application/json", ...req.headers }, body: JSON.stringify(req.body), signal: AbortSignal.timeout(10000) });
+  if (!r.ok) throw new Error(`${provider} ${r.status}: ${(await r.text().catch(() => "")).slice(0, 200)}`);
+  return r.status;
+}
+
 function rfc822(msg) {
   const addr = (s) => (/<([^>]+)>/.exec(s) || [, s])[1];
   const body = msg.text.replace(/\r?\n/g, "\r\n").replace(/^\./gm, ".."); // dot-stuffing
-  return { from: addr(msg.from), data: [`From: ${msg.from}`, `To: ${msg.to}`, `Subject: ${msg.subject}`, `Date: ${new Date(msg.t).toUTCString()}`, `Message-ID: <${msg.id}@luminaac>`, "MIME-Version: 1.0", "Content-Type: text/plain; charset=utf-8", "Content-Transfer-Encoding: 8bit", "", body].join("\r\n") };
+  return { from: addr(msg.from), data: [`From: ${msg.from}`, `To: ${msg.to}`, `Subject: ${msg.subject}`, `Date: ${new Date(msg.t).toUTCString()}`, `Message-ID: <${msg.id}@luminaac>`, ...Object.entries(msg.headers || {}).map(([k, v]) => `${k}: ${v}`), "MIME-Version: 1.0", "Content-Type: text/plain; charset=utf-8", "Content-Transfer-Encoding: 8bit", "", body].join("\r\n") };
 }
 
 // Minimal SMTP client: EHLO, STARTTLS, AUTH PLAIN/LOGIN, MAIL, RCPT, DATA, QUIT.

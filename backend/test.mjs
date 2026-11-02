@@ -413,6 +413,34 @@ t("youtube: @name without a key explains how to paste the channel link", /channe
   ps.close();
 }
 
+// ---- Email providers and the urgent-alert fallback ----
+{
+  t("mail: mode picks the configured provider", mailer.mode({ RESEND_API_KEY: "x" }) === "resend" && mailer.mode({ POSTMARK_TOKEN: "x" }) === "postmark" && mailer.mode({ SMTP_HOST: "h" }) === "smtp" && mailer.mode({}) === "outbox" && mailer.mode({ MAIL_MODE: "Console", RESEND_API_KEY: "x" }) === "console");
+  const calls = []; const fake = async (url, o) => { calls.push({ url, o }); return { ok: true, status: 200, text: async () => "" }; };
+  const msg = { from: "LuminAAC <a@b.org>", to: "p@q.org", subject: "Hi", text: "Body", headers: { "List-Unsubscribe": "<https://x/u>" } };
+  await mailer.http("resend", msg, { RESEND_API_KEY: "re_test" }, fake);
+  const rb = JSON.parse(calls[0].o.body);
+  t("mail: Resend request shape", calls[0].url === "https://api.resend.com/emails" && calls[0].o.headers.Authorization === "Bearer re_test" && rb.to[0] === "p@q.org" && rb.text === "Body" && rb.headers["List-Unsubscribe"]);
+  await mailer.http("postmark", msg, { POSTMARK_TOKEN: "pm_test" }, fake);
+  const pb = JSON.parse(calls[1].o.body);
+  t("mail: Postmark request shape", calls[1].url === "https://api.postmarkapp.com/email" && calls[1].o.headers["X-Postmark-Server-Token"] === "pm_test" && pb.TextBody === "Body" && pb.Headers[0].Name === "List-Unsubscribe");
+  let threw = false; try { await mailer.http("resend", msg, {}, fake); } catch { threw = true; }
+  t("mail: a missing API key is an error, not a silent drop", threw);
+  let threw2 = false; try { await mailer.http("resend", msg, { RESEND_API_KEY: "k" }, async () => ({ ok: false, status: 422, text: async () => "bad from" })); } catch (e) { threw2 = /422/.test(e.message); }
+  t("mail: provider errors surface", threw2);
+  const store = await import("./store.js");
+  const u = acc.createUser({ email: "fallback@example.org", password: "long enough password", name: "Fallback" });
+  u.emailVerified = Date.now(); u.memberships.push({ family: store.fid(KEY), role: "parent" }); acc.save();
+  const before = mailer.outbox().length;
+  await call("POST", "/api/alerts", { kind: "help", message: "Fallback check" });
+  const box = mailer.outbox();
+  t("mail: urgent alert emails a verified member with no push", box.length === before + 1 && box[0].to === "fallback@example.org" && /^Urgent/.test(box[0].subject));
+  await call("POST", "/api/alerts", { kind: "help", message: "again" });
+  t("mail: fallback is throttled", mailer.outbox().length === before + 1);
+  await call("POST", "/api/alerts", { kind: "zone-enter", message: "arrived" });
+  t("mail: non-urgent alerts don't email", mailer.outbox().length === before + 1);
+}
+
 console.log(`\n${pass} passed, ${failN} failed`);
 
 server.close(); process.exit(failN ? 1 : 0);
