@@ -10,6 +10,7 @@ import { load } from "./shared.js";
 import * as C from "./sound-core.js";
 import * as St from "./sound-store.js";
 import { level, pitch, judgeTry, praise, stickerFor } from "./games.js";
+import * as ASR from "./asr.js";
 
 const mv = document.querySelector(".mv");
 const $ = (id) => document.getElementById(id);
@@ -68,6 +69,7 @@ const GAMES = [
   { id: "sing", e: "🥁", label: "Sing and Tap", go: () => targetLoop(singTurn) },
   { id: "train", e: "🚂", label: "Word Train", go: () => targetLoop(trainTurn) },
   { id: "world", e: "🎈", label: "Sound World", go: worldGame },
+  { id: "word", e: "🗣️", label: "Say the word", go: () => targetLoop(wordTurn) },
 ];
 function renderEntry() {
   const on = enabled(), box = $("spTiles");
@@ -165,7 +167,7 @@ async function targetLoop(turn) {
   const judge = await getJudge(plan.target);
   if (my !== running || !game) return;
   tries++;
-  St.record("try", { target: plan.target.id, say: plan.target.approx || plan.target.say, judge, game: game.id, voiced: result ? result.heard : undefined, ms: result?.ms || undefined }, { by: grown ? "caregiver" : "child" });
+  St.record("try", { target: plan.target.id, say: plan.target.approx || plan.target.say, judge, game: game.id, voiced: result ? result.heard : undefined, ms: result?.ms || undefined, ...(result?.asr && { asr: result.asr }) }, { by: grown ? "caregiver" : "child" });
   reward(plan.feedback, result, judge);
   row(btn("Next", () => targetLoop(turn)), btn("All done", () => closing("All done! Great voice today."), "quiet"));
 }
@@ -240,6 +242,29 @@ async function trainTurn(target, plan, my) {
   const tr = $("spStage").querySelector(".sp-train"); if (tr && !calm()) tr.classList.add("go");
   say(target.say, 0.8);
   return r;
+}
+
+// ---------- 4. Say the word (optional word recognition, see asr.js) ----------
+// The picture and word, a slow model, then "your turn". With recognition on, hearing the
+// word (or the family's form of it) gets a big "I heard you say ...". Not hearing it changes
+// nothing: no "wrong", no retry demand, and the grown-up judge still decides.
+async function wordTurn(target, plan, my) {
+  stage(`<div class="sp-word" aria-hidden="true">${esc(target.e || "")}</div><p class="sp-bigword">${esc(target.show)}</p>`);
+  prompt("Listen."); row();
+  say(target.say, 0.65); await wait(1600);
+  if (plan.showModel) { say(target.say, 0.65); await wait(1600); }
+  if (my !== running) return null;
+  const c = cfg(), eng = c.asr || "off";
+  if (eng !== "off" && micOK() && ASR.available(eng)) {
+    prompt("Your turn! Say it.");
+    row();
+    const alts = await ASR.listenFor(eng, [target], 4500, { modelUrl: c.asrModel }).catch(() => []);
+    if (my !== running) return null;
+    const j = ASR.judgeHeard(alts, target);
+    if (j.match) { prompt(`I heard you say "${esc(j.heard)}"!`); say(`${j.heard}!`, 0.85); flash($("spStage").querySelector(".sp-bigword")); await wait(1200); }
+    return { heard: true, asr: j.match || "none" };
+  }
+  return yourTurn(4500, null);
 }
 
 // ---------- 3. Sound World (cause and effect, no target, nothing to get right) ----------

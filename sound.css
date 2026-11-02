@@ -57,3 +57,5 @@ dialog.sp.is-calm *, dialog.sp.is-calm { animation: none !important; transition:
 .sp-ph.lv-once { border-color: var(--wc-action, #2f6f6a); }
 .sp-ph.lv-often { background: var(--wc-action-tint, #e3f0ee); border-color: var(--wc-action, #2f6f6a); }
 .sp-ph.lv-word { background: var(--wc-action, #2f6f6a); border-color: var(--wc-action, #2f6f6a); color: #fff; }
+.sp-bigword { font-size: clamp(2rem, 8vw, 3.2rem); font-weight: 800; margin: 8px 0 0; text-align: center; }
+.sp-bigword.on { color: var(--ember-deep); }

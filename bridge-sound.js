@@ -88,7 +88,18 @@ function renderSettings() {
   const c = cfg();
   html($("#spSettings"), `<label>Tries per game <select id="spTries">${[3, 4, 5, 6].map((n) => `<option ${n === c.tries ? "selected" : ""}>${n}</option>`).join("")}</select></label>
     <label class="check"><input type="checkbox" id="spCas" ${c.cas ? "checked" : ""}/> Apraxia of speech (CAS) or suspected: one target at a time, slower changes</label>
-    <label class="check"><input type="checkbox" id="spSay" ${c.sayWithMe ? "checked" : ""}/> "Say it with me": after tapping a target word on the board, a soft 3-second "your turn"</label>`);
+    <label class="check"><input type="checkbox" id="spSay" ${c.sayWithMe ? "checked" : ""}/> "Say it with me": after tapping a target word on the board, a soft 3-second "your turn"</label>
+    <label>Word recognition in "Say the word"
+      <select id="spAsr"><option value="off">Off (a grown-up judges, or every try counts)</option><option value="device">On this device (vosk, needs a model address)</option><option value="browser">The browser's speech service</option></select></label>
+    <label id="spAsrModelL" hidden>Model address <input id="spAsrModel" type="url" placeholder="https://your-site/models/vosk-model-small-en-us-0.15.tar.gz" value="${esc(c.asrModel || "")}" /></label>
+    <p class="soft small" id="spAsrNote"></p>`);
+  const note = () => {
+    const v = $("#spAsr").value; $("#spAsrModelL").hidden = v !== "device";
+    $("#spAsrNote").textContent = v === "browser" ? "In Chrome and Safari this sends the microphone audio to Google or Apple to turn it into words. Use the on-device option if that isn't OK." : v === "device" ? "Runs on this device; audio never leaves it. The model (about 40 MB, Apache-2.0) downloads once from the address you give. It only listens for the practice words. The microphone also has to be allowed in Games settings." : "Recognition only ever adds an 'I heard you'. It never marks a try wrong.";
+  };
+  $("#spAsr").value = c.asr || "off"; note();
+  $("#spAsr").addEventListener("change", (e) => { c.asr = e.target.value; save(); note(); });
+  $("#spAsrModel").addEventListener("change", (e) => { c.asrModel = e.target.value.trim(); save(); });
   $("#spTries").addEventListener("change", (e) => { c.tries = +e.target.value; save(); });
   $("#spCas").addEventListener("change", (e) => { c.cas = e.target.checked; save(); });
   $("#spSay").addEventListener("change", (e) => { c.sayWithMe = e.target.checked; save(); });
