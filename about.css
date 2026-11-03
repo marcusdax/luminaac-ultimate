@@ -1,0 +1,100 @@
+/* "A day with LuminAAC" (docs/MOTION-CONCEPT.md, zone 5). The only page with
+   showcase motion. Scroll-driven reveals use CSS scroll timelines where the
+   browser has them; everything else, and reduced motion, gets the still page. */
+[data-c="people"] { --wc: var(--wc-people); --wt: var(--wc-people-tint); }
+[data-c="action"] { --wc: var(--wc-action); --wt: var(--wc-action-tint); }
+[data-c="describe"] { --wc: var(--wc-describe); --wt: var(--wc-describe-tint); }
+[data-c="thing"] { --wc: var(--wc-thing); --wt: var(--wc-thing-tint); }
+[data-c="social"] { --wc: var(--wc-social); --wt: var(--wc-social-tint); }
+[data-c="little"] { --wc: var(--wc-little); --wt: var(--wc-little-tint); }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fog); color: var(--ink); font-family: var(--font); font-size: var(--fs-sm); line-height: var(--lh-body); }
+.skip { position: absolute; left: -999px; top: var(--s2); background: var(--lit); color: var(--lit-ink); padding: var(--s2) var(--s4); border-radius: var(--r-chip); font-weight: 800; z-index: 10; }
+.skip:focus { left: var(--s2); }
+:focus-visible { outline: 3px solid var(--lit); outline-offset: 3px; }
+a { color: var(--sky-deep); text-underline-offset: 3px; }
+
+.a-top { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; justify-content: space-between; padding: var(--s3) var(--s4); background: var(--dusk); color: #fff; }
+.a-logo { display: flex; align-items: center; gap: var(--s2); color: #fff; text-decoration: none; font-weight: 800; font-size: var(--fs-md); }
+.a-nav { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.a-nav a { min-height: 44px; display: inline-flex; align-items: center; padding: 0 var(--s4); border-radius: var(--r-chip); color: var(--band-ink); text-decoration: none; font-weight: 700; }
+.a-nav a:hover { color: #fff; }
+.a-nav .a-cta { background: var(--lit); color: var(--lit-ink); }
+
+.a-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); align-items: center; gap: var(--s6); padding: var(--s7) var(--s5); background: var(--dusk); color: #fff; }
+.a-hero-art { position: relative; aspect-ratio: 4 / 3; border-radius: var(--r-sheet); overflow: hidden; display: grid; place-items: center; background: radial-gradient(80% 70% at 50% 60%, #2c3e4c, var(--dusk)); }
+.a-hero-art canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.a-hero-art.is-3d .a-hero-still { visibility: hidden; }
+.a-hero h1 { margin: 0 0 var(--s3); font-size: clamp(2.2rem, 6vw, 3.6rem); line-height: 1.05; font-weight: 800; }
+.a-lede { margin: 0 0 var(--s5); font-size: var(--fs-md); color: var(--band-ink); max-width: 46ch; }
+.a-small { margin: var(--s4) 0 0; color: var(--band-ink); font-size: var(--fs-xs); max-width: 52ch; }
+.a-hero-actions { display: flex; flex-wrap: wrap; gap: var(--s3); margin: 0; }
+.a-btn { min-height: 48px; display: inline-flex; align-items: center; padding: 0 var(--s5); border-radius: var(--r-chip); background: var(--lit); color: var(--lit-ink); font-weight: 800; text-decoration: none; }
+.a-btn.quiet { background: transparent; color: inherit; border: 2px solid currentColor; }
+
+.a-day-h { max-width: 64rem; margin: var(--s7) auto var(--s3); padding: 0 var(--s5); font-size: var(--fs-xl); }
+.a-scene { max-width: 64rem; margin: 0 auto; padding: var(--s6) var(--s5); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s6); align-items: center; min-height: 70vh; }
+.a-scene:nth-of-type(even) .a-art { order: 2; }
+.a-copy h3 { margin: 0 0 var(--s3); font-size: var(--fs-xl); line-height: var(--lh-tight); }
+.a-copy p { max-width: 52ch; }
+.a-time { margin: 0 0 var(--s2); font-weight: 800; color: var(--ember-deep); }
+.a-art { position: relative; aspect-ratio: 4 / 3; border-radius: var(--r-sheet); background: linear-gradient(var(--sky-top), var(--sky-low)); border: 1px solid var(--line); overflow: hidden; padding: var(--s4); }
+
+/* 1. Board */
+.a-art-board { display: grid; grid-template-rows: auto 1fr; gap: var(--s3); }
+.a-strip { display: flex; gap: var(--s2); align-items: center; min-height: 52px; padding: 0 var(--s3); border-radius: var(--r-strip); background: var(--dusk); }
+.a-word { padding: 4px 10px; border-radius: 10px; background: #2c3e4c; color: #fff; font-weight: 800; }
+.a-word-new { background: var(--lit); color: var(--lit-ink); }
+.a-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s2); }
+.a-tiles span { display: grid; place-items: center; border-radius: var(--r-tile); background: var(--wt); border: 3px solid var(--wc); font-weight: 800; font-size: var(--fs-md); }
+
+/* 2. Link */
+.a-art-link { display: grid; place-items: center; color: var(--ink-soft); }
+.a-art-link svg { width: 100%; height: auto; }
+.a-dev { fill: var(--paper); stroke: var(--dusk); stroke-width: 4; }
+.a-link { stroke: var(--sky-deep); stroke-width: 4; stroke-dasharray: 3 10; stroke-linecap: round; fill: none; }
+.a-dot { fill: var(--lit); }
+
+/* 3. Lanterns */
+.a-art-lanterns { background: linear-gradient(#a9a2c0, #c9c3d9); }
+.a-art-lanterns span { position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%); padding: 8px 14px; border-radius: 20px 20px 14px 14px; background: color-mix(in srgb, var(--lit) 70%, #fff); color: var(--lit-ink); font-weight: 800; box-shadow: 0 0 0 3px color-mix(in srgb, var(--lit) 35%, transparent); }
+
+/* 4. Calm */
+.a-art-calm { background: linear-gradient(#22313d, #141c24); }
+.a-horizon { position: absolute; left: 0; right: 0; top: 55%; height: 2px; background: var(--lit); box-shadow: 0 0 40px 14px rgba(242, 179, 61, 0.35); }
+.a-orb { position: absolute; left: 50%; top: 55%; width: 120px; height: 120px; margin: -60px; border-radius: 50%; background: radial-gradient(circle, var(--lit) 0%, rgba(242,179,61,.35) 45%, transparent 70%); }
+
+.a-end { max-width: 64rem; margin: var(--s7) auto; padding: var(--s7) var(--s5); text-align: center; background: var(--dusk); color: #fff; border-radius: var(--r-sheet); }
+.a-end h2 { margin: 0 0 var(--s5); font-size: var(--fs-xl); }
+.a-end .a-hero-actions { justify-content: center; }
+.a-foot { max-width: 64rem; margin: 0 auto; padding: var(--s5); color: var(--ink-soft); font-size: var(--fs-xs); }
+
+@media (max-width: 760px) {
+  .a-top { position: static; }
+  .a-hero, .a-scene { grid-template-columns: minmax(0, 1fr); padding-left: var(--s4); padding-right: var(--s4); }
+  .a-scene { min-height: 0; }
+  .a-scene:nth-of-type(even) .a-art { order: 0; }
+  .a-day-h { padding: 0 var(--s4); }
+  .a-end { margin-left: var(--s4); margin-right: var(--s4); }
+}
+
+/* Scroll-driven story: each picture settles in as it scrolls into view, and the
+   picture's one action (the word landing, the sync dot, the lanterns lining up,
+   the breath) plays across its scroll range. No scroll-jacking. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .a-art { animation: a-in linear both; animation-timeline: view(); animation-range: entry 0% cover 35%; }
+    @keyframes a-in { from { opacity: 0; transform: translateY(40px) scale(0.97); } }
+    .a-word-new { animation: a-land linear both; animation-timeline: view(); animation-range: cover 20% cover 50%; }
+    @keyframes a-land { from { transform: translate(40px, 160px) scale(1.6); opacity: 0.3; } }
+    .a-tile-go { animation: a-press linear both; animation-timeline: view(); animation-range: cover 15% cover 25%; }
+    @keyframes a-press { 50% { transform: scale(0.94); } }
+    .a-dot { animation: a-sync linear both; animation-timeline: view(); animation-range: cover 25% cover 60%; }
+    @keyframes a-sync { from { transform: translateX(0); } to { transform: translateX(116px); } }
+    .a-art-lanterns span { animation: a-line linear both; animation-timeline: view(); animation-range: cover 25% cover 55%; }
+    @keyframes a-line { to { top: 40%; } }
+    .a-horizon, .a-orb { animation: a-breath linear both; animation-timeline: view(); animation-range: cover 10% cover 90%; }
+    @keyframes a-breath { 40% { top: 35%; } 100% { top: 60%; } }
+  }
+}

@@ -66,7 +66,7 @@ New:
 | `--t-ambient` | 40 s | Slowest scene drift (Play, games) |
 | `--t-breath-in` / `--t-breath-out` | 4 s / 6 s | Calm horizon |
 
-Motion only ever confirms something the child did. Nothing moves to get attention. Still mode and `prefers-reduced-motion` turn off everything except the spoken-word glow, which becomes a static outline.
+Motion only ever confirms something the child did. Nothing moves to get attention. Since v0.18 one gate (`motion-gate.js`, see [docs/MOTION-CONCEPT.md](docs/MOTION-CONCEPT.md)) sets the level: 0 still, 1 confirmations, 2 UI, 3 ambient skies. Still mode and `prefers-reduced-motion` turn off everything except the spoken-word glow, which becomes a static outline.
 
 ## 6. Game scenes
 

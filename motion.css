@@ -1,0 +1,46 @@
+/* Motion (docs/MOTION-CONCEPT.md). motion-gate.js keeps <html data-ml> at
+   0 still · 1 confirmations · 2 UI · 3 ambient. Motion only confirms what the
+   child did; nothing here loops on a screen with words. */
+
+/* Zone 0: the word that flies from a tile to the strip */
+.mg-ghost { box-shadow: var(--lift); border-radius: var(--r-tile); will-change: transform, opacity; }
+
+/* Zone 1: the lit pill that slides between nav items */
+.mg-pill-host > :not(.mg-pill) { position: relative; z-index: 1; }
+.mg-pill { position: absolute; z-index: 0; border-radius: 16px; background: var(--paper); box-shadow: var(--lift); pointer-events: none; will-change: transform; }
+.rd .mg-pill { background: var(--lit); box-shadow: none; }
+.nav-btn.mg-hold, .rd .nav-btn.mg-hold { background: transparent; box-shadow: none; }
+
+/* Sheets rise in --t-ui; closing is instant (exit faster than enter). */
+@keyframes mg-rise { from { opacity: 0; transform: translateY(12px); } }
+:root[data-ml="2"] dialog[open], :root[data-ml="3"] dialog[open] { animation: mg-rise var(--t-ui) var(--ease); }
+
+/* The dark bands fade in once when the app opens, then never move again. */
+@keyframes mg-band { from { opacity: 0.4; } }
+:root[data-ml="2"] .strip-wrap, :root[data-ml="3"] .strip-wrap,
+:root[data-ml="2"] .nav, :root[data-ml="3"] .nav { animation: mg-band var(--t-glow) var(--ease) 1; }
+
+/* Folder change: a short View Transition of the board only. */
+#grid { view-transition-name: board; }
+::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation-duration: var(--t-ui); animation-timing-function: var(--ease); }
+
+/* Zone 2: Calm. Breathing is 4 s in and 6 s out (DESIGN.md), and the sky behind follows it. */
+.breathe-orb { transition: transform var(--t-breath-out, 6s) ease-in-out; }
+.breathe-orb.in { transition-duration: var(--t-breath-in, 4s); }
+
+/* Shader skies sit under the host's own content. The host's background stays as the still poster. */
+.has-sky { position: relative; isolation: isolate; overflow: hidden; }
+.sky-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; display: block; pointer-events: none; }
+.sky-canvas[hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mg-ghost, .mg-pill, .sky-canvas { display: none !important; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
+/* Zone 4: Bridge. The linked-devices beam. */
+.mg-beam { color: var(--ink-soft); max-width: 220px; margin: var(--s2) 0; }
+.mg-beam[hidden] { display: none; }
+.mg-beam svg { display: block; width: 100%; height: auto; }
+.mg-beam .mg-line { stroke: var(--sky-deep); fill: none; }
+.mg-beam .mg-dot { fill: var(--lit); opacity: 0; }

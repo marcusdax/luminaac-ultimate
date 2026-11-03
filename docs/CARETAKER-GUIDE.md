@@ -308,7 +308,7 @@ Tap **Print a summary for a therapist** for a one-page report you can print or s
 
 Under **Word games** (in Play, or further down Talk), your child plays with **their own word tiles**. The tiles have the same colours and pictures as on Talk, and core words sit in the same columns. Every tap speaks the word, so playing is talking.
 
-**The eight games:**
+**The games:**
 - **Word Garden:** a word plants a sprout, and tapping it again grows it. Two words together ("more water") make it bloom.
 - **Conductor:** the train waits until he asks. Places (park, home, school) pick the line. "Go", "stop", "fast", "slow", "more" and "again" drive it.
 - **Feelings Weather:** pick the sky that feels like you; every sky is OK. Rain and storms clear only when your child chooses to breathe with the cloud. It also has a door in **Calm**.
@@ -317,6 +317,11 @@ Under **Word games** (in Play, or further down Talk), your child plays with **th
 - **My Turn, Your Turn:** you sit on the top half, your child on the bottom, and a lit token passes between you.
 - **Sound Pond:** voice makes ripples and moves a fish. With the microphone off, taps do it instead.
 - **Copy the Robot:** copy the pose, then tap **I did it**. If you allow it, the camera can check arm positions on the device. Nothing is recorded or sent.
+- **Lantern Sky (new in 0.18):** each word floats up as a lantern. **Say my sky** lines them up into a sentence and reads it, lighting each lantern as its word is said.
+- **Tide Pool (new in 0.18):** tap the water. The ripple opens the shells it reaches, and each shell says its word (crab, fish, blue, more, star).
+- **Sound Garden (new in 0.18):** every sound grows a flower, and a long sound makes it bloom. If you allowed the microphone for Sound Pond, it listens for loudness only and records nothing. Otherwise, tap **I made a sound** after each sound.
+- **Aurora Feelings (new in 0.18):** pick a feeling, and the sky takes its colour and pace. The feeling appears in the Bridge with the other things your child said.
+- **Word Train (new in 0.18):** each word becomes a carriage on a 3D train. Tap two carriages to swap them, then **Go, train!** sends it round once while the voice reads the words. On older tablets, or with Movement set to Small or Still, it is a flat train that works the same way.
 
 **How every game works:**
 - **All done** is always in the top-right corner, and it always works.
@@ -325,7 +330,8 @@ Under **Word games** (in Play, or further down Talk), your child plays with **th
 
 **Your settings:** in **Bridge → Videos and games → Word games** you choose:
 - which games show;
-- **Movement** (Gentle, or Still: nothing moves by itself);
+- **Movement**, which since 0.18 covers the board, Calm and every game: **Gentle** (slow skies in Calm and games), **Small** (only the word travelling to the sentence bar) or **Still** (nothing moves by itself). The tablet's own "reduce motion" setting and Still mode always win, and a low battery turns the skies off;
+- **Calm sky** (night, sea or dawn), the slow horizon behind the breathing circle. Breathing is 4 seconds in and 6 seconds out;
 - **Game sounds** (soft, normal or off; words are still spoken);
 - **Rest after** 5 to 20 minutes, or no limit;
 - how many word buttons Word Garden shows;

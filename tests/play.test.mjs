@@ -4,10 +4,10 @@ import { CORE } from "../vocab.js";
 let pass = 0, fail = 0;
 const t = (name, ok) => { ok ? pass++ : fail++; console.log(`${ok ? "ok  " : "FAIL"} ${name}`); };
 
-t("eight games, each with a scene and World pieces", P.GAMES.length === 8 && P.GAMES.every((g) => g.scene && P.PIECES[g.id]));
+t("thirteen games, each with a scene and World pieces", P.GAMES.length === 13 && P.GAMES.every((g) => g.scene && P.PIECES[g.id]));
 const s = P.playSettings({ play: { minutes: 7, tiles: 40, off: ["robot"] }, calm: true, quiet: true });
 t("settings: bad values fall back, calm and quiet switches still win", s.minutes === 10 && s.tiles === 12 && s.motion === "still" && s.sound === "off");
-t("settings: a game turned off is hidden", P.shown(s).length === 7 && !P.shown(s).some((g) => g.id === "robot"));
+t("settings: a game turned off is hidden", P.shown(s).length === 12 && !P.shown(s).some((g) => g.id === "robot"));
 t("session cap: 0 means no cap; never negative", P.minutesLeft(0, 0, 9e9) === Infinity && P.minutesLeft(0, 5, 10 * 60e3) === 0);
 
 let w = { pieces: [] };

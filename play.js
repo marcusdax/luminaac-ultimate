@@ -6,6 +6,10 @@ import { load, persist, speak } from "./shared.js";
 import { CORE } from "./vocab.js";
 import { level, pitch } from "./games.js";
 import * as P from "./play-core.js";
+import * as M from "./motion-core.js";
+import { level as mlevel } from "./motion-gate.js";
+import { mountSky } from "./shader-sky.js";
+import { MODES } from "./shaders/sky.js";
 
 const $ = (id) => document.getElementById(id);
 const esc = (s = "") => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -14,7 +18,7 @@ const lexicon = new Map(CORE.map((c) => [c.w.toLowerCase(), c]));
 // Words the games need that aren't on the core board: same classes as the Fitzgerald Key.
 const EXTRA = {
   park: ["thing", "🌳"], home: ["thing", "🏠"], school: ["thing", "🏫"], fast: ["describe", "⚡"], slow: ["describe", "🐢"], again: ["social", "🔁"],
-  wait: ["little", "⏳"], water: ["thing", "💧"], flower: ["thing", "🌸"], tree: ["thing", "🌳"], sun: ["thing", "☀️"], grow: ["action", "🌱"], pretty: ["describe", "✨"],
+  juice: ["thing", "🧃"], wait: ["little", "⏳"], water: ["thing", "💧"], flower: ["thing", "🌸"], tree: ["thing", "🌳"], sun: ["thing", "☀️"], grow: ["action", "🌱"], pretty: ["describe", "✨"],
 };
 for (const x of [...P.CAST, ...P.STAGES]) EXTRA[x.w] ||= ["thing", x.e];
 for (const x of P.ACTS) EXTRA[x.w] ||= ["action", x.e];
@@ -52,12 +56,15 @@ document.body.append(dlg);
 let cur = null, started = 0, turns = 0, capTimer = 0, cleanup = [];
 const api = {
   get settings() { return settings(); },
-  scene: (html) => { $("pkScene").innerHTML = html; return $("pkScene"); },
+  // The shader sky (if any) stays as the scene changes underneath it.
+  scene: (html) => { const s = $("pkScene"), cv = s.querySelector(":scope > .sky-canvas"); s.innerHTML = html; if (cv) s.prepend(cv); return s; },
   el: (sel) => $("pkScene").querySelector(sel),
   note: (t) => { $("pkNote").textContent = t || ""; },
   say: (t) => { if (t) speak(t); },
   chime,
-  still: () => settings().motion === "still" || matchMedia("(prefers-reduced-motion: reduce)").matches,
+  still: () => mlevel() === 0, // motion-gate.js: Still mode, reduce motion and the Movement setting
+  level: () => mlevel(),
+  sky: null,
   strip(words) { $("pkStrip").innerHTML = words.map((w, i) => `<span${i === words.length - 1 ? ' class="is-lit"' : ""}>${esc(w)}</span>`).join(" "); },
   // Real board tiles, in their Talk columns. Each tap speaks the word, like Talk.
   tiles(words, onTap, { label = "Words" } = {}) {
@@ -83,6 +90,9 @@ function open(g) {
   $("pkTitle").textContent = g.name; $("pkStrip").textContent = ""; api.note(""); $("pkTiles").textContent = "";
   dlg.dataset.scene = g.scene; dlg.classList.toggle("pk-still", api.still());
   dlg.showModal();
+  // A slow shader sky for the scene at motion level 3; the scene colour is the still poster.
+  api.sky = mountSky($("pkScene"), { scene: g.scene, mode: g.sky ? MODES[g.sky] : undefined });
+  cleanup.push(() => { api.sky?.stop(); api.sky = null; });
   RUN[g.id](api);
   const s = settings();
   clearInterval(capTimer);
@@ -307,7 +317,139 @@ function robot(k) {
   $("pkTiles").hidden = true; k.note("Copy what the robot does, then tap \"I did it\"."); show();
 }
 
-const RUN = { garden, conductor, weather, stage, sort, turns: turnsGame, pond, robot };
+// ---------- 9. Lantern Sky ----------
+function lantern(k) {
+  let st = { lanterns: [] }, n = 0, lined = false;
+  k.scene(`<div class="pk-lantern"><svg class="pk-const" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points=""/></svg><ul class="pk-lans" aria-label="Lanterns"></ul><button type="button" class="pk-say" disabled>Say my sky</button></div>`);
+  k.note("Tap words. Each one floats up as a lantern.");
+  const ul = k.el(".pk-lans"), line = k.el(".pk-const polyline"), btn = k.el(".pk-say");
+  const at = (li, l) => { li.style.left = `${l.x * 100}%`; li.style.top = `${l.y * 100}%`; };
+  const clear = () => { st = { lanterns: [] }; lined = false; ul.textContent = ""; line.setAttribute("points", ""); btn.textContent = "Say my sky"; btn.disabled = true; };
+  const add = (w) => {
+    if (lined) clear();
+    const r = M.lanternAdd(st, w, n++); st = { lanterns: r.lanterns };
+    if (r.gone) ul.querySelector(`[data-id="${r.gone.id}"]`)?.remove();
+    const l = r.lanterns.at(-1), it = wordItem(w), li = document.createElement("li");
+    li.className = "pk-lan"; li.dataset.id = l.id; li.dataset.c = it.c;
+    li.innerHTML = `<span class="pk-pic" aria-hidden="true">${esc(it.e || "🏮")}</span><span class="pk-lbl">${esc(w)}</span>`;
+    at(li, l); ul.append(li);
+    // It rises from the ground to its place: slowly with skies on, quickly at "Small", not at all when Still.
+    const lv = k.level(), ms = lv >= 3 ? 1600 : lv >= 1 ? 300 : 0;
+    if (ms && li.animate) li.animate([{ transform: `translate(-50%, ${Math.round(ul.clientHeight * (1 - l.y))}px)`, opacity: 0.2 }, { transform: "translate(-50%, 0)", opacity: 1 }], { duration: ms, easing: "cubic-bezier(0.2, 0.7, 0.2, 1)" });
+    btn.disabled = false; k.chime(600 + st.lanterns.length * 40); k.piece();
+  };
+  k.tiles(M.LANTERN_WORDS.slice(0, Math.max(6, k.settings.tiles)), (w) => add(w));
+  btn.addEventListener("click", () => {
+    if (lined) { clear(); k.note("A new sky. Tap words to make lanterns."); return; }
+    if (!st.lanterns.length) return;
+    lined = true; turns++;
+    const pts = M.constellation(st.lanterns);
+    pts.forEach((l) => at(ul.querySelector(`[data-id="${l.id}"]`), l));
+    line.setAttribute("points", pts.map((l) => `${l.x * 100},${l.y * 100 + 4}`).join(" "));
+    const s = M.lanternSentence(st.lanterns); k.strip(st.lanterns.map((l) => l.w)); k.say(s); k.chime(880); k.piece("landmark");
+    // Each lantern lights as its word is read.
+    pts.forEach((l, i) => k.timer(() => { ul.querySelectorAll(".pk-lan").forEach((x) => x.classList.toggle("is-lit", x.dataset.id === String(l.id))); }, 300 + i * 520));
+    k.timer(() => ul.querySelectorAll(".pk-lan").forEach((x) => x.classList.remove("is-lit")), 300 + pts.length * 520 + 400);
+    k.note(`${s}. Your words made a sky.`); btn.textContent = "New sky";
+  });
+}
+
+// ---------- 10. Tide Pool ----------
+function tide(k) {
+  let open = [];
+  k.scene(`<div class="pk-tide" aria-label="The pool. Tap the water to make a ripple.">${M.SHELLS.map((s, i) => `<button type="button" class="pk-shell" data-i="${i}" style="left:${s.x * 100}%;top:${s.y * 100}%" aria-label="Shell ${i + 1}"><span aria-hidden="true">🐚</span></button>`).join("")}</div>`);
+  k.note("Tap the water. The ripple opens the shells it reaches.");
+  const pool = k.el(".pk-tide");
+  const openShell = (i) => {
+    if (open.includes(i)) return;
+    open = [...open, i]; const s = M.SHELLS[i], b = pool.querySelector(`[data-i="${i}"]`);
+    b.classList.add("is-open"); b.firstElementChild.textContent = s.e; b.setAttribute("aria-label", s.w);
+    k.say(s.w); k.strip(open.map((j) => M.SHELLS[j].w)); k.chime(620 + i * 60); k.piece();
+    if (open.length === M.SHELLS.length) {
+      k.piece("landmark"); k.note("Every shell is open! They'll close for a new go.");
+      k.timer(() => { open = []; pool.querySelectorAll(".pk-shell").forEach((x, j) => { x.classList.remove("is-open"); x.firstElementChild.textContent = "🐚"; x.setAttribute("aria-label", `Shell ${j + 1}`); }); k.note("Tap the water again."); }, 3000);
+    }
+  };
+  const ring = (x, y, v) => {
+    if (k.sky?.on) return k.sky.ripple(x, y, v);
+    if (k.still()) return;
+    const r = document.createElement("span"); r.className = "pk-ripple"; r.style.left = `${x * 100}%`; r.style.top = `${y * 100}%`;
+    pool.append(r); setTimeout(() => r.remove(), 1200);
+  };
+  const tap = (x, y) => {
+    turns++; const lv = k.level(), rp = M.rippleFor(lv);
+    ring(x, y, rp.speed === Infinity ? 1 : rp.speed);
+    const hits = lv === 0 ? M.stillHit(M.SHELLS, x, y, open) : M.rippleHits(M.SHELLS, x, y, { ...rp, open });
+    if (!hits.length) { k.chime(440); return; }
+    hits.forEach((h) => k.timer(() => openShell(h.i), h.ms));
+  };
+  pool.addEventListener("click", (e) => {
+    const sh = e.target.closest(".pk-shell"), s = sh ? M.SHELLS[+sh.dataset.i] : null;
+    if (s) return tap(s.x, s.y);
+    const r = pool.getBoundingClientRect(); tap((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+  });
+  $("pkTiles").hidden = true;
+}
+
+// ---------- 11. Sound Garden ----------
+function bloom(k) {
+  let st = { h: 0, held: 0, bloomed: false }, mic = null, iv = 0;
+  k.scene(`<div class="pk-bloom"><div class="pk-stem" style="--h:0"><span class="pk-flower" aria-hidden="true">🌱</span></div><div class="pk-ground"></div><button type="button" class="pk-mysound">I made a sound</button></div>`);
+  const stem = k.el(".pk-stem"), flower = k.el(".pk-flower");
+  const draw = () => { stem.style.setProperty("--h", st.h.toFixed(3)); flower.textContent = st.bloomed ? "🌻" : st.h > 0.5 ? "🌿" : "🌱"; };
+  const step = (r) => {
+    st = r; draw();
+    if (r.event === "bloom") {
+      turns++; k.say("It bloomed!"); k.chime(880); k.piece("landmark"); k.note("Your voice made it bloom! A new seed is coming.");
+      k.timer(() => { st = { h: 0, held: 0, bloomed: false }; draw(); k.note(mic ? "Make a sound to grow the new seed." : "Make a sound, then tap \"I made a sound\"."); }, 3500);
+    }
+  };
+  k.el(".pk-mysound").addEventListener("click", () => { turns++; k.chime(560); k.piece(); step(M.gardenTap(st)); });
+  k.note("Make a sound, then tap \"I made a sound\". Each sound helps it grow.");
+  if (load().games?.settings?.mic && navigator.mediaDevices?.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: false } }).then((stream) => {
+      const a = new (window.AudioContext || window.webkitAudioContext)(), an = a.createAnalyser(); an.fftSize = 2048;
+      a.createMediaStreamSource(stream).connect(an); mic = { stream, a }; const buf = new Float32Array(an.fftSize);
+      k.note("Make a sound. Any sound helps it grow, and a long one makes it bloom. Nothing is recorded.");
+      iv = setInterval(() => { an.getFloatTimeDomainData(buf); const r = M.gardenGrow(st, level(buf), 100); if (r.h !== st.h || r.event) step(r); }, 100);
+    }).catch(() => {});
+  }
+  k.onClose(() => { clearInterval(iv); mic?.stream.getTracks().forEach((t) => t.stop()); mic?.a.close?.(); });
+  $("pkTiles").hidden = true;
+}
+
+// ---------- 12. Aurora Feelings ----------
+function aurora(k) {
+  k.scene(`<div class="pk-aurora"><span class="pk-aurora-e" aria-hidden="true">🌌</span><p class="pk-aurora-say" aria-live="polite"></p></div>`);
+  k.note("How do you feel? Your sky will show it.");
+  const wrap = k.el(".pk-aurora"), box = $("pkTiles");
+  box.textContent = ""; box.hidden = false; box.setAttribute("aria-label", "Feelings");
+  M.FEELINGS.forEach((f, i) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "tile"; b.dataset.c = "describe"; b.style.gridColumn = String(i + 1);
+    b.innerHTML = `<span class="pic" aria-hidden="true">${f.e}</span><span class="label">${f.id}</span>`;
+    b.addEventListener("click", () => {
+      turns++; const a = M.auroraFor(f.id, k.level());
+      k.sky?.set({ c: a.color, speed: a.speed, mode: MODES.aurora });
+      wrap.style.setProperty("--feel", a.rgb); wrap.classList.add("has-feel");
+      k.el(".pk-aurora-e").textContent = f.e; k.el(".pk-aurora-say").textContent = a.say;
+      k.strip([f.id]); k.say(a.say); k.piece();
+      // Grown-ups see it in the Bridge with the other things he said.
+      try { const log = JSON.parse(localStorage.getItem("luminaac:log") || "[]"); log.push({ t: Date.now(), text: a.say, kind: "feeling" }); localStorage.setItem("luminaac:log", JSON.stringify(log.slice(-5000))); } catch {}
+      k.note("Thank you for telling me.");
+    });
+    box.append(b);
+  });
+}
+
+// ---------- 13. Word Train (3D, or a flat train when 3D can't run) ----------
+function train3d(k) {
+  k.scene(`<div class="pk-rest"><p>Getting the train ready…</p></div>`);
+  let gone = false; k.onClose(() => { gone = true; });
+  import("./train3d.js").then((m) => { if (!gone) m.default(k, { wordItem, esc, turn: () => { turns++; } }); })
+    .catch(() => { if (!gone) k.note("The train couldn't load. Try again later."); });
+}
+
+const RUN = { garden, conductor, weather, stage, sort, turns: turnsGame, pond, robot, lantern, tide, bloom, aurora, train3d };
 
 // ---------- Menu in My Voice (Play, under the sound games) and a door in Calm ----------
 const box = document.createElement("details");

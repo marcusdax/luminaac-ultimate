@@ -1,5 +1,9 @@
 # Roadmap
 
+## v0.18: Motion
+- Built from [the motion concept](docs/MOTION-CONCEPT.md): one motion gate, a word that travels to the sentence bar, a breathing Calm sky, slow shader skies in games, Lantern Sky, Tide Pool, Sound Garden, Aurora Feelings, a 3D Word Train with a flat fallback, small Bridge motion and a scroll-story website page.
+- **Next:** ask his SLP or OT whether the travelling word helps or distracts (it can be set to Still), measure the skies and the 3D train on the oldest iPad families use, and decide whether `about.html` becomes a separate marketing site.
+
 ## v0.17: Sound Path B–D and Safety Links
 - **Sound Path increment B:** Watch my mouth (family video clips kept on the device), Mouth Mirror (MediaPipe face blendshapes for jaw and lips; camera off by default) and Sound and treat (pairing, turned on with the SLP).
 - **Safety Links (C):** tracker cards with photo, placement and battery reminders; an "if found" QR page with no location; a wandering plan sheet; structured sensor events; the "door opened and nobody is going out together" rule.

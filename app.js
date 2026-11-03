@@ -4,6 +4,8 @@ import { CORE, FOLDERS, QUICK, SCALE, CALM_NEEDS, PLANS } from "./vocab.js";
 import { KOKORO_VOICES } from "./ai.js";
 import { hasVoice, hasPhoto, playVoice, applyPhoto } from "./symbols.js";
 import { buildOBZ, readOBZ, wordsFromBoard, mergeWords } from "./obf-core.js";
+import { flyTo, swap, pillMove } from "./motion-gate.js";
+import { mountCalmSky } from "./shader-sky.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -170,9 +172,10 @@ function speakMessage() {
   save("counts"); save("pairs");
 }
 
-function addWord(item) {
+function addWord(item, src) {
   state.words.push(item);
   renderStrip(true);
+  if (src) flyTo(src, $("#stripWords .word:last-child")); // the word travels to the strip (docs/MOTION-CONCEPT.md)
   if (settings.speakOnTap) say(item.w);
   renderNext();
 }
@@ -207,7 +210,7 @@ function renderNext() {
     b.className = "next-chip";
     b.dataset.c = item.c;
     b.textContent = item.w;
-    b.addEventListener("click", () => addWord(item));
+    b.addEventListener("click", () => addWord(item, b));
     row.append(b);
   });
 }
@@ -230,7 +233,7 @@ function tile(item, onTap) {
   label.textContent = item.w;
   b.append(pic, label);
   applyPhoto(pic, item.w); // a photo symbol replaces the picture when a caregiver added one
-  b.addEventListener("click", () => onTap(item));
+  b.addEventListener("click", () => onTap(item, b));
   return b;
 }
 
@@ -245,7 +248,7 @@ function renderFolders() {
     b.setAttribute("aria-selected", String(state.folder === f.id));
     b.innerHTML = `<span class="pic" aria-hidden="true">${f.e}</span>`;
     b.append(f.label);
-    b.addEventListener("click", () => { state.folder = f.id; renderFolders(); renderGrid(); });
+    b.addEventListener("click", () => swap(() => { state.folder = f.id; renderFolders(); renderGrid(); }));
     bar.append(b);
   });
 }
@@ -375,22 +378,28 @@ function startBreathing() {
   stopBreathing();
   const orb = $("#orb");
   const cue = $("#breatheCue");
+  // In for 4 s, out for 6 s (DESIGN.md --t-breath-in / --t-breath-out). The Calm sky follows the same clock.
   let inhale = true;
   const step = () => {
     orb.classList.toggle("in", inhale);
     cue.textContent = inhale ? "Breathe in" : "Breathe out";
+    state.breathing = setTimeout(step, inhale ? 4000 : 6000);
     inhale = !inhale;
   };
+  calmSky.breathe(Date.now());
   step();
-  state.breathing = setInterval(step, 4000);
   $("#breatheToggle").textContent = "Pause breathing";
 }
 function stopBreathing() {
-  clearInterval(state.breathing);
+  clearTimeout(state.breathing);
+  calmSky.breathe(null);
   state.breathing = null;
   $("#orb").classList.remove("in");
   $("#breatheToggle").textContent = "Start breathing";
 }
+
+// The Calm sky: a slow shader horizon inside the breathing panel (shader-sky.js).
+const calmSky = mountCalmSky($("#breathe"));
 
 // ---------- Plans ----------
 function renderPlans() {
@@ -603,11 +612,14 @@ function show(view) {
   if (view === "care" && !state.unlocked) return;
   if (view !== "care") state.unlocked = false;
   state.view = view;
+  const was = $(".nav-btn[aria-current]");
   $$(".view").forEach((v) => (v.hidden = v.id !== `view-${view}`));
   $$(".nav-btn:not(a)").forEach((b) => {
     const v = b.dataset.view || "care";
     v === view ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current");
   });
+  pillMove(was, $(".nav-btn[aria-current]"));
+  calmSky.active(view === "calm");
   if (view !== "calm") { stopBreathing(); document.body.classList.remove("low-arousal"); }
   if (view === "care") renderCare();
   if (view === "plans") renderPlans();

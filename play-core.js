@@ -12,14 +12,21 @@ export const GAMES = [
   { id: "turns", name: "My Turn, Your Turn", e: "🤝", scene: "dawn", sub: "Play together" },
   { id: "pond", name: "Sound Pond", e: "🐟", scene: "sea", sub: "My voice makes ripples" },
   { id: "robot", name: "Copy the Robot", e: "🤖", scene: "night", sub: "Move like me" },
+  // v0.18 motion games (docs/MOTION-CONCEPT.md §5). Rules in motion-core.js.
+  { id: "lantern", name: "Lantern Sky", e: "🏮", scene: "dusk", sub: "My words float up" },
+  { id: "tide", name: "Tide Pool", e: "🐚", scene: "sea", sky: "pool", sub: "Ripples open shells" },
+  { id: "bloom", name: "Sound Garden", e: "🌱", scene: "day", sub: "My voice grows a flower" },
+  { id: "aurora", name: "Aurora Feelings", e: "🌌", scene: "night", sky: "aurora", sub: "My sky shows my feeling" },
+  { id: "train3d", name: "Word Train", e: "🚃", scene: "rails", sub: "Words become carriages" },
 ];
 
 // ---------- Settings (set in the Bridge, synced in games.settings.play) ----------
-export const DEFAULTS = { off: [], motion: "gentle", sound: "soft", minutes: 10, tiles: 6, combos: true, camera: false };
+export const DEFAULTS = { off: [], motion: "gentle", calmSky: "night", sound: "soft", minutes: 10, tiles: 6, combos: true, camera: false };
 export function playSettings(gamesSettings = {}) {
   const p = { ...DEFAULTS, ...(gamesSettings.play || {}) };
   p.minutes = [0, 5, 10, 15, 20].includes(+p.minutes) ? +p.minutes : 10;
   p.tiles = Math.min(12, Math.max(4, +p.tiles || 6));
+  if (!["gentle", "small", "still"].includes(p.motion)) p.motion = "gentle";
   if (gamesSettings.calm) p.motion = "still"; // the older "Calm visuals" switch still wins
   if (gamesSettings.quiet && p.sound !== "off") p.sound = "off";
   return p;
@@ -36,6 +43,7 @@ export function minutesLeft(startedAt, minutes, now = Date.now()) {
 export const PIECES = {
   garden: ["🌱", "🌷", "🌼", "🌳"], conductor: ["🚃", "🛤️", "🚉"], weather: ["☁️", "🌈", "⭐"], stage: ["🎪", "🎈", "🏰"],
   sort: ["🔷", "🔶", "💎"], turns: ["🤝", "🧩", "🏠"], pond: ["🐟", "🪷", "🐸"], robot: ["🤖", "🔩", "🛰️"],
+  lantern: ["🏮", "✨", "🌠"], tide: ["🐚", "🦀", "🪸"], bloom: ["🌱", "🌿", "🌻"], aurora: ["🌌", "💫", "🌠"], train3d: ["🚃", "🛤️", "🚂"],
 };
 // One piece per try; "landmark" for asking, two-word combos and finishing a story.
 export function addPiece(world = { pieces: [] }, game, kind = "try", now = Date.now()) {

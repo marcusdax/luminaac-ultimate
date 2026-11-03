@@ -8,6 +8,7 @@ These files are vendored in `vendor/` and served from the app itself. There is n
 | qrcode-generator | 1.4.4 | MIT | © 2009 Kazuhiko Arase | `vendor/qrcode.js` (licence in the file header) |
 | jsQR | 1.4.0 | Apache-2.0 | © cozmo (Cosmo Wolfe) and contributors | `vendor/jsQR.js`, `vendor/jsQR.LICENSE` |
 | Motion | 11.18.2 | MIT | © Framer B.V. / Matt Perry | `vendor/motion.js`, `vendor/motion.LICENSE.md` |
+| three.js | r170 (0.170.0) | MIT | © 2010-2024 three.js authors | `vendor/three/three.module.min.js`, `vendor/three/LICENSE`. Loaded only by Word Train and `about.html` |
 | OpenMoji (126 colour SVGs) | 15.1.0 | CC BY-SA 4.0 | © OpenMoji, HfG Schwäbisch Gmünd | `vendor/openmoji/*.svg`, `vendor/openmoji.LICENSE.txt` |
 | Human (face detection and expression) | 3.3.6 | MIT | © Vladimir Mandic | `vendor/human/human.esm.js`, `vendor/human/models/` (BlazeFace, emotion), `vendor/human/LICENSE` |
 | simplify-js | 1.2.4 | BSD-2-Clause | © 2017 Vladimir Agafonkin | `vendor/simplify.js`, `vendor/simplify.LICENSE` |

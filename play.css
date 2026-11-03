@@ -116,3 +116,56 @@
 /* Still mode and reduced motion: nothing moves except what he taps, and that jumps. */
 .pk.pk-still *, .pk.pk-still *::before { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) { .pk *, .pk *::before { animation: none !important; transition: none !important; } }
+
+/* ---------- v0.18 motion games (docs/MOTION-CONCEPT.md §5) ---------- */
+/* 9. Lantern Sky */
+.pk-lantern { position: absolute; inset: 0; }
+.pk-lans { position: absolute; inset: 0 0 64px; margin: 0; padding: 0; list-style: none; }
+.pk-lan { position: absolute; transform: translate(-50%, 0); display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 72px; padding: 8px 12px 10px; border-radius: 22px 22px 16px 16px;
+  background: color-mix(in srgb, var(--lit) 70%, #fff); color: var(--lit-ink); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lit) 35%, transparent), 0 8px 18px rgba(28,38,48,.18);
+  transition: left .8s var(--ease), top .8s var(--ease), box-shadow var(--t-glow) var(--ease); }
+.pk-lan .pk-pic { font-size: 1.8rem; line-height: 1; }
+.pk-lan .pk-lbl { background: transparent; padding: 0; font-size: var(--fs-md); }
+.pk-lan.is-lit { box-shadow: 0 0 0 5px var(--lit), 0 0 28px var(--lit); }
+.pk-const { position: absolute; inset: 0 0 64px; width: 100%; height: calc(100% - 64px); pointer-events: none; }
+.pk-const polyline { fill: none; stroke: var(--lit); stroke-width: 3px; vector-effect: non-scaling-stroke; stroke-dasharray: 2 8; stroke-linecap: round; opacity: .8; }
+.pk-say { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); min-height: var(--target-min); padding: 0 var(--s6); border: 0; border-radius: var(--r-chip); background: var(--lit); color: var(--lit-ink); font: 800 var(--fs-md) var(--font); cursor: pointer; }
+.pk-say:disabled { background: var(--line); color: var(--ink-soft); cursor: default; }
+
+/* 10. Tide Pool */
+.pk-tide { position: absolute; inset: 5% 4%; border-radius: 42% 46% 40% 48%; background: color-mix(in srgb, #9fc4c6 55%, transparent); cursor: pointer; overflow: hidden; }
+.has-sky .pk-tide { background: color-mix(in srgb, #9fc4c6 25%, transparent); }
+.pk-tide .pk-ripple { margin: -20px; }
+.pk-shell { position: absolute; transform: translate(-50%, -50%); min-width: 72px; min-height: 72px; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--paper) 80%, transparent); font-size: 2.4rem; cursor: pointer; transition: transform var(--t-ui) var(--ease), background var(--t-glow) var(--ease); }
+.pk-shell.is-open { background: var(--paper); box-shadow: 0 0 0 4px var(--lit); transform: translate(-50%, -50%) scale(1.1); }
+.pk-shell:focus-visible { outline: 3px solid var(--lit); outline-offset: 3px; }
+
+/* 11. Sound Garden */
+.pk-bloom { position: absolute; inset: 0; }
+.pk-bloom .pk-ground { z-index: 0; }
+.pk-stem { position: absolute; z-index: 1; left: 50%; bottom: 20%; width: 10px; margin-left: -5px; height: calc(4% + var(--h, 0) * 50%); border-radius: 6px; background: #5f8f4e; transition: height .6s var(--ease); }
+.pk-flower { position: absolute; left: 50%; top: 0; transform: translate(-50%, -85%); font-size: calc(2.6rem + var(--h, 0) * 3rem); line-height: 1; transition: font-size .6s var(--ease); }
+.pk-mysound { position: absolute; z-index: 2; left: 50%; bottom: 4%; transform: translateX(-50%); min-height: var(--target-min); padding: 0 var(--s6); border: 0; border-radius: var(--r-chip); background: var(--lit); color: var(--lit-ink); font: 800 var(--fs-md) var(--font); cursor: pointer; }
+
+/* 12. Aurora Feelings: without the shader, a still band in the feeling's colour */
+.pk-aurora { position: absolute; inset: 0; display: grid; place-content: center; gap: var(--s3); text-align: center; color: #e6ecef; }
+.pk-aurora.has-feel { background: radial-gradient(120% 40% at 50% 30%, color-mix(in srgb, var(--feel) 55%, transparent), transparent 70%); }
+.has-sky .pk-aurora.has-feel { background: none; }
+.pk-aurora-e { font-size: 6rem; line-height: 1; }
+.pk-aurora-say { margin: 0; font-size: var(--fs-xl); font-weight: 800; }
+
+/* 13. Word Train */
+.pk-t3 { position: absolute; inset: 0; display: grid; grid-template-rows: 1fr auto auto; gap: var(--s2); padding: var(--s2) var(--s3); }
+.pk-t3-stage { position: relative; min-height: 0; border-radius: var(--r-sheet); overflow: hidden; }
+.pk-t3-stage canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.pk-t3-stage.is-flat { display: grid; align-items: end; overflow-x: auto; }
+.pk-flat { height: min(160px, 100%); min-width: 100%; }
+.pk-flat-train { transform-box: fill-box; }
+.pk-rail { stroke: #5b5346; stroke-width: 4; }
+.pk-fcar.is-lit rect { stroke: var(--lit); stroke-width: 6; }
+.pk-cars { display: flex; flex-wrap: wrap; gap: var(--s2); margin: 0; padding: 0; list-style: none; justify-content: center; }
+.pk-car { min-height: var(--target-min); padding: 0 var(--s4); border: 2px solid var(--line); border-radius: var(--r-tile); background: var(--paper); color: var(--ink); font: 800 var(--fs-md) var(--font); cursor: pointer; }
+.pk-car.is-lit { border-color: var(--lit); box-shadow: 0 0 0 3px var(--lit); }
+.pk-t3-row { display: flex; gap: var(--s3); justify-content: center; }
+.pk-go { min-height: var(--target-min); padding: 0 var(--s6); border: 0; border-radius: var(--r-chip); background: var(--lit); color: var(--lit-ink); font: 800 var(--fs-md) var(--font); cursor: pointer; }
+.pk-go:disabled { background: var(--line); color: var(--ink-soft); cursor: default; }

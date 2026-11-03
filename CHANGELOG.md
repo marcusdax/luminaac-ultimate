@@ -2,6 +2,20 @@
 
 All notable changes. Versions match the service worker cache name in `sw.js`.
 
+## 0.18.0 (3 November 2026)
+Builds `docs/MOTION-CONCEPT.md`, increments M1 to M5. The board, tiles, word colours and pictures don't change.
+### Added
+- **One motion gate** (`motion-gate.js`, rules in `motion-core.js`). Every animation asks it first. It reads the tablet's "reduce motion" setting, Still mode, the grown-up's **Movement** setting, the battery (under 20 % and not charging: confirmations only) and the device (2 cores or 2 GB or less: no skies or 3D). `<html data-ml>` carries the level to CSS.
+- **Movement** in Bridge → Word games now has three choices: **Gentle** (slow skies in Calm and games), **Small** (only show where his words go) and **Still**. It covers the board, Calm and every game.
+- **Board (M1):** a tapped word travels from its tile to the sentence bar (220 ms). Folder changes use a short View Transition. The lit pill slides between nav items. Sheets rise in 180 ms, and the dark bands fade in once at start-up.
+- **Calm (M2):** breathing is now 4 s in and 6 s out, as DESIGN.md says. Behind the orb, a WebGL horizon rises and settles with the breath. The grown-up picks a **Calm sky** (night, sea or dawn).
+- **Game skies (M2):** every game scene gets a slow shader sky (`shader-sky.js`, `shaders/sky.js`): drifting clouds, water light, dim stars. 30 frames a second at most, half resolution, paused when hidden. The scene colour stays as the still picture.
+- **Four new games (M3):** **Lantern Sky** (each word floats up as a lantern; Speak lines them up into a sentence), **Tide Pool** (a ripple opens the shells it reaches and each says its word), **Sound Garden** (any sound grows a flower; a long sound or enough sounds make it bloom; the microphone is optional) and **Aurora Feelings** (the sky takes the colour and pace of a feeling, and the feeling is logged for grown-ups).
+- **Word Train (M4):** words become carriages on a 3D train (three.js r170, vendored in `vendor/three/`, loaded only by this game and cached on first use). Tap two carriages to swap them; "Go, train!" sends it once round the loop while the voice reads them. At "Small", "Still", on low-end tablets or without WebGL, it is a flat SVG train.
+- **Bridge (M5):** counts tick up, the 14-day chart draws in once a visit, and a small beam runs from the tablet to the phone when a sync lands. Safety and alerts don't move.
+- **Website (M5):** `about.html`, "A day with LuminAAC": a scroll-driven story (CSS scroll timelines, with a still page where they aren't supported or motion is reduced) and a slow 3D ribbon of the logo's lit wave.
+- Tests: `tests/motion.test.mjs` (54). Play tests updated for 13 games.
+
 ## 0.17.0 (3 November 2026)
 Builds the rest of `docs/SOUND-PATH.md`: increments B, C and D.
 ### Added
