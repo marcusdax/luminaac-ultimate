@@ -2,6 +2,24 @@
 
 All notable changes. Versions match the service worker cache name in `sw.js`.
 
+## 0.17.0 (3 November 2026)
+Builds the rest of `docs/SOUND-PATH.md`: increments B, C and D.
+### Added
+- **Watch my mouth** (Sound Path): a 3-second close-up of a familiar face saying each target, recorded in the Bridge and kept on the device (IndexedDB). It plays slowly, then at normal speed, then gives a "your turn". Clips can be moved between devices as a file.
+- **Mouth Mirror** (Sound Path, camera off by default): a friendly face copies the child's jaw and lips live, and the child copies open (ah), round (oo) and closed (mm). It uses MediaPipe Face Landmarker blendshapes on the device and records nothing. It covers jaw and lips only, never the tongue, and won't open during Potty Path. "I did it" works without the camera.
+- **Sound and treat** (Sound Path, the SLP turns it on): the target sound plays while the child's favourite thing shows, with no demand to copy it. Pairings are their own events (`pair`), so they never change the practice engine's success rate. Daily cap of 5, 10 or 15.
+- **Safety Links** (Safety hub):
+  - Tracker cards now take a photo, what the tracker is attached to, and a battery-check date, with a reminder at the top of Safety. Each tracker shows an honest note about its limits (AirTag anti-stalking alerts, Find Hub links that expire after 7 days).
+  - **"If found" QR page** (`found.html`): a public page with the details the caregiver chose (first name, how they talk, how to approach, what calms them, a call button). It never includes an address or location. Printable sticker sheet. Can be switched off at any time.
+  - **Wandering plan sheet**: one printable page with photo, appearance, communication, triggers, favourite places, nearby water from the water layer, safe-zone names and trackers.
+  - **Sensor events**: `door_open`, `gate_open`, `window_open`, `pool_motion`, `wearable_sos`, `wearable_left_zone`, `seizure_alert`, `location` and `arousal`.
+  - **Door rule**: a door or gate opening is urgent unless someone pressed "Going out together". The alert also says whether the child's tablet has moved.
+  - **Bluetooth "is he near?"** (Chrome and Edge on Android or a computer): shows near, nearby, far or lost signal from a paired tag. On iPhone and iPad it says plainly that Bluetooth isn't available.
+- **Research mode** (increment D): a wristband sensor can send heart rate only after a parent ticks a separate consent. A caregiver-only "calm check?" appears when heart rate stays well above the child's usual level for 3 minutes while they are still, at most once every 30 minutes. It is never shown on the child's device, and readings are kept for 1 hour.
+- **Export labelled sounds** (increment D): magic moments with a recording and a meaning, exported as one file for a future personal sound model. It needs a parent to type their name to agree.
+- Server: `/api/found`, `/api/found/:token` (public), `/api/safety/out`, structured webhook events and the research consent (`backend/server.js`). Shared rules in `safety-core.js`.
+- Tests: `tests/safety.test.mjs` (27), 9 new Sound Path tests (35 in all), 13 new server tests.
+
 ## 0.16.0 (2 November 2026)
 ### Added
 - **Eight word games** in Play (and Feelings Weather in Calm), played with the child's own word tiles in their Talk columns. Every tap speaks. The games are Word Garden, Conductor, Feelings Weather, Story Stage, Pattern Lab, My Turn Your Turn, Sound Pond and Copy the Robot.

@@ -5,7 +5,7 @@
 <h3 align="center">An AAC app for nonverbal children that learns the child's own language from the people who love them.</h3>
 
 <p align="center">
-  Version 0.16 &middot; vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
+  Version 0.17 &middot; vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
 </p>
 
 <p align="center">
@@ -60,6 +60,7 @@ A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as 
 | 12 | v0.13 | **The simpler layout becomes the standard.** Hubs on the Bridge and Talk · Calm · My day · Play on My Voice for every device, the older header fits phones, and a full audit of the docs against the app ([FEATURE-AUDIT.md](docs/FEATURE-AUDIT.md)) |
 | 13 | v0.14 | **Reach, privacy and research.** Push alerts and email summaries, family photos and recorded voices on tiles, one- and two-switch scanning, optional end-to-end encryption with device approval codes, a "Say the word" game with on-device listening, a Capacitor 8 native shell with background geofences ([STORE-CHECKLIST.md](docs/STORE-CHECKLIST.md)), and a blind caregiver agreement check with kappa ([VALIDATION-STUDY.md](docs/VALIDATION-STUDY.md)). Sound tags and sign learning are concepts only ([ML-CONCEPTS.md](docs/ML-CONCEPTS.md)) |
 | 15 | v0.16 | **Word games**: eight games played with the child's own board tiles in their Talk columns (Word Garden, Conductor, Feelings Weather, Story Stage, Pattern Lab, My Turn Your Turn, Sound Pond, Copy the Robot), an add-only play world, and grown-up settings for movement, sound, rest time and camera. Plus the [DESIGN.md](DESIGN.md) "quiet sky, lit strip" look: a still sky behind words, a dark lantern rail with the open section lit, and a lit hub indicator. See [the games concept](docs/GAMES-CONCEPT.md) |
+| 16 | v0.17 | **Sound Path B–D and Safety Links** (from [the Sound Path plan](docs/SOUND-PATH.md)): Watch my mouth (family clips on the device), Mouth Mirror (jaw and lips, camera off by default), Sound and treat; tracker cards with battery reminders, an "if found" QR page with no location, a wandering plan sheet, smart sensor events and the "going out together" door rule; Bluetooth near or far (Android/Chrome); research-mode wristband "calm check?" behind a separate consent; export of labelled sounds |
 | 14 | v0.14.2 to v0.15 | **Lock-up fix and shared boards.** Sound games, stories and Sound Path no longer freeze the page after one go (their pop-ups opened inside the hidden Talk view); the microphone is let go when a game closes. **Open Board Format** import and export (.obf and .obz) in the Caregiver area, so boards move to and from CoughDrop, Cboard, AsTeRICS Grid and other AAC apps. |
 
 ## Architecture
@@ -120,7 +121,7 @@ The live app at <https://luminaac-web.vercel.app> is deployed on Vercel from `ma
 - `.vercelignore` keeps `native/`, `tests/`, `docs/`, `backend/test.mjs`, `backend/data/` and Markdown files (except `PRIVACY.md` and `THIRD-PARTY.md`) off public hosting. `screenshots/` is served because the in-app guide shows them.
 - Any static host works for the front end alone. Serve over HTTPS and don't cache `sw.js` long-term. Point the Bridge at your own server under Account and devices.
 
-When you change any shipped file, bump `VERSION` in `sw.js` (currently `luminaac-v0.16.0`) so devices pick up the new copy. When an update takes over, `pwa.js` reloads the Bridge once, and My Voice only while it is out of sight. To rebuild `guide.html` from `docs/CARETAKER-GUIDE.md`, run `python3 tools/mkguide.py` (needs the Python `markdown` package).
+When you change any shipped file, bump `VERSION` in `sw.js` (currently `luminaac-v0.17.0`) so devices pick up the new copy. When an update takes over, `pwa.js` reloads the Bridge once, and My Voice only while it is out of sight. To rebuild `guide.html` from `docs/CARETAKER-GUIDE.md`, run `python3 tools/mkguide.py` (needs the Python `markdown` package).
 
 ### Backend (optional)
 
@@ -140,7 +141,8 @@ cd ..
 node tests/geo-water.test.mjs         # 45 tests: Overpass parsing and racing, map-tile water scan, clipping, danger alerts
 node tests/interests-games.test.mjs   # 44 tests: YouTube links, embed lock-down, interest scoring, growth, digest, report, pitch, games
 node tests/potty.test.mjs             # 89 tests: Potty Path logic
-node tests/sound.test.mjs             # 35 tests: Sound Path ladder and practice engine
+node tests/sound.test.mjs             # 35 tests: Sound Path ladder, practice engine, mouth shapes, pairing, sound set
+node tests/safety.test.mjs            # 27 tests: sensor events, door rule, Bluetooth, calm check, if-found page
 node tests/nav.test.mjs               # 24 tests: redesign hubs, old links, the switch, Now/Next, back to Caregiver
 node tests/play.test.mjs              # 29 tests: the eight word games, play world, tile layout, pose check
 node tests/obf.test.mjs               # 17 tests: Open Board Format export, .obz zip, import from other apps
@@ -161,6 +163,7 @@ python3 tests/browser/obf.py          # board export and import in the Caregiver
 | `backend/` | Zero-dependency Node API (sync, share, alerts, chat, sensors, predictions, accounts, passkeys, devices, federated learning); `mirror.js` keeps its files in Redis when hosted, `youtube.js` looks up channels |
 | `api/index.js`, `package.json` | The family server as a Vercel function at `/api` |
 | `bridge-chat.js`, `bridge-iot.js`, `bridge-yt.js` | v0.12: team chat, sensors and wearable trackers, YouTube channels |
+| `safety-core.js`, `bridge-links.js`, `found.html`, `found.js` | v0.17 Safety Links: sensor events, door rule, Bluetooth and research-mode rules (tested); "if found" page, wandering plan, going out together, Bluetooth card |
 | `play-core.js`, `play.js`, `play.css`, `bridge-play.js` | v0.16 word games: rules (tested), the game frame and eight games, styles, Bridge settings |
 | `nav-core.js`, `bridge-hubs.js`, `myvoice-redesign.js`, `redesign.css` | Redesign R1, the default layout (`?redesign=0` for the older tabs): hubs, Now/Next, Play, back to Caregiver |
 | `obf-core.js` | Open Board Format (.obf, .obz) import and export, with a tiny zip reader and writer |

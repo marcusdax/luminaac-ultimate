@@ -59,3 +59,18 @@ dialog.sp.is-calm *, dialog.sp.is-calm { animation: none !important; transition:
 .sp-ph.lv-word { background: var(--wc-action, #2f6f6a); border-color: var(--wc-action, #2f6f6a); color: #fff; }
 .sp-bigword { font-size: clamp(2rem, 8vw, 3.2rem); font-weight: 800; margin: 8px 0 0; text-align: center; }
 .sp-bigword.on { color: var(--ember-deep); }
+
+/* Increment B: Watch my mouth, Mouth Mirror, Sound and treat */
+.sp-clip { display: block; width: min(360px, 80vw); aspect-ratio: 1; object-fit: cover; border-radius: 20px; background: var(--dusk); margin: 0 auto; }
+.sp-mirror { position: relative; display: grid; place-items: center; }
+.sp-face { width: min(220px, 55vw); height: auto; }
+.sp-mouth { transition: rx .08s linear, ry .08s linear; }
+.sp-cam { position: absolute; right: -8px; bottom: -8px; width: 96px; height: 72px; object-fit: cover; border-radius: 10px; border: 2px solid var(--paper); transform: scaleX(-1); }
+.sp-treat { text-align: center; }
+.sp-fav { display: inline-block; font-size: clamp(5rem, 22vw, 8rem); line-height: 1; }
+.sp-fav.on { animation: sp-bounce .6s ease; }
+@keyframes sp-bounce { 40% { transform: translateY(-14px) scale(1.06); } }
+.sp-rec { flex-basis: 100%; }
+.sp-rec video { width: 200px; aspect-ratio: 1; object-fit: cover; border-radius: 14px; background: #000; display: block; }
+#spClips li { flex-wrap: wrap; }
+#spFavs .is-on { outline: 3px solid var(--lumen); }

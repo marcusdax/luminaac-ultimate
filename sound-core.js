@@ -101,7 +101,7 @@ export function targetOf(t) {
 }
 
 // ---------- Events ----------
-export const KINDS = ["try", "heard", "word_use", "break", "stop", "rung", "retract"];
+export const KINDS = ["try", "heard", "word_use", "break", "stop", "rung", "retract", "pair"];
 export const JUDGE = { got: 1, close: 0.5, tried: 0 };
 export const rid = () => (globalThis.crypto?.randomUUID ? crypto.randomUUID() : "s" + Math.random().toString(36).slice(2) + Date.now().toString(36));
 export function makeEvent(kind, data = {}, o = {}) {
@@ -219,3 +219,43 @@ export const COACH = [
   { title: "Short and often", say: ["3–6 tries is a whole session. Twice a day beats once for 20 minutes.", "Stop while it's still fun. Two breaks or one Stop ends practice for today."] },
   { title: "When it's hard", say: ["Go back a rung. Easier is not backwards.", "Check: tired, hungry, poorly, too noisy? Try another day.", "Ask your SLP about apraxia of speech if sounds come and go or vary a lot between tries."] },
 ];
+
+// ---------- Mouth Mirror (increment B) ----------
+// MediaPipe Face Landmarker blendshapes (0–1). Jaw and lips only: the model does
+// not reliably see the tongue, so nothing here is about the tongue.
+export const SHAPES = [
+  { id: "open", say: "aaah", show: "ah", e: "😮", hint: "Open wide" },
+  { id: "round", say: "ooooh", show: "oo", e: "😗", hint: "Make it round" },
+  { id: "closed", say: "mmmm", show: "mm", e: "🤐", hint: "Lips together" },
+];
+export function mouthShape(bs) {
+  if (!bs) return null;
+  const get = (k) => (Array.isArray(bs) ? bs.find((c) => c.categoryName === k)?.score : bs[k]) || 0;
+  const jaw = get("jawOpen"), round = Math.max(get("mouthPucker"), get("mouthFunnel")), close = get("mouthClose");
+  if (round >= 0.45 && jaw < 0.5) return "round";
+  if (jaw >= 0.35) return "open";
+  if (jaw < 0.12 && round < 0.3 && (close >= 0.05 || jaw < 0.06)) return "closed";
+  return null;
+}
+// How open and how round, for the character that copies the child (0–1 each).
+export function mouthPose(bs) {
+  const get = (k) => (Array.isArray(bs) ? bs?.find((c) => c.categoryName === k)?.score : bs?.[k]) || 0;
+  return { open: Math.min(1, get("jawOpen") * 1.6), round: Math.min(1, Math.max(get("mouthPucker"), get("mouthFunnel")) * 1.4) };
+}
+
+// ---------- Sound and treat (pairing, the SLP turns it on) ----------
+// Pairs a target sound with something the child loves, with no demand to copy.
+// Pairing trials are their own events, so they never change the practice
+// engine's success rate. A voice during pairing is logged as "heard".
+export function pairingPlan(events, target, now = Date.now(), perDay = 10) {
+  const today = dayNow(now), n = live(events).filter((e) => e.kind === "pair" && dayOf(e) === today).length;
+  return { left: Math.max(0, perDay - n), done: n >= perDay, reps: 3, target: target ? targetOf(target) : null };
+}
+
+// ---------- Magic moments as a personal sound set (increment D) ----------
+// A manifest of the family's own labelled recordings, for a future personal sound
+// model. Only moments with a meaning and media, only with consent, never automatic.
+export function soundSet(moments = [], { child = "", consentBy = "" } = {}) {
+  const items = moments.filter((m) => m.meaning && m.media).map((m) => ({ id: m.id, t: m.t, kind: m.kind, label: m.meaning, context: m.context || "", file: `${m.id}.webm` }));
+  return { kind: "luminaac-sound-set", version: 1, child, consentBy, created: new Date().toISOString(), note: "Family-labelled recordings of this child's own sounds. Labels are what the family understood, not a diagnosis.", items };
+}

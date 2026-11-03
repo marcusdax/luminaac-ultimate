@@ -6,7 +6,10 @@
 // score that goes down, any voice counts. The grown-up is the judge; with no
 // grown-up there every try is simply "tried". Nothing is recorded: the microphone
 // is only measured for loudness and pitch, on the device. See docs/SOUND-PATH.md.
-import { load } from "./shared.js";
+// Increment B adds Watch my mouth (a family member's own short clip, kept on the
+// device), Mouth Mirror (camera, off by default: a face copies jaw and lips, nothing
+// recorded) and Sound and treat (pairing a sound with a favourite thing, SLP-led).
+import { load, getMedia } from "./shared.js";
 import * as C from "./sound-core.js";
 import * as St from "./sound-store.js";
 import { level, pitch, judgeTry, praise, stickerFor } from "./games.js";
@@ -70,12 +73,15 @@ const GAMES = [
   { id: "train", e: "🚂", label: "Word Train", go: () => targetLoop(trainTurn) },
   { id: "world", e: "🎈", label: "Sound World", go: worldGame },
   { id: "word", e: "🗣️", label: "Say the word", go: () => targetLoop(wordTurn) },
+  { id: "mouth", e: "👄", label: "Watch my mouth", go: () => targetLoop(mouthTurn) },
+  { id: "mirror", e: "🪞", label: "Mouth Mirror", go: mirrorGame, when: () => cfg().mirror },
+  { id: "treat", e: "🎁", label: "Sound and treat", go: treatGame, when: () => cfg().treat },
 ];
 function renderEntry() {
   const on = enabled(), box = $("spTiles");
   $("spBox").hidden = !on; if (!on) return;
   box.textContent = "";
-  for (const g of GAMES) {
+  for (const g of GAMES.filter((x) => !x.when || x.when())) {
     const b = document.createElement("button"); b.type = "button"; b.className = "tile mv-ptile"; b.dataset.c = "action";
     b.innerHTML = `<span class="pic" aria-hidden="true">${g.e}</span><span class="label">${esc(g.label)}</span>`;
     b.addEventListener("click", () => start(g)); box.append(b);
@@ -93,7 +99,7 @@ function start(g) {
   dlg.classList.toggle("is-calm", calm());
   dlg.showModal(); g.go();
 }
-function end() { running++; stopMic(); game = null; speechSynthesis?.cancel(); renderEntry(); }
+function end() { running++; stopMic(); stopCam(); game = null; speechSynthesis?.cancel(); renderEntry(); }
 dlg.addEventListener("close", end);
 dlg.addEventListener("cancel", (e) => { e.preventDefault(); stopNow(); });
 $("spStop").addEventListener("click", stopNow);
@@ -101,7 +107,7 @@ function stopNow() { if (game) St.record("stop", { game: game.id }); closing("Al
 $("spBreak").addEventListener("click", () => {
   if (!game) return;
   if (paused) return;
-  paused = true; running++; stopMic(); St.record("break", { game: game.id });
+  paused = true; running++; stopMic(); stopCam(); St.record("break", { game: game.id });
   stage(`<p class="sp-big">Break</p><p class="sp-soft">Take your time.</p>`); prompt("");
   row(btn("Back to it", () => { paused = false; game.go(); }), btn("All done", () => closing("All done. Thank you for playing."), "quiet"));
 });
@@ -116,7 +122,7 @@ function holdBtn(b, ms, fn) {
   b.addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && !e.repeat) go(e); }); b.addEventListener("keyup", cancel);
 }
 function closing(text) {
-  running++; stopMic();
+  running++; stopMic(); stopCam();
   stage(`<p class="sp-big">${esc(text)}</p>${shelf.length ? `<p class="sp-stickers" aria-label="${shelf.length} stickers">${shelf.join(" ")}</p>` : ""}`);
   prompt(""); say(text); $("spJudge").hidden = true;
   row(btn("Close", () => dlg.close()));
@@ -303,6 +309,115 @@ async function worldGame() {
   }
   tries++; reward("every", { heard: true, long: voicedMs >= 400 }, "tried");
   row(btn("Again", () => worldGame()), btn("All done", () => closing("All done! What a voice."), "quiet"));
+}
+
+// ---------- 5. Watch my mouth (family video models, increment B) ----------
+// A 2–3 second close-up of Mum, Dad or a sibling saying the target, recorded in the
+// Bridge and kept on this device. Slow first, then normal speed, then "your turn".
+let clipURL = "";
+async function mouthTurn(target, plan, my) {
+  const blob = await getMedia("clip:" + target.id).catch(() => null);
+  if (my !== running) return null;
+  if (clipURL) URL.revokeObjectURL(clipURL);
+  clipURL = blob ? URL.createObjectURL(blob) : "";
+  stage(blob ? `<video class="sp-clip" playsinline preload="auto" aria-label="Watch the mouth say ${esc(target.show)}"></video><p class="sp-bigword">${esc(target.show)}</p>`
+    : `<div class="sp-word" aria-hidden="true">${esc(target.e || "👄")}</div><p class="sp-bigword">${esc(target.show)}</p><p class="sp-soft">A grown-up can record a short clip of their mouth saying this in the Bridge.</p>`);
+  row();
+  if (blob) {
+    const v = $("spStage").querySelector("video"); v.src = clipURL; v.volume = gset().quiet ? 0 : gset().volume;
+    for (const rate of plan.showModel ? [0.6, 0.6, 1] : [0.6, 1]) {
+      if (my !== running) return null;
+      prompt(rate < 1 ? "Watch. Slowly." : "Watch."); v.playbackRate = rate; v.preservesPitch = true; v.currentTime = 0;
+      await v.play().catch(() => {});
+      await new Promise((r) => { v.onended = r; setTimeout(r, 6000 / rate); });
+      await wait(500);
+    }
+  } else { prompt("Listen."); say(target.say, 0.6); await wait(1600); }
+  if (my !== running) return null;
+  return yourTurn(4500, null);
+}
+
+// ---------- 6. Mouth Mirror (camera, off by default, increment B) ----------
+// A friendly face copies the child's jaw and lips live: open (ah), round (oo),
+// closed (mm). MediaPipe Face Landmarker runs on the device; video is never saved
+// or sent. Not during Potty Path. Without the camera, "I did it" works the same.
+const VISION = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+const FACE_MODEL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+let cam = null, camRaf = 0;
+function stopCam() { cancelAnimationFrame(camRaf); cam?.stream.getTracks().forEach((t) => t.stop()); cam?.lm.close?.(); cam = null; }
+const face = (open = 0.1, round = 0) => `<svg class="sp-face" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="54" fill="#e7c27d"/><circle cx="42" cy="48" r="6" fill="#2b2b2b"/><circle cx="78" cy="48" r="6" fill="#2b2b2b"/><ellipse class="sp-mouth" cx="60" cy="82" rx="${(22 - round * 12).toFixed(1)}" ry="${(2 + open * 18 + round * 6).toFixed(1)}" fill="#5a2a2a"/></svg>`;
+async function mirrorGame() {
+  const my = running;
+  if (document.getElementById("pp")?.open) { stage(`<p class="sp-soft">Mouth Mirror rests while Potty Path is open.</p>`); row(btn("Close", () => dlg.close())); return; }
+  let i = 0, held = 0;
+  const shape = () => C.SHAPES[i % C.SHAPES.length];
+  const show = () => {
+    const s = shape();
+    stage(`<div class="sp-mirror">${face(s.id === "open" ? 0.8 : 0.05, s.id === "round" ? 1 : 0)}<video class="sp-cam" playsinline muted ${cam ? "" : "hidden"}></video></div><p class="sp-bigword">${esc(s.show)}</p>`);
+    prompt(`${s.hint}: "${s.show}"`); say(s.say, 0.6);
+    if (cam) { const v = $("spStage").querySelector(".sp-cam"); v.srcObject = cam.stream; v.play().catch(() => {}); }
+  };
+  const win = async () => {
+    if (my !== running) return;
+    const s = shape(), target = C.targetOf({ id: s.id === "open" ? "ah" : s.id === "round" ? "oo" : "mm" });
+    cancelAnimationFrame(camRaf); held = 0;
+    const judge = await getJudge(target); if (my !== running) return;
+    tries++; St.record("try", { target: target.id, say: target.say, judge, game: "mirror" }, { by: grown ? "caregiver" : "child" });
+    reward("every", { heard: true }, judge); i++;
+    if (tries >= Math.max(3, Math.min(6, cfg().tries))) return closing("All done! What a mirror.");
+    row(btn("Next", () => { show(); controls(); if (cam) track(); }), btn("All done", () => closing("All done! What a mirror."), "quiet"));
+  };
+  const track = () => {
+    const v = $("spStage").querySelector(".sp-cam"), m = $("spStage").querySelector(".sp-mouth");
+    const loop = () => {
+      if (!cam || my !== running) return;
+      if (v.readyState >= 2) {
+        const r = cam.lm.detectForVideo(v, performance.now()), bs = r.faceBlendshapes?.[0]?.categories;
+        if (bs) { const p = C.mouthPose(bs); m?.setAttribute("rx", (22 - p.round * 12).toFixed(1)); m?.setAttribute("ry", (2 + p.open * 18 + p.round * 6).toFixed(1)); }
+        if (C.mouthShape(bs) === shape().id) { if (++held >= 10) return win(); } else held = Math.max(0, held - 1);
+      }
+      camRaf = requestAnimationFrame(loop);
+    };
+    loop();
+  };
+  const controls = () => row(btn("I did it", win), ...(cam ? [] : [btn("Use the camera", startCam, "quiet")]));
+  async function startCam() {
+    prompt("Starting the camera. Nothing is recorded or saved.");
+    try {
+      const { FilesetResolver, FaceLandmarker } = await import(`${VISION}/vision_bundle.mjs`);
+      const fs = await FilesetResolver.forVisionTasks(`${VISION}/wasm`);
+      const lm = await FaceLandmarker.createFromOptions(fs, { baseOptions: { modelAssetPath: FACE_MODEL }, runningMode: "VIDEO", numFaces: 1, outputFaceBlendshapes: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 480, height: 360 } });
+      if (my !== running) { stream.getTracks().forEach((t) => t.stop()); lm.close?.(); return; }
+      cam = { stream, lm }; show(); controls(); track();
+    } catch { prompt("The camera couldn't start. Tap \"I did it\" instead."); }
+  }
+  show(); controls();
+}
+
+// ---------- 7. Sound and treat (pairing, the SLP turns it on) ----------
+// The target sound plays while their favourite thing shows. Nothing is asked of
+// the child. If they make a sound anyway, it is logged as "heard".
+async function treatGame() {
+  const my = running, c = cfg(), list = (c.targets || []).map(C.targetOf);
+  const fav = c.treatThing || { e: "🚂", label: "Train" };
+  const plan = C.pairingPlan(St.events(), list.find((t) => t.id === c.treatTarget) || list[0], Date.now(), c.treatPerDay || 10);
+  if (!plan.target) { stage(`<p class="sp-soft">A grown-up can choose a sound in the Bridge (Sound Path).</p>`); row(btn("Close", () => dlg.close())); return; }
+  if (plan.done) return closing("That's all the treats for today.");
+  stage(`<div class="sp-treat"><span class="sp-fav" aria-hidden="true">${esc(fav.e)}</span><p class="sp-bigword">${esc(plan.target.show)}</p></div>`);
+  prompt(fav.label ? `${fav.label}!` : ""); row();
+  for (let k = 0; k < plan.reps; k++) {
+    if (my !== running) return;
+    flash($("spStage").querySelector(".sp-fav")); say(plan.target.say, 0.65); await wait(1800);
+  }
+  // Listen only after the model has finished, so the talker's own voice isn't "heard".
+  let heard = false;
+  if (micOK()) { try { await startMic(); heard = !!(await listen(3000))?.heard; } catch {} } else await wait(1500);
+  if (my !== running) return;
+  St.record("pair", { target: plan.target.id, thing: fav.label || fav.e, voiced: heard || undefined }, { by: "child" });
+  if (heard) St.record("heard", { sound: plan.target.approx || plan.target.say, spontaneous: false, game: "treat" }, { by: "child" });
+  tries++; reward("light", null, "tried"); prompt(heard ? "I heard you!" : `${fav.label || "Yay"}!`);
+  row(btn("Again", () => treatGame()), btn("All done", () => closing("All done."), "quiet"));
 }
 
 // ---------- "Say it with me" on the main board ----------

@@ -1,5 +1,11 @@
 # Roadmap
 
+## v0.17: Sound Path B–D and Safety Links
+- **Sound Path increment B:** Watch my mouth (family video clips kept on the device), Mouth Mirror (MediaPipe face blendshapes for jaw and lips; camera off by default) and Sound and treat (pairing, turned on with the SLP).
+- **Safety Links (C):** tracker cards with photo, placement and battery reminders; an "if found" QR page with no location; a wandering plan sheet; structured sensor events; the "door opened and nobody is going out together" rule.
+- **D:** Bluetooth near or far on Android and Chrome; research-mode wristband "calm check?" nudge for grown-ups only, behind a separate consent; export of labelled magic moments for a future personal sound model.
+- **Before families rely on D:** an SLP and ethics review of research mode, and real-world testing of the Bluetooth range thresholds with common tags. Mouth Mirror's thresholds also need checking with children's faces.
+
 ## v0.16: Word games and the "quiet sky" look
 - **Eight word games** (`docs/GAMES-CONCEPT.md`): Word Garden, Conductor, Feelings Weather (also in Calm), Story Stage, Pattern Lab, My Turn Your Turn, Sound Pond and Copy the Robot. They are played with the child's own word tiles in their Talk columns, and every tap speaks.
 - **Shared rules:** "All done" in a fixed corner, nothing fails, an add-only play world, and Bridge settings for which games show, movement, sound, rest time, tile count and camera consent.

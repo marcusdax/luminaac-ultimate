@@ -84,3 +84,10 @@ Toilet events are kept apart from the synced document, in `d.potty = { seq, even
 | `DELETE /api/potty/events` | `sync:write` (parent) | Deletes the family's toilet log |
 
 Sealed (end-to-end encrypted) events are stored as `{id, dev, seq, c}` only. Alerts accept `kind: "potty"`.
+
+## v0.17: Safety Links
+- `/api/hooks/<secret>` also takes `{ "event": ... }`: `door_open`, `gate_open`, `window_open`, `pool_motion`, `wearable_sos`, `wearable_left_zone`, `seizure_alert`, `location` (`lat`, `lng`, `acc`; stored on the sensor, no alert) and `arousal` (`hr`, optional `moving`). Rules live in `../safety-core.js`.
+- Door, gate and window alerts follow the exit rule: urgent unless `outUntil` is in the future, with a note on whether the child's device moved between its last two heartbeats (`prevLoc`, `lastLoc`).
+- `GET|POST /api/safety/out` (`{ minutes }`, 0 = back home) for anyone in the circle who reads alerts, not paired child devices.
+- `GET|POST|DELETE /api/found` (parents) manages the "if found" page; `GET /api/found/:token` is public and returns only `foundView` fields (never a location). Tokens sit in the share index.
+- Research mode: `POST /api/sensors` with `kind: "wearable", research: true, consent: true` (and optional `rest`). Heart-rate readings are kept for 1 hour, never listed, and raise a non-urgent `calm-check` alert marked `caregiverOnly`. Without consent, `arousal` events are ignored.

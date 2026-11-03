@@ -6,12 +6,12 @@
 //  • Model weights from the Hugging Face hub are cached by Transformers.js itself
 //    ("transformers-cache"); Human's models are vendored locally under vendor/human.
 //  • The backend API (/api/…) and map tiles are never cached here.
-const VERSION = "luminaac-v0.16.0";
+const VERSION = "luminaac-v0.17.0";
 const SHELL = `${VERSION}-shell`, CDN = `${VERSION}-cdn`;
 const FILES = [
   "./", "index.html", "bridge.html", "guide.html", "guide.css", "manifest.webmanifest", "bridge.webmanifest", "favicon.svg",
   "tokens.css", "app.css", "myvoice.css", "bridge.css", "phase3.css", "phase4.css", "phase6.css", "phase7.css", "potty.css", "sound.css", "redesign.css", "brand/brand-tokens.css",
-  "app.js", "myvoice.js", "access.js", "shared.js", "vocab.js", "myvoice-p3.js", "myvoice-p4.js", "myvoice-p7.js", "potty.js", "potty-core.js", "potty-store.js", "potty-icons.js", "sound-core.js", "sound-store.js", "myvoice-sound.js", "bridge-sound.js", "nav-core.js", "myvoice-redesign.js", "bridge-hubs.js", "bridge-chat.js", "bridge-iot.js", "bridge-yt.js", "bridge-play.js", "play.js", "play-core.js", "play.css", "bridge-notify.js", "bridge-r2.js", "bridge-symbols.js", "symbols.js", "scan-core.js", "e2ee-core.js", "asr.js", "labels-core.js", "bridge-labels.js", "e2ee-store.js", "bridge-e2ee.js",
+  "app.js", "myvoice.js", "access.js", "shared.js", "vocab.js", "myvoice-p3.js", "myvoice-p4.js", "myvoice-p7.js", "potty.js", "potty-core.js", "potty-store.js", "potty-icons.js", "sound-core.js", "sound-store.js", "myvoice-sound.js", "bridge-sound.js", "nav-core.js", "myvoice-redesign.js", "bridge-hubs.js", "bridge-chat.js", "bridge-iot.js", "bridge-links.js", "safety-core.js", "found.html", "found.js", "bridge-yt.js", "bridge-play.js", "play.js", "play-core.js", "play.css", "bridge-notify.js", "bridge-r2.js", "bridge-symbols.js", "symbols.js", "scan-core.js", "e2ee-core.js", "asr.js", "labels-core.js", "bridge-labels.js", "e2ee-store.js", "bridge-e2ee.js",
   "bridge.js", "bridge-plus.js", "bridge-p3.js", "bridge-p4.js", "bridge-p6.js", "bridge-p7.js", "bridge-potty.js", "interests.js", "games.js", "water.js", "water-tiles.js", "emotion.js", "geo.js", "fl-core.js", "motion-lite.js",
   "ai.js", "ai-worker.js", "pwa.js", "dialog-guard.js", "obf-core.js",
   "vendor/motion.js", "vendor/qrcode.js", "vendor/simplify.js", "vendor/jsQR.js", "vendor/leaflet/leaflet.js", "vendor/leaflet/leaflet.css",

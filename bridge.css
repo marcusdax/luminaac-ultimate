@@ -248,3 +248,17 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { border-color
 .lab-table { width: 100%; border-collapse: collapse; margin-top: var(--s2); }
 .lab-table th, .lab-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
 .lab-table caption { caption-side: bottom; text-align: left; padding-top: 6px; }
+
+/* Safety Links (v0.17) */
+.links-card { grid-column: 1 / -1; }
+.out-row { display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center; justify-content: space-between; padding: var(--s3); border-radius: 12px; background: var(--paper); border: 1px solid var(--line); margin-bottom: var(--s3); }
+.out-row.is-on { border-color: var(--wc-action); background: var(--wc-action-tint); }
+.out-row p { margin: 0; }
+.found-qr { margin: var(--s2) 0 var(--s3); }
+.found-sticker { display: inline-flex; flex-direction: column; align-items: center; width: 150px; padding: 8px; border: 2px solid var(--ink); border-radius: 12px; background: #fff; color: #000; text-align: center; font-size: .85rem; }
+.found-sticker svg { width: 120px; height: 120px; }
+.found-sticker p { margin: 4px 0 0; }
+.found-sheet { display: flex; flex-wrap: wrap; gap: 12px; }
+.ble-state { font-size: 1.15rem; margin: 0 0 4px; }
+.iot-photo { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; }
+.iot-research { border: 1px dashed var(--line); border-radius: 10px; padding: var(--s2) var(--s3); }

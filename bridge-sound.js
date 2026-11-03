@@ -5,6 +5,7 @@
 // practice log lives only on the device that played (sound-store.js).
 import * as C from "./sound-core.js";
 import * as St from "./sound-store.js";
+import { putMedia, getMedia } from "./shared.js";
 
 const B = window.__bridge;
 const db = () => B.db;
@@ -105,6 +106,83 @@ function renderSettings() {
   $("#spSay").addEventListener("change", (e) => { c.sayWithMe = e.target.checked; save(); });
 }
 
+// ---------- Increment B: family video models, Mouth Mirror, Sound and treat ----------
+// Clips are 3-second close-ups recorded here and kept in this browser's storage
+// (IndexedDB), never uploaded. Record on the tablet the child uses, or move a clip
+// with "Download" and "Add a clip file".
+const FAVS = [["🚂", "Train"], ["🫧", "Bubbles"], ["🎵", "Music"], ["🐶", "Dog"], ["🍪", "Cookie"], ["🚗", "Car"], ["⚽", "Ball"], ["🦕", "Dino"]];
+let rec = null;
+async function recordClip(t, li) {
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) return B.toast("This browser can't record video.");
+  if (rec) return;
+  const out = li.querySelector(".sp-rec");
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 480, height: 480 }, audio: true });
+    out.hidden = false; out.innerHTML = `<video playsinline muted autoplay></video><p class="small" role="status">Get close, face the camera. Say "${esc(t.approx || t.say)}" slowly once…</p>`;
+    out.querySelector("video").srcObject = stream;
+    const chunks = [], mr = new MediaRecorder(stream);
+    rec = mr; mr.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+    for (const n of [3, 2, 1]) { out.querySelector("p").textContent = `Recording in ${n}…`; await new Promise((r) => setTimeout(r, 700)); }
+    mr.start(); out.querySelector("p").textContent = `Recording: say "${t.approx || t.say}" now.`;
+    await new Promise((r) => setTimeout(r, 3000)); mr.stop();
+    await new Promise((r) => (mr.onstop = r)); stream.getTracks().forEach((x) => x.stop());
+    const blob = new Blob(chunks, { type: mr.mimeType || "video/webm" });
+    out.innerHTML = `<video playsinline controls></video><p class="row gap"></p>`;
+    out.querySelector("video").src = URL.createObjectURL(blob);
+    out.querySelector("p").append(btn("Keep it", async () => { await putMedia("clip:" + t.id, blob); (cfg().clips ||= {})[t.id] = Date.now(); out.hidden = true; save(`Recorded a "Watch my mouth" clip for "${t.show}"`); }, "btn"), btn("Try again", () => { out.hidden = true; recordClip(t, li); }));
+  } catch { out.hidden = true; B.toast("The camera or microphone couldn't start."); }
+  finally { rec = null; }
+}
+async function renderModels() {
+  const c = cfg(), el = $("#spModels"), list = c.targets.map(C.targetOf);
+  const fav = c.treatThing || { e: "🚂", label: "Train" };
+  html(el, `<h3 class="h3">Watch my mouth</h3>
+    <p class="soft small">Record a 3-second close-up of a familiar face saying each target, slowly. ${esc(name())} sees it slow, then at normal speed. Clips stay on this device and are never uploaded.</p>
+    <ul class="sp-tlist" id="spClips"></ul>
+    <h3 class="h3">Mouth Mirror</h3>
+    <label class="check"><input type="checkbox" id="spMirror" ${c.mirror ? "checked" : ""}/> Mouth Mirror may use the front camera</label>
+    <p class="soft small">A friendly face copies ${esc(name())}'s jaw and lips: open (ah), round (oo) and closed (mm). Only jaw and lips: the camera can't reliably see the tongue. It runs on the device; nothing is recorded or sent. Leave it off if they don't like the camera. Without it, "I did it" works the same.</p>
+    <h3 class="h3">Sound and treat <span class="pill">with your SLP</span></h3>
+    <label class="check"><input type="checkbox" id="spTreat" ${c.treat ? "checked" : ""}/> Show Sound and treat</label>
+    <p class="soft small">The target sound plays while their favourite thing shows, to make the sound worth listening to. Nothing is asked of them. Research on this is mixed and small, so use it with your SLP.</p>
+    <div id="spTreatSet" ${c.treat ? "" : "hidden"}>
+      <label>Sound <select id="spTreatTarget">${list.map((t) => `<option value="${esc(t.id)}" ${t.id === c.treatTarget ? "selected" : ""}>${esc(t.show)}</option>`).join("")}</select></label>
+      <p class="small">Favourite thing</p><p class="row gap" id="spFavs" style="flex-wrap:wrap">${FAVS.map(([e, l]) => `<button type="button" class="btn quiet${fav.e === e ? " is-on" : ""}" data-fe="${e}" data-fl="${l}" aria-pressed="${fav.e === e}">${e} ${l}</button>`).join("")}</p>
+      <label>Times a day <select id="spTreatN">${[5, 10, 15].map((n) => `<option ${n === (c.treatPerDay || 10) ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+    </div>`);
+  const ul = $("#spClips");
+  if (!list.length) ul.innerHTML = `<li class="soft">Choose targets first.</li>`;
+  for (const t of list) {
+    const has = !!(await getMedia("clip:" + t.id).catch(() => null)), li = document.createElement("li");
+    li.innerHTML = `<span aria-hidden="true">${esc(t.e || "🗣️")}</span><span><b>${esc(t.show)}</b><br><span class="soft small">${has ? "Clip on this device ✓" : c.clips?.[t.id] ? "Recorded on another device" : "No clip yet"}</span></span><span class="row gap"></span><div class="sp-rec" hidden></div>`;
+    const acts = li.querySelector(".row");
+    acts.append(btn(has ? "Record again" : "Record", () => recordClip(t, li)));
+    if (has) acts.append(btn("Download", async () => { const b = await getMedia("clip:" + t.id); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `luminaac-clip-${t.id}.webm`; a.click(); }, "link-btn"));
+    const file = document.createElement("label"); file.className = "link-btn"; file.innerHTML = `Add a clip file<input type="file" accept="video/*" hidden>`;
+    file.querySelector("input").addEventListener("change", async (e) => { const f = e.target.files[0]; if (!f) return; if (f.size > 8e6) return B.toast("That clip is too big. Keep it to a few seconds."); await putMedia("clip:" + t.id, f); (cfg().clips ||= {})[t.id] = Date.now(); save(`Added a "Watch my mouth" clip for "${t.show}"`); });
+    acts.append(file); ul.append(li);
+  }
+  $("#spMirror").addEventListener("change", (e) => { c.mirror = e.target.checked; save(e.target.checked ? "Allowed the camera for Mouth Mirror" : "Stopped the camera for Mouth Mirror"); });
+  $("#spTreat").addEventListener("change", (e) => { c.treat = e.target.checked; if (c.treat && !c.treatTarget) c.treatTarget = list[0]?.id; save(e.target.checked ? "Turned on Sound and treat" : "Turned off Sound and treat"); });
+  $("#spTreatTarget")?.addEventListener("change", (e) => { c.treatTarget = e.target.value; save(); });
+  $("#spTreatN")?.addEventListener("change", (e) => { c.treatPerDay = +e.target.value; save(); });
+  $("#spFavs")?.addEventListener("click", (e) => { const b = e.target.closest("[data-fe]"); if (!b) return; c.treatThing = { e: b.dataset.fe, label: b.dataset.fl }; save(); });
+}
+
+// Increment D: the family's own labelled magic moments, exported for a future
+// personal sound model. Only with a parent's say-so, never automatic.
+async function exportSoundSet() {
+  const who = prompt(`This downloads every magic moment that has a recording and a meaning, with your labels, as one file. It may contain ${name()}'s voice and your home. Keep it private and share it only with someone you trust (for example a research team with ethics approval).\n\nType your name to agree:`);
+  if (!who?.trim()) return;
+  const set = C.soundSet(db().moments || [], { child: db().profile.child || "", consentBy: who.trim().slice(0, 60) });
+  const toB64 = (b) => new Promise((r) => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.onerror = () => r(null); fr.readAsDataURL(b); });
+  for (const it of set.items) { const b = await getMedia(it.id).catch(() => null); it.data = b ? await toB64(b) : null; }
+  set.items = set.items.filter((x) => x.data);
+  if (!set.items.length) return B.toast("No recorded moments with a meaning on this device yet.");
+  B.download(`luminaac-sound-set-${B.dayKey(Date.now())}.json`, set);
+  B.save(`Exported ${set.items.length} labelled sound${set.items.length === 1 ? "" : "s"} (agreed by ${set.consentBy})`);
+}
+
 function renderCoach() {
   html($("#spCoach"), C.COACH.map((x) => `<div class="pot-script"><b>${esc(x.title)}</b><ul>${x.say.map((y) => `<li>${esc(y)}</li>`).join("")}</ul></div>`).join(""));
 }
@@ -128,6 +206,7 @@ function renderData() {
     const done = () => { document.body.classList.remove("printing-potty"); removeEventListener("afterprint", done); };
     addEventListener("afterprint", done); setTimeout(() => window.print(), 50);
   }), btn("Download practice data", () => B.download(`luminaac-sound-${B.dayKey(Date.now())}.json`, St.exportData())),
+  btn("Export labelled sounds", exportSoundSet),
   btn("Delete practice data", () => { if (confirm("Delete all Sound Path practice data on this device? This can't be undone.")) { St.deleteAll(); B.toast("Deleted."); render(); } }, "btn danger quiet"));
 }
 
@@ -135,9 +214,9 @@ function render() {
   if ($("#tab-sound")?.hidden !== false) return;
   renderOn();
   const on = !!db().access.sound;
-  ["#spLadder", "#spTargets", "#spInv", "#spWeek", "#spSettings", "#spCoach", "#spData"].forEach((s) => ($(s).closest(".card").hidden = !on));
+  ["#spLadder", "#spTargets", "#spInv", "#spWeek", "#spSettings", "#spModels", "#spCoach", "#spData"].forEach((s) => ($(s).closest(".card").hidden = !on));
   if (!on) return;
-  renderLadder(); renderTargets(); renderInventory(); renderWeek(); renderSettings(); renderCoach(); renderData();
+  renderLadder(); renderTargets(); renderInventory(); renderWeek(); renderSettings(); renderModels(); renderCoach(); renderData();
 }
 window.addEventListener("bridge:show", (e) => { if (e.detail === "sound") render(); });
 window.addEventListener("bridge:reload", render);

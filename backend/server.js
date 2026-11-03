@@ -22,6 +22,7 @@ import * as potty from "./potty.js";
 import * as yt from "./youtube.js";
 import * as wp from "./webpush.js";
 import * as summary from "./summary.js";
+import { hookEvent, exitRule, calmCheck, foundView } from "../safety-core.js";
 
 const PORT = Number(process.env.PORT || 3001);
 const ORIGINS = (process.env.ALLOWED_ORIGINS || "*").split(",").map((s) => s.trim());
@@ -168,7 +169,7 @@ function broadcast(key, event, data) {
 
 // ---------- Web Push ----------
 const URGENT_KINDS = ["help", "home", "danger-enter", "silent"];
-const ALERT_TITLE = { help: "Help needed", home: "Wants to go home", "danger-enter": "Entered a danger area", "danger-leave": "Left a danger area", "zone-enter": "Arrived", "zone-leave": "Left a place", silent: "Device went quiet", back: "Sharing again", sensor: "Sensor", potty: "Toilet", custom: "Message" };
+const ALERT_TITLE = { help: "Help needed", home: "Wants to go home", "danger-enter": "Entered a danger area", "danger-leave": "Left a danger area", "zone-enter": "Arrived", "zone-leave": "Left a place", silent: "Device went quiet", back: "Sharing again", sensor: "Sensor", "calm-check": "Calm check?", potty: "Toilet", custom: "Message" };
 const isUrgent = (a) => !!a.urgent || URGENT_KINDS.includes(a.kind);
 const pushLog = []; // last few results, for tests and the status route
 // Send to everyone in the family whose preferences allow it. Only short text goes
@@ -251,6 +252,13 @@ async function route(req, res, url) {
     return ok(res, scopedView(d.doc, sh.role));
   }
 
+  // Public: the "if found" page for a QR sticker. Only fields the caregiver chose.
+  if ((m = /^\/api\/found\/([A-Za-z0-9_-]{20,})$/.exec(p)) && M === "GET") {
+    const fam = shareIndex.get(m[1]), f = fam && store.read(fam).found;
+    if (!f || f.token !== m[1]) return fail(res, 404, "This page has been switched off");
+    return ok(res, foundView(f.fields));
+  }
+
   // ---- Sensor webhooks (public: the secret is in the URL) ----
   // Door, gate and pool sensors, smart-home hubs (Home Assistant, SmartThings,
   // IFTTT, Alexa routines through IFTTT) and trackers that can call a URL post here.
@@ -259,12 +267,36 @@ async function route(req, res, url) {
     if (!family) return fail(res, 404, "Unknown sensor link");
     if (limited(hookTries, th, 30, 10 * 60e3)) return fail(res, 429, "Too many alerts from this sensor. Wait a few minutes.");
     bump(hookTries, th);
-    const b = M === "POST" ? await body(req).catch(() => ({})) : {};
-    const said = String(b.message ?? b.value1 ?? b.state ?? url.searchParams.get("message") ?? "").slice(0, 140);
+    const b = M === "POST" ? await body(req).catch(() => ({})) : Object.fromEntries(url.searchParams);
     const sensor = store.read(family).sensors?.find((x) => x.tokenHash === th);
     if (!sensor) return fail(res, 404, "Unknown sensor link");
-    const a = raise(family, { kind: "sensor", from: sensor.name, message: `${sensor.name}: ${said || SENSOR_SAYS[sensor.kind] || "triggered"}`, sensor: sensor.id, ...(sensor.urgent && { urgent: true }) });
-    store.update(family, (d) => { const x = d.sensors?.find((y) => y.id === sensor.id); if (x) x.last = a.t; });
+    const ev = hookEvent(b, sensor), now = Date.now();
+    store.update(family, (d) => { const x = d.sensors?.find((y) => y.id === sensor.id); if (x) { x.last = now; if (ev.loc) x.lastLoc = { ...ev.loc, t: now }; } });
+    // Research mode: heart-rate readings only count for a wristband a parent gave
+    // separate consent for. They never reach the child's device and are kept 1 hour.
+    if (ev.research) {
+      if (!sensor.research) return ok(res, { ignored: true }, "Research mode is off for this sensor");
+      if (ev.hr == null) return fail(res, 400, "Validation failed", "hr must be a heart rate");
+      let r;
+      store.update(family, (d) => {
+        const x = d.sensors.find((y) => y.id === sensor.id);
+        x.hr = [...(x.hr || []).filter((y) => now - y.t < 3600e3), { t: now, hr: ev.hr, ...(b.moving && { moving: true }) }].slice(-400);
+        r = calmCheck(x.hr, { rest: x.rest ?? null, lastNudge: x.nudged || 0 }, now);
+        if (r.nudge) x.nudged = now;
+      });
+      if (r.nudge) raise(family, { kind: "calm-check", from: sensor.name, message: r.why, sensor: sensor.id, caregiverOnly: true });
+      return ok(res, { nudge: r.nudge });
+    }
+    if (ev.event === "location") return ok(res, { stored: !!ev.loc });
+    let urgent = ev.urgent, why = "";
+    if (ev.rule === "exit" && urgent) {
+      const d = store.read(family);
+      const tab = Object.values(acc.db().devices).filter((v) => v.family === family && !v.revoked && v.lastLoc).sort((x, y) => y.lastLoc.t - x.lastLoc.t)[0];
+      const hr = new Date(now).getHours();
+      const r = exitRule({ out: d.outUntil || 0, tablet: tab ? { last: tab.lastLoc, prev: tab.prevLoc } : null, quietFrom: hr >= 21 || hr < 6 ? 21 : null }, now);
+      urgent = r.urgent; why = r.why;
+    }
+    const a = raise(family, { kind: "sensor", from: sensor.name, message: ev.message + (why ? ` ${why}` : ""), sensor: sensor.id, ...(ev.event && { event: ev.event }), ...(ev.loc && { loc: ev.loc }), ...(urgent && { urgent: true }) });
     return ok(res, { id: a.id, t: a.t });
   }
 
@@ -570,16 +602,45 @@ async function route(req, res, url) {
       chat: can(w, "chat") ? (d.chat || []).filter((c) => c.t > since) : [] });
   }
 
+  // ---- "We're going out together": door alerts stay calm until then ----
+  if (p === "/api/safety/out") {
+    if (w.kind === "device" || !can(w, "alerts:read")) return deny();
+    if (M === "GET") return ok(res, { until: store.read(key).outUntil || 0 });
+    if (M === "POST") {
+      const b = await body(req), mins = Math.min(12 * 60, Math.max(0, Number(b.minutes) || 0)), until = mins ? Date.now() + mins * 60e3 : 0;
+      store.update(key, (d) => { d.outUntil = until; audit(d, until ? `Going out together for ${mins} minutes` : "Back home"); });
+      return ok(res, { until });
+    }
+  }
+  // ---- "If found" page (parents choose every field; revocable) ----
+  if (p === "/api/found") {
+    if (!can(w, "share")) return deny();
+    if (M === "GET") { const f = store.read(key).found; return ok(res, f ? { path: `/api/found/${f.token}`, fields: f.fields, created: f.created } : null); }
+    if (M === "POST") {
+      const b = await body(req), fields = foundView(b || {}), old = store.read(key).found;
+      const token = old?.token || randomBytes(18).toString("base64url");
+      store.update(key, (d) => { d.found = { token, fields, created: old?.created || Date.now(), updated: Date.now() }; audit(d, old ? "If-found page updated" : "If-found page created"); });
+      shareIndex.set(token, key); saveIndex();
+      return ok(res, { path: `/api/found/${token}`, fields });
+    }
+    if (M === "DELETE") {
+      const old = store.update(key, (d) => { const f = d.found; delete d.found; if (f) audit(d, "If-found page switched off"); return f; });
+      if (old) { shareIndex.delete(old.token); saveIndex(); }
+      return ok(res, undefined, "Switched off");
+    }
+  }
+
   // ---- Sensors and wearables (parents set them up) ----
   if (p === "/api/sensors") {
     if (!can(w, "devices")) return deny();
-    if (M === "GET") return ok(res, (store.read(key).sensors || []).map(({ tokenHash, ...x }) => x));
+    if (M === "GET") return ok(res, (store.read(key).sensors || []).map(({ tokenHash, hr, ...x }) => x));
     if (M === "POST") {
       const b = await body(req), name = String(b.name || "").trim().slice(0, 60);
       if (!name) return fail(res, 400, "Validation failed", "name is required");
       const kind = SENSOR_KINDS.includes(b.kind) ? b.kind : "other", token = randomBytes(24).toString("base64url");
-      const sn = { id: randomUUID(), name, kind, urgent: typeof b.urgent === "boolean" ? b.urgent : ["pool", "door", "gate", "wearable"].includes(kind), created: Date.now(), last: null, tokenHash: sha(token) };
-      store.update(key, (d) => { (d.sensors ||= []).push(sn); audit(d, `Sensor added: ${name}`); });
+      const research = kind === "wearable" && b.research === true && b.consent === true;
+      const sn = { id: randomUUID(), name, kind, urgent: typeof b.urgent === "boolean" ? b.urgent : ["pool", "door", "gate", "wearable"].includes(kind), created: Date.now(), last: null, tokenHash: sha(token), ...(research && { research: true, rest: Number(b.rest) > 40 && Number(b.rest) < 160 ? Math.round(b.rest) : null }) };
+      store.update(key, (d) => { (d.sensors ||= []).push(sn); audit(d, `Sensor added: ${name}${research ? " (research mode, consent given)" : ""}`); });
       hookIndex.set(sn.tokenHash, key); saveHooks();
       const { tokenHash, ...out } = sn;
       return ok(res, { ...out, path: `/api/hooks/${token}` }, "Copy this link now. It is shown only once.");
@@ -698,7 +759,7 @@ async function route(req, res, url) {
     dv.sharing = b.sharing !== false; dv.lastBeat = Date.now();
     const floor = Number(process.env.DEADMAN_FLOOR_MIN ?? 5); // lower only for demos/tests
     dv.silentAfterMin = Math.min(1440, Math.max(floor, Number(b.silentAfterMin) || dv.silentAfterMin || DEADMAN_MIN()));
-    if (loc) dv.lastLoc = { ...loc, t: Date.now() };
+    if (loc) { if (dv.lastLoc) dv.prevLoc = dv.lastLoc; dv.lastLoc = { ...loc, t: Date.now() }; }
     dv.silentSince = null; acc.save();
     if (was) raise(dv.family, { kind: "back", message: `${dv.name} is sharing location again`, from: dv.name, ...(loc && { loc }) });
     return ok(res, { sharing: dv.sharing, silentAfterMin: dv.silentAfterMin, nextBeatSec: Math.min(300, dv.silentAfterMin * 20) });

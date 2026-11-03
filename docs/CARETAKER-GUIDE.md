@@ -237,6 +237,20 @@ Door, gate and window sensors, pool alarms, bed sensors, motion sensors, or your
 
 Each sensor shows when it last alerted. **Remove** switches its link off for good.
 
+**Smarter alerts (new in 0.17).** A hub can send an event name instead of a message, such as `{"event":"door_open"}`. Other names are `gate_open`, `window_open`, `pool_motion`, `wearable_sos`, `wearable_left_zone`, `seizure_alert` and `location` (with `lat` and `lng`). Pool, SOS and seizure alerts are always urgent. A door or gate opening is urgent unless someone pressed **Going out together**. The alert also says whether your child's tablet has moved, because they may have left without it.
+
+### If they go missing (new in 0.17)
+The **If they go missing** card on the Safety page has four parts:
+
+- **Going out together.** Press it before you leave with your child, for 1 or 3 hours. Door and gate alerts stay calm until then. Press **We're back** when you're home.
+- **"If found" QR page.** Fill in the first name, how they talk, how to approach them, what calms them, any medical note and a phone number, then choose **Save and show the QR**. Print the sticker sheet for shoes, a wristband or a backpack. Whoever scans it sees only those lines and a **Call my family** button. It never shows an address or a location. **Switch the page off** stops every sticker working.
+- **Wandering plan sheet.** Add a photo and the details searchers ask for first, then **Print the sheet** and keep it by the door. It adds nearby water from your water zones, your safe-zone names and your trackers.
+- **Bluetooth: is he near?** In Chrome on Android or a computer, pair a small Bluetooth tag and this phone shows **Near**, **Nearby**, **Far** or **Lost signal** while the page is open. iPhone and iPad browsers can't do this. It is a backup only.
+
+Trackers can also have a photo, what they're attached to and a **battery check** date. A reminder appears at the top of Safety when it's due.
+
+**Research mode for wristbands (optional).** When you add a **Tracker alert** sensor, you can tick a separate consent so a wristband may send heart rate (`{"event":"arousal","hr":118}`). If it stays well above your child's usual level for 3 minutes while they're still, grown-ups see a quiet "Calm check?". Your child never sees it. It's a research feature, it can be wrong, and readings are kept for 1 hour. Talk to your child's clinician first.
+
 **Honest limits:** anyone who has a sensor's link can raise an alert, so keep links private, and remove a sensor if a link gets out. Alerts reach an open Bridge within about 30 seconds. A sensor only alerts if its own app or hub is working and online. This adds to supervision; it never replaces it.
 
 <a id="videos-games-insights"></a>
@@ -334,6 +348,10 @@ Sound Path is short, playful voice practice that builds new sounds, then syllabl
 - **You're the judge.** Press and hold **Grown-up** in a game, then mark each try **Got it**, **Close** or **Tried**. With no grown-up there, every try simply counts as tried. The app never marks a try wrong and never scores speech by itself.
 - **How it adapts:** a new target is practised a few times in a row with praise every try. Once it's reliable it's mixed with others and spoken praise fades to every other try (a sticker still comes every time). Two breaks or one Stop end practice for the day.
 - **Sounds you've heard:** tap a sound on the chart when you hear your child make it, and log words they use to mean something. Print the **sheet for the SLP**.
+- **Watch my mouth (new in 0.17):** in **Sound Path → Watch my mouth, Mouth Mirror, Sound and treat**, choose **Record** next to a target, get close to the camera and say it slowly once. Your child sees your mouth slow, then at normal speed, then gets a turn. Clips stay on the device you recorded on. Record on your child's tablet, or use **Download** and **Add a clip file** to move one.
+- **Mouth Mirror (new in 0.17):** tick **Mouth Mirror may use the front camera**. A friendly face copies your child's jaw and lips while they try open (ah), round (oo) and closed (mm). Nothing is recorded. It doesn't look at the tongue. Without the camera, **I did it** works the same.
+- **Sound and treat (new in 0.17, with your SLP):** the target sound plays while their favourite thing (bubbles, a train…) bounces on screen. Nothing is asked of them. Choose the sound, the favourite and how many times a day.
+- **Export labelled sounds (new in 0.17):** in **Sheet and data**, this saves every magic moment that has a recording and a meaning as one file, for a future model of your child's own sounds. You type your name to agree. Keep the file private.
 - **What it doesn't do:** no mouth or tongue exercises (research doesn't support them for speech), no smile detection, and no recording. The microphone is only measured for loudness and pitch, on the device, and only if you allow it in Videos and games.
 
 <a id="potty-path"></a>
