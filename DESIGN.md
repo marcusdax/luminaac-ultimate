@@ -83,3 +83,7 @@ See [docs/GAMES-CONCEPT.md](docs/GAMES-CONCEPT.md).
 - **Child-facing pictures:** stay OpenMoji or ARASAAC, as now.
 - **Scene art:** flat vector shapes with no outlines. Kenney CC0 kits may be used for game props.
 - **No emoji in Bridge UI chrome.**
+
+## 8. The website
+
+The public site has its own direction, "Night to light", in [DESIGN-SITE.md](DESIGN-SITE.md). It uses the same lit rule and body typeface, and adds a display face and cinematic motion that stay off the app.
