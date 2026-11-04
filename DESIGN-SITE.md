@@ -1,98 +1,79 @@
 # LuminAAC website design direction: "Night to light"
 
-Status: November 2026. This covers the public website (`about.html` today, and the landing pages that follow). The app keeps its own direction in [DESIGN.md](DESIGN.md) ("Quiet sky, lit strip"). The two share one brand, one action colour and one typeface for body text. Values live in `brand/brand-tokens.css` under "Website" and are used by name, never as raw values.
+Status: November 2026, built at [`welcome/`](welcome/) (served at `/welcome/`). The app keeps its own calm direction in [DESIGN.md](DESIGN.md). The website doesn't have to look like the app: it is where LuminAAC is allowed to be a visual piece. They share the gold action colour, the body typeface and the word-class colours, so the site still feels like home when someone opens the app. Values live in `brand/brand-tokens.css` ("Website") and `welcome/site.css`, and are used by name.
 
-**The idea.** The logo is a wave (a voice) under a rising sun. The site tells that story as one scroll, from night to dawn. You start in a dark sky where a voice can't get out. You finish in morning light, on the promise: free for families, forever. Light is earned as you scroll. **Lit means chosen, on the site as in the app**: the gold appears only where something matters (the call to action, the spoken word, "$0").
+**The idea.** The logo is a wave (a voice) under a rising sun. The site tells that story as one scroll, from night to morning. Behind every section is the **Luminous Field**: a living, visionary mandala of light. You start in a night sky full of light where a voice can't get out yet. You finish in morning light, on the promise: free for families, forever. **Lit means chosen**: the gold marks only what matters (the call to action, the spoken word, "$0").
 
-How the site differs from the app: the app is calm because a child is using it to talk. The website is where LuminAAC is allowed to be cinematic. It still respects reduced motion and never puts motion behind words someone has to read.
+**The message.** No one should have to pay for their voice to be heard. LuminAAC is free for nonverbal people, their families and caregivers, for the full app, forever. The founder's story is told in general terms: a single dad who refused to accept a voice in a box or behind a subscription. The site doesn't use the child's name or family photos.
 
-## 1. Colour roles
+## 1. The Luminous Field (`welcome/field.js`)
+
+One full-screen WebGL fragment shader behind the page, inspired by visionary art (intricate, radiant, sacred geometry) but kept light:
+- a flower-of-life mandala, with an inner layer and an outer layer turning slowly in opposite directions
+- iridescent filaments radiating from a warm golden heart
+- a fine "capillary" filigree that flows across the whole field
+- tap ripples (sky blue)
+
+Each section sets the field with `data-*` attributes: `data-sky` (0 night, 1 morning), `data-center` and `data-center-m` (where the heart sits on desktop and on phones), `data-zoom` (0.6 times on portrait screens), `data-glow` (line intensity: 1 in the hero, 0.45 to 0.55 behind reading text) and `data-warm` (a warmer dusk behind the founder's story). Values ease over time, so the mood shifts the same way at any frame rate.
+
+The field scales its resolution down on slow devices, pauses when the tab is hidden, renders one still frame in Still mode or with reduced motion, and falls back to a CSS gradient without WebGL.
+
+## 2. Colour roles
 
 | Token | Value | Role |
 |---|---|---|
-| `--site-abyss` | `#080c11` | Top of the hero, the deepest night |
-| `--night-sky` (brand) | `#0f1419` | Page background for night sections |
-| `--dusk` (app) | `#22313d` | Sticky nav band, cards on night |
-| `--site-dawn` | `#2b2622` | Warm transition band between night and day |
-| `--site-day` | `#f6f2ea` | Background of the closing "free forever" section (warm paper, not white) |
-| `--site-ink-night` | `#eef2f4` | Text on night (16.4:1 on `--night-sky`) |
+| `--site-abyss` | `#080c11` | Deepest night, the page base |
+| `--site-day` | `#f6f2ea` | Morning paper behind the closing sections |
+| `--site-ink-night` | `#eef2f4` | Text on night (16.4:1). Night text also gets a soft dark halo (`--night-text-shadow`) so it reads over the field |
 | `--site-ink-night-soft` | `#a9b6bf` | Secondary text on night (8.9:1) |
-| `--ink` / `--ink-soft` (app) | `#1c2630` / `#4b5864` | Text on day (13.7:1 and 6.5:1 on `--site-day`) |
-| `--lit` (app, `--lumen`) | `#f2b33d` | **Primary.** Buttons, focus ring, the spoken word, the "$0". Never decoration. Text on it is `--lit-ink` (8.2:1) |
-| `--sky` (brand) | `#64b5f6` | **Accent.** The voice: the wave, sound lines, links on night (8.4:1). Links on day use `--sky-deep` (5.5:1) |
-| `--ember` (brand) | `#ff9800` | Logo sun rays only. Not used in UI |
-| `--wc-*` (app) | Fitzgerald Key | Only inside board demos, never as section colours |
-| `--ok` / `--alert` (app) | | Form success and error |
+| `--ink` / `--ink-soft` | `#1c2630` / `#4b5864` | Text on morning (13.7:1 and 6.5:1) |
+| `--lit` | `#f2b33d` | **Primary.** Buttons, focus ring, the spoken word, "heard.", "$0" |
+| `--sky` / `--sky-deep` | `#64b5f6` / `#1f64a8` | **Accent.** The voice: links, ripples, the second button |
+| `--ember-deep` | `#a35200` | Eyebrows and the "$" on morning sections |
+| `--rose`, `--teal` | `#f2a7c3`, `#7fd6cf` | Iridescent line art only (mandala, constellation). Never text or UI |
+| `--wc-*` | Fitzgerald Key | Word tiles: lanterns, the freed words, board demos |
 
 Rules:
-- One gold thing per screen. If two items are lit, one of them is wrong.
-- The only gradients are skies: background washes between two neighbouring tokens (night to dusk, dawn to day). No gradient text, no gradient buttons, no purple-to-blue.
-- Glow is light, not colour: `--glow-lit` and `--glow-sky` are soft halos behind a lit item. Nothing else glows.
+- One gold thing per screen.
+- Rainbow colour lives only in the light lines of the field and the mandalas. Text, buttons and cards stay in the core palette.
+- No gradient text, no gradient buttons, no glass panels.
 
-## 2. Typography
+## 3. Typography
 
-Two families:
-- **Display: Fraunces** (variable, free on Google Fonts, SOFT axis at 100, opsz on). A warm, hand-touched serif for headlines and the founder's words, so the site reads like a promise from a person rather than a product sheet. Weights 400 and 600. Headlines are sentence case.
-- **Body and UI: Atkinson Hyperlegible Next**, the same as the app, at 400, 600 and 800. Buttons, nav, labels, board tiles and all body text use it.
+- **Display: Fraunces** (SOFT 100, opsz 144, weights 300 to 400). Used for headlines, the manifesto, the founder's words and "$0".
+- **Body and UI: Atkinson Hyperlegible Next** (400, 600 and 800), the same as the app.
+- Scale: `--fs-hero` clamp(3.25–7rem), `--fs-d1` clamp(2.5–4.5rem), `--fs-d2` clamp(1.75–2.75rem), `--fs-lead` 22 px, `--fs-body` 18 px, `--fs-ui` 16 px, `--fs-meta` 14 px. Measure 38rem.
 
-| Token | Size / line height | Use |
-|---|---|---|
-| `--fs-hero` | clamp(3.25rem, 8.5vw, 7rem) / 1.0 | The one hero line |
-| `--fs-d1` | clamp(2.5rem, 5.5vw, 4.5rem) / 1.05 | Section headlines, "$0" |
-| `--fs-d2` | clamp(1.75rem, 3.2vw, 2.75rem) / 1.15 | Sub-headlines, story pull quotes |
-| `--fs-lead` | 1.375rem (22) / 1.45 | Intro paragraph under a headline |
-| `--fs-body` | 1.125rem (18) / 1.6 | Body text |
-| `--fs-ui` | 1rem (16) / 1.4 | Buttons, nav, labels |
-| `--fs-meta` | 0.875rem (14) / 1.4 | Captions, footnotes |
+## 4. Sections
 
-Text width is `--measure: 38rem` (about 68 characters at 18 px). Fraunces is never set smaller than `--fs-d2`.
-
-## 3. Space and layout
-
-- The 4 px scale from the app (`--s1` to `--s7`), plus `--s8: 64px`, `--s9: 96px`.
-- Section padding: `--sec: clamp(96px, 16vh, 200px)` top and bottom. Each section owns most of a screen, so one idea is on screen at a time.
-- Content width `--wrap: 72rem`, gutter `--gutter: clamp(16px, 4vw, 48px)`.
-- Alternate the layout. Hero is full-bleed, story is off-centre (text left, image bleeding right), features run as a horizontal strip, the pledge is centred. Only the hero and the pledge are centred.
-
-## 4. Shape and depth
-
-- Radius: `--r-chip: 999px` (buttons, pills), `--r-tile: 14px` (board tiles, from the app), `--r-card: 22px` (panels, from `--r-sheet`), `--r-media: 28px` (photos and video).
-- Depth on night comes from light, not shadow: `--glow-lit: 0 0 48px rgba(242,179,61,.35)` and `--glow-sky: 0 0 40px rgba(100,181,246,.28)`.
-- On day sections, use the app's `--lift` and nothing else.
-- No glass, no blur panels, no borders on night cards (use `--dusk` fill instead).
+| # | Section | Sky | What moves |
+|---|---|---|---|
+| 1 | **Hero:** "No one should have to pay to be heard." | night, full glow | Title lines rise out of a blur. Tap anywhere: a word tile floats up as a lantern, the field ripples, and the word is spoken (sound toggle in the header) |
+| 2 | **Manifesto** | night | The words light up one by one as you scroll. "box", "price tag" and "subscription" light in gold. Ends on "A voice is a right, not a subscription." |
+| 3 | **The box** | night | Pinned and scrubbed: a grey 3D box with a padlock and "$ / month". The lock falls, the lid swings open and the front drops. "I want to be heard" rises out as word tiles, and the headline changes to "We opened the box." |
+| 4 | **Our story** | warm dusk | An SVG flower-of-life mandala draws itself on scroll, then turns slowly with a beating heart |
+| 5 | **What makes it different** | night, low glow | A constellation of 8 differences around the logo. It cycles on its own until touched; arrow keys move between them |
+| 6 | **See it speak** | morning | A sticky tablet frame plays **real recordings** of the app (Talk, Calm, My day, Play, the Bridge). The chapter changes as you scroll or tap. On phones the chapters become pills under the tablet |
+| 7 | **$0** | morning | Counts down from 300 to 0. The "per…" line steps through month → year → the full app → every family → forever |
+| 8 | **Get LuminAAC** | morning | Open in the browser (`/`), Add to home screen (a real Install button where the browser supports it, plus steps for iPad/iPhone and Android), App Store and Google Play marked "Coming soon" (honest: not submitted yet, see docs/STORE-CHECKLIST.md) |
 
 ## 5. Components
 
-- **Primary button:** `--lit` pill, `--lit-ink` text at 800 weight, min-height 56 px, `--glow-lit` on hover, 3 px `--lit` focus ring at 3 px offset, 40% opacity when disabled. Only one per screen. The label is a verb: "Open My Voice", "Start free".
-- **Secondary button:** transparent, 2 px `--sky` border and `--sky` text on night, or `--sky-deep` on day.
-- **Quiet link:** underlined, 3 px offset. `--sky` on night, `--sky-deep` on day.
-- **Nav:** transparent over the hero, turns into the `--dusk` band after 80 px of scroll. Logo on the left; on the right Guide, Bridge, Our story, and the one lit "Open My Voice" pill.
-- **Board demo:** the real tile component (`--r-tile`, 6 px class band, tint fill) at 1.25× size, with a `--dusk` sentence strip. Features are shown by doing them on this board, not by describing them on cards.
-- **Feature strip:** five "lit tiles" (Talk, Bridge, Calm, Play, Private). The active one is lit and opens a short demo with one sentence. No grid of three identical cards.
-- **The box vs. the sky:** one comparison block. On the left, a closed grey box with a padlock and a monthly price ticking up. On the right, the open sky with the wave. Plain words, no competitor names.
-- **Pledge:** "$0" in Fraunces at `--fs-d1` in `--lit`, then one line: "Free for nonverbal people, families and caregivers. The full app. Forever."
-- **Story:** a full-bleed photo or film with a pull quote in Fraunces. Video always has captions and a poster frame, and never autoplays with sound.
-- **Footer:** `--night-sky` background with links, the free-forever line, privacy and accessibility statements.
+- **Buttons:** primary `--lit` pill (56 px), ghost `--sky` outline, ink button on cards. 3 px gold focus ring everywhere.
+- **Header:** transparent over the hero; turns into a band after 80 px (dark at night, paper in the morning). Sound and Still toggles are 44 px icon buttons with `aria-pressed`.
+- **Lanterns and freed words** reuse the app's tile look: a tint fill and a class-colour band.
+- **Device frame:** dark bezel, 34 px radius, with the recording at the app's 1180×820 aspect ratio.
 
-## 6. Motion
+## 6. Motion and access
 
-| Token | Value | Use |
-|---|---|---|
-| `--t-ui` (app) | 180 ms | Hover, nav band, button glow |
-| `--t-reveal` | 700 ms | Text and tiles entering on scroll (rise 16 px and fade) |
-| `--t-scene` | 1200 ms | Colour changes between sky sections |
-| `--ease-out` | cubic-bezier(.16, 1, .3, 1) | Reveals and scenes |
-| `--t-ambient` (app) | 40 s | Slowest sky drift in the hero |
+- Libraries are vendored in `welcome/vendor/`: GSAP 3.13 with ScrollTrigger and SplitText (GreenSock standard no-charge licence), and Lenis 1.3.4 smooth scroll (MIT).
+- **Still mode** (header button, remembered) and `prefers-reduced-motion`: the field renders one frame, there is no smooth scroll and no pinning, every section shows its final state, the walkthrough shows a play button instead of autoplaying, and lanterns fade in place.
+- Videos are muted, `playsinline`, play only while on screen, and have a WebM fallback.
+- Nothing flashes. Ripples fade over 6 s.
 
-- **Hero:** a WebGL night sky (reuse `shader-sky.js` and `shaders/sky.js`) with the logo wave drawn as light. Each tap or click lights a star and speaks a word. That is the product's promise, shown in one gesture.
-- **The scroll is the story:** the background moves night → dusk → dawn → day across the page, driven by CSS scroll timelines where supported.
-- **Allowed on the site only:** slow light motes in the hero, parallax of no more than 40 px on photos, and the founder film.
-- **Reduced motion or Still:** each section shows its final frame, and the hero becomes the static logo sky. Nothing flashes more than 3 times a second.
+## 7. Imagery
 
-## 7. Imagery and icons
-
-- **Icons:** Tabler (MIT), 2 px stroke, 24 px, the same as the app. No emoji in site UI. OpenMoji appears only on board tiles.
-- **Photography:** real photos from the founder's family, never stock. Warm grade, every shot colour-matched to one reference frame. Subjects can be cut out (rembg) and set against the sky.
-- **Film:** a 60 to 90 second founder story, cut on the beat of its score (PySceneDetect, Auto-Editor, librosa for beat marks, FFmpeg for export). Titles are HTML (HyperFrames) set in Fraunces.
-- **3D:** at most one object, the sun as a glowing lantern (three.js, already used in `train3d.js`). It must load after the first paint and have a still fallback.
-- **The art direction from the R&D decks** (neural light, nodes on near-black): kept as texture only. Connection lines and node glows appear in the Bridge section, drawn in `--sky`. There is no cyber or neon look.
+- **Walkthroughs:** recorded from the real app with `tools/record-walkthroughs.js` (Playwright, with a visible gold "finger"), then encoded to H.264 MP4 plus VP9 WebM with posters, about 4 MB in total. Re-record them whenever the app's look changes.
+- **No stock and no family photos.** All art is generated in code: the field shader and the SVG mandala and constellation.
+- **Icons:** stroked, 24 px, 2 px or 1.8 px lines. No emoji in the site interface; emoji appear only inside app recordings.
+- **R&D decks and Drive:** the VIVELLA poster's radial "compass" geometry informed the constellation. Its branding is not used.
