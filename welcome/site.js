@@ -175,7 +175,7 @@
     cap.textContent = title;
     video.classList.add("is-fading");
     setTimeout(() => {
-      video.poster = `media/${name}.jpg`; video.src = `media/${name}.${EXT}`; video.setAttribute("aria-label", "Walkthrough of LuminAAC: " + title);
+      video.poster = `/welcome/media/${name}.jpg`; video.src = `/welcome/media/${name}.${EXT}`; video.setAttribute("aria-label", "Walkthrough of LuminAAC: " + title);
       video.load(); playIfOk(); video.classList.remove("is-fading");
     }, still ? 0 : 280);
   }
@@ -201,7 +201,6 @@
   let deferred = null;
   addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; $$("[data-install]").forEach((b) => (b.hidden = false)); });
   $$("[data-install]").forEach((b) => b.addEventListener("click", async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice.catch(() => {}); deferred = null; b.hidden = true; }));
-  if ("serviceWorker" in navigator && location.protocol !== "file:") addEventListener("load", () => navigator.serviceWorker.register("../sw.js").catch(() => {}));
 
   /* ---------- motion (GSAP) ---------- */
   let lenis = null, seeST = null, ctx = null;

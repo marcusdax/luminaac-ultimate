@@ -8,15 +8,15 @@
   <meta name="theme-color" content="#080c11" />
   <meta property="og:title" content="LuminAAC · No one should have to pay to be heard" />
   <meta property="og:description" content="A free talking app for people who can't speak yet, and a bridge for everyone who loves them. The full app, free forever." />
-  <meta property="og:image" content="media/talk.jpg" />
-  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
-  <link rel="manifest" href="../manifest.webmanifest" />
+  <meta property="og:image" content="https://luminaac.org/welcome/media/talk.jpg" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="canonical" href="https://luminaac.org/" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..700,0..100;1,9..144,300..700,0..100&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../tokens.css" />
-  <link rel="stylesheet" href="../brand/brand-tokens.css" />
-  <link rel="stylesheet" href="site.css" />
+  <link rel="stylesheet" href="/tokens.css" />
+  <link rel="stylesheet" href="/brand/brand-tokens.css" />
+  <link rel="stylesheet" href="/welcome/site.css" />
 </head>
 <body>
   <canvas id="field" aria-hidden="true"></canvas>
@@ -27,7 +27,7 @@
 
   <header class="top" id="top">
     <a class="brand" href="#hero" aria-label="LuminAAC, back to the top">
-      <img src="../brand/logo-mark.svg" alt="" width="36" height="36" /><span>LuminAAC</span>
+      <img src="/brand/logo-mark.svg" alt="" width="36" height="36" /><span>LuminAAC</span>
     </a>
     <nav class="nav" aria-label="Site">
       <a href="#see">See it speak</a>
@@ -123,7 +123,7 @@
         <h2 id="h-diff" class="display h2 reveal">Built around the person, not the price.</h2>
         <div class="constellation" id="constellation">
           <svg class="c-lines" viewBox="-200 -200 400 400" aria-hidden="true"></svg>
-          <div class="c-core" aria-hidden="true"><img src="../brand/logo-mark.svg" alt="" width="64" height="64" /></div>
+          <div class="c-core" aria-hidden="true"><img src="/brand/logo-mark.svg" alt="" width="64" height="64" /></div>
           <div class="c-nodes" role="tablist" aria-label="What makes LuminAAC different"></div>
         </div>
         <div class="c-panel" id="cPanel" role="tabpanel" aria-live="polite"></div>
@@ -149,9 +149,9 @@
           <figure class="device">
             <div class="device-frame">
               <div class="screen">
-                <video id="seeVideo" muted playsinline loop preload="metadata" poster="media/talk.jpg" aria-label="Walkthrough of LuminAAC: Talk">
-                  <source src="media/talk.mp4" type="video/mp4" />
-                  <source src="media/talk.webm" type="video/webm" />
+                <video id="seeVideo" muted playsinline loop preload="metadata" poster="/welcome/media/talk.jpg" aria-label="Walkthrough of LuminAAC: Talk">
+                  <source src="/welcome/media/talk.mp4" type="video/mp4" />
+                  <source src="/welcome/media/talk.webm" type="video/webm" />
                 </video>
                 <button class="play-btn" id="playBtn" type="button" hidden aria-label="Play the walkthrough"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z" /></svg></button>
               </div>
@@ -182,18 +182,18 @@
           <article class="get-card primary">
             <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" /></svg>
             <h3>Open it in your browser</h3>
-            <p>Works on iPad, Android tablets, Chromebooks, phones and computers. Nothing to sign up for.</p>
-            <a class="btn btn-lit" href="../">Open My Voice</a>
+            <p>Works on iPad, Android tablets, Chromebooks, phones and computers at <strong>luminaac.app</strong>. Nothing to sign up for.</p>
+            <a class="btn btn-lit" href="https://luminaac.app/">Open My Voice</a>
           </article>
           <article class="get-card">
             <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3" /><path d="M12 7v7M9 11l3 3 3-3" /></svg>
             <h3>Add it to your home screen</h3>
             <p>It opens like an app and keeps working with no internet.</p>
-            <button class="btn btn-ink" type="button" data-install hidden>Install LuminAAC</button>
+            <a class="btn btn-ink" href="https://luminaac.app/">Go to luminaac.app</a>
             <details class="how">
               <summary>How to install</summary>
-              <p><strong>iPad and iPhone:</strong> open My Voice in Safari, tap Share, then Add to Home Screen.</p>
-              <p><strong>Android and Chromebook:</strong> open My Voice in Chrome, open the menu, then Install app.</p>
+              <p><strong>iPad and iPhone:</strong> open luminaac.app in Safari, tap Share, then Add to Home Screen.</p>
+              <p><strong>Android and Chromebook:</strong> open luminaac.app in Chrome, open the menu, then Install app.</p>
             </details>
           </article>
           <article class="get-card">
@@ -203,24 +203,24 @@
             <span class="pill">Coming soon</span>
           </article>
         </div>
-        <p class="get-more reveal">For caregivers: <a href="../bridge.html">open the Bridge</a> · <a href="../guide.html">read the guide</a> · <a href="https://github.com/marcusdax/luminaac-ultimate">see the code</a></p>
+        <p class="get-more reveal">For caregivers: <a href="https://luminaac.app/bridge.html">open the Bridge</a> · <a href="https://luminaac.app/guide.html">read the guide</a> · <a href="https://github.com/marcusdax/luminaac-ultimate">see the code</a></p>
       </div>
     </section>
   </main>
 
   <footer class="foot" data-sky="1">
     <div class="wrap foot-in">
-      <p class="brand"><img src="../brand/logo-mark.svg" alt="" width="28" height="28" /><span>LuminAAC</span></p>
+      <p class="brand"><img src="/brand/logo-mark.svg" alt="" width="28" height="28" /><span>LuminAAC</span></p>
       <p class="foot-line display">No one should have to pay to be heard.</p>
       <p class="small">Free for families, forever · Open source (MIT) · Words stay on your devices unless you choose to sync</p>
     </div>
   </footer>
 
-  <script src="vendor/gsap.min.js" defer></script>
-  <script src="vendor/ScrollTrigger.min.js" defer></script>
-  <script src="vendor/SplitText.min.js" defer></script>
-  <script src="vendor/lenis.min.js" defer></script>
-  <script src="field.js" defer></script>
-  <script src="site.js" defer></script>
+  <script src="/welcome/vendor/gsap.min.js" defer></script>
+  <script src="/welcome/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="/welcome/vendor/SplitText.min.js" defer></script>
+  <script src="/welcome/vendor/lenis.min.js" defer></script>
+  <script src="/welcome/field.js" defer></script>
+  <script src="/welcome/site.js" defer></script>
 </body>
 </html>
