@@ -250,6 +250,7 @@
 
       // pledge zero glows in
       gsap.from(".zero", { scale: 0.7, opacity: 0, duration: 1.6, ease: "expo.out", scrollTrigger: { trigger: ".pledge", start: "top 60%" } });
+      gsap.from(".res-card", { y: 40, opacity: 0, duration: 1, ease: "expo.out", stagger: 0.12, scrollTrigger: { trigger: ".res-grid", start: "top 85%" } });
       gsap.from(".get-card", { y: 40, opacity: 0, duration: 1, ease: "expo.out", stagger: 0.12, scrollTrigger: { trigger: ".get-grid", start: "top 80%" } });
     });
 

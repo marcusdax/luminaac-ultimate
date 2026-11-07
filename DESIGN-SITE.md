@@ -56,6 +56,7 @@ Rules:
 | 6 | **See it speak** | morning | A sticky tablet frame plays **real recordings** of the app (Talk, Calm, My day, Play, the Bridge). The chapter changes as you scroll or tap. On phones the chapters become pills under the tablet |
 | 7 | **$0** | morning | Counts down from 300 to 0. The "per…" line steps through month → year → the full app → every family → forever |
 | 8 | **Get LuminAAC** | morning | Open in the browser (`/`), Add to home screen (a real Install button where the browser supports it, plus steps for iPad/iPhone and Android), App Store and Google Play marked "Coming soon" (honest: not submitted yet, see docs/STORE-CHECKLIST.md) |
+| 9 | **Guides** (`#resources`) | morning | Three PDF cards (brochure, user guide, clinician brief) with cover thumbnails, served from `welcome/docs/`. Cards rise in on scroll and lift on hover |
 
 ## 5. Components
 
