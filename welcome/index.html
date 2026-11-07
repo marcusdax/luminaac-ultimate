@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LuminAAC · No one should have to pay to be heard</title>
+  <meta name="description" content="LuminAAC is a free AAC app for nonverbal people and the families and caregivers who love them. The full app, free forever. Works offline, private by default, open source." />
+  <meta name="theme-color" content="#080c11" />
+  <meta property="og:title" content="LuminAAC · No one should have to pay to be heard" />
+  <meta property="og:description" content="A free talking app for people who can't speak yet, and a bridge for everyone who loves them. The full app, free forever." />
+  <meta property="og:image" content="https://luminaac.org/welcome/media/talk.jpg" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="canonical" href="https://luminaac.org/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..700,0..100;1,9..144,300..700,0..100&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/tokens.css" />
+  <link rel="stylesheet" href="/brand/brand-tokens.css" />
+  <link rel="stylesheet" href="/welcome/site.css" />
+</head>
+<body>
+  <canvas id="field" aria-hidden="true"></canvas>
+  <div class="field-fallback" aria-hidden="true"></div>
+  <div id="lanterns" aria-hidden="true"></div>
+
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="top" id="top">
+    <a class="brand" href="#hero" aria-label="LuminAAC, back to the top">
+      <img src="/brand/logo-mark.svg" alt="" width="36" height="36" /><span>LuminAAC</span>
+    </a>
+    <nav class="nav" aria-label="Site">
+      <a href="#see">See it speak</a>
+      <a href="#why">Why it's free</a>
+      <a href="#story">Our story</a>
+    </nav>
+    <div class="top-actions">
+      <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" title="Speak words when you tap the light">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" /><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" /></svg>
+        <span class="sr">Speak words when I tap the light</span>
+      </button>
+      <button class="icon-btn" id="stillBtn" type="button" aria-pressed="false" title="Still mode: stop the motion">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" /></svg>
+        <span class="sr">Still mode</span>
+      </button>
+      <a class="btn btn-lit sm" href="#get">Get it free</a>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+
+    <!-- 1 · Hero -->
+    <section class="hero" id="hero" data-sky="0" data-glow="1" data-center="0.70,0.52" data-center-m="0.62,0.07" data-zoom="1" aria-labelledby="h-hero">
+      <div class="wrap hero-in">
+        <p class="eyebrow reveal">AAC for nonverbal people · Free forever</p>
+        <h1 id="h-hero" class="display hero-title"><span class="line">No one should</span> <span class="line">have to pay</span> <span class="line">to be <em class="lit-word">heard.</em></span></h1>
+        <p class="lead reveal">LuminAAC gives a voice to people who can't speak yet, and a bridge to the families and caregivers who love them. The full app. Free. Forever.</p>
+        <p class="actions reveal">
+          <a class="btn btn-lit" href="#get">Get LuminAAC free</a>
+          <a class="btn btn-ghost" href="#see">Watch it speak</a>
+        </p>
+      </div>
+      <p class="tap-hint reveal" aria-hidden="true"><span class="dot"></span> Tap the light. It speaks.</p>
+      <a class="scroll-cue" href="#manifesto" aria-label="Scroll to the story"><span></span></a>
+    </section>
+
+    <!-- 2 · Manifesto -->
+    <section class="manifesto" id="manifesto" data-sky="0" data-center="0.5,0.5" data-center-m="0.5,0.9" data-zoom="1.6" aria-label="What we believe">
+      <div class="wrap">
+        <div class="scrub-track"><p class="scrub display">Somewhere right now, someone knows exactly what they want to say. Too often, the words they need are kept in a box, behind a price tag or a subscription.</p></div>
+        <p class="manifesto-end display reveal">A voice is a right, <br />not a subscription.</p>
+      </div>
+    </section>
+
+    <!-- 3 · The box -->
+    <section class="box-sec" id="why" data-sky="0" data-center="0.5,0.62" data-center-m="0.5,0.22" data-zoom="0.8" aria-labelledby="h-box">
+      <div class="box-pin">
+        <div class="wrap box-grid">
+          <div class="box-copy">
+            <p class="eyebrow">The difference</p>
+            <h2 id="h-box" class="display h2"><span class="swap swap-a">Other apps keep a voice in a box.</span><span class="swap swap-b" aria-hidden="true">We opened the box.</span></h2>
+            <p class="body">Most AAC apps cost hundreds of dollars, or charge every month. When the payments stop, the voice can stop too.</p>
+            <p class="body">LuminAAC has no paywall, no trial that runs out, no ads and no premium tier for families. Schools and clinics that want professional tools help keep it free for everyone else.</p>
+          </div>
+          <div class="box-stage" aria-hidden="true">
+            <div class="box3d">
+              <div class="face back"></div>
+              <div class="face left"></div>
+              <div class="face right"></div>
+              <div class="face front"><span class="price">$ / month</span><svg class="lock" viewBox="0 0 48 56"><rect x="6" y="24" width="36" height="28" rx="6" /><path d="M14 24v-8a10 10 0 0 1 20 0v8" fill="none" /></svg></div>
+              <div class="face lid"></div>
+            </div>
+            <div class="freed">
+              <span class="ftile" data-c="people">I</span>
+              <span class="ftile" data-c="action">want</span>
+              <span class="ftile" data-c="little">to</span>
+              <span class="ftile" data-c="action">be</span>
+              <span class="ftile" data-c="describe">heard</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 · Story -->
+    <section class="story" id="story" data-sky="0" data-warm="1" data-center="0.22,0.5" data-center-m="0.5,0.2" data-zoom="1.25" aria-labelledby="h-story">
+      <div class="wrap story-grid">
+        <svg class="story-mandala" id="storyMandala" viewBox="-110 -110 220 220" aria-hidden="true"></svg>
+        <div class="story-copy">
+          <p class="eyebrow reveal">Why LuminAAC exists</p>
+          <h2 id="h-story" class="display h2 reveal">Built by a dad who refused to accept it.</h2>
+          <p class="body reveal">I'm a single dad. My son is nonverbal. Not yet verbal, I like to say. When we went looking for a voice for him, we found two kinds: ones that boxed him into someone else's idea of what he should say, and ones that locked his words behind a subscription.</p>
+          <p class="body reveal">I couldn't accept either. So I built the app I wish we'd been handed: one that learns how he already communicates, keeps his words on our own devices, and never asks for a credit card.</p>
+          <blockquote class="pull reveal"><p class="display">“No one should have to pay for their voice to be heard.”</p><footer>The founder of LuminAAC, and a dad</footer></blockquote>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 · Constellation of differences -->
+    <section class="diff" id="different" data-sky="0" data-center="0.5,0.5" data-center-m="0.5,0.05" data-zoom="1.9" data-glow="0.45" aria-labelledby="h-diff">
+      <div class="wrap">
+        <p class="eyebrow reveal">What makes it different</p>
+        <h2 id="h-diff" class="display h2 reveal">Built around the person, not the price.</h2>
+        <div class="constellation" id="constellation">
+          <svg class="c-lines" viewBox="-200 -200 400 400" aria-hidden="true"></svg>
+          <div class="c-core" aria-hidden="true"><img src="/brand/logo-mark.svg" alt="" width="64" height="64" /></div>
+          <div class="c-nodes" role="tablist" aria-label="What makes LuminAAC different"></div>
+        </div>
+        <div class="c-panel" id="cPanel" role="tabpanel" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- 6 · Walkthroughs -->
+    <section class="see" id="see" data-sky="1" data-center="0.85,0.2" data-center-m="0.5,0.08" data-zoom="1.4" aria-labelledby="h-see">
+      <div class="wrap">
+        <p class="eyebrow reveal">See it speak</p>
+        <h2 id="h-see" class="display h2 reveal">Five places, one voice.</h2>
+        <p class="body intro reveal">These are real recordings of LuminAAC on a tablet. Nothing is staged.</p>
+      </div>
+      <div class="see-pin">
+        <div class="wrap see-grid">
+          <ol class="chapters" id="chapters">
+            <li class="chapter is-on" data-vid="talk"><button type="button"><span class="ch-n">01</span><span class="ch-t">Talk</span></button><div class="ch-body"><h3 class="display">Tap, and it speaks.</h3><p>Colour-coded words that stay in the same place, so hands learn where they live. Build a sentence and say it out loud.</p></div></li>
+            <li class="chapter" data-vid="calm"><button type="button"><span class="ch-n">02</span><span class="ch-t">Calm</span></button><div class="ch-body"><h3 class="display">A place to breathe.</h3><p>Show how big a feeling is, ask for what helps, and breathe with a slow light.</p></div></li>
+            <li class="chapter" data-vid="day"><button type="button"><span class="ch-n">03</span><span class="ch-t">My day</span></button><div class="ch-body"><h3 class="display">Know what comes next.</h3><p>Visual plans for the store, the doctor and the morning. Tick off each step and say what you need along the way.</p></div></li>
+            <li class="chapter" data-vid="play"><button type="button"><span class="ch-n">04</span><span class="ch-t">Play</span></button><div class="ch-body"><h3 class="display">Learning that feels like play.</h3><p>Stories and twenty games. In Lantern Sky, every word floats up as a lantern.</p></div></li>
+            <li class="chapter" data-vid="bridge"><button type="button"><span class="ch-n">05</span><span class="ch-t">The Bridge</span></button><div class="ch-body"><h3 class="display">For everyone who listens.</h3><p>Caregivers catch the moments that matter, learn which sounds mean what, and share it with the whole circle.</p></div></li>
+          </ol>
+          <figure class="device">
+            <div class="device-frame">
+              <div class="screen">
+                <video id="seeVideo" muted playsinline loop preload="metadata" poster="/welcome/media/talk.jpg" aria-label="Walkthrough of LuminAAC: Talk">
+                  <source src="/welcome/media/talk.mp4" type="video/mp4" />
+                  <source src="/welcome/media/talk.webm" type="video/webm" />
+                </video>
+                <button class="play-btn" id="playBtn" type="button" hidden aria-label="Play the walkthrough"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l11 7-11 7z" /></svg></button>
+              </div>
+            </div>
+            <figcaption><span id="seeCap">Talk</span> · recorded in the app</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 · Pledge -->
+    <section class="pledge" id="pledge" data-sky="1" data-center="0.5,0.5" data-zoom="1.1" aria-labelledby="h-pledge">
+      <div class="wrap pledge-in">
+        <p class="eyebrow reveal">What it costs to be heard</p>
+        <h2 id="h-pledge" class="zero" aria-label="Zero dollars"><span class="cur">$</span><span class="num">0</span></h2>
+        <p class="per" aria-live="polite"><span id="per">per month</span></p>
+        <p class="lead reveal">Free for nonverbal people, their families and caregivers. The full app, forever. That isn't a launch offer. It's the point.</p>
+        <p class="small reveal">And it's open source under the MIT licence, so no one can ever take it away.</p>
+      </div>
+    </section>
+
+    <!-- 8 · Get it -->
+    <section class="get" id="get" data-sky="1" data-center="0.5,0.95" data-zoom="1.3" aria-labelledby="h-get">
+      <div class="wrap">
+        <p class="eyebrow reveal">Get LuminAAC</p>
+        <h2 id="h-get" class="display h2 reveal">Free on the devices you already have.</h2>
+        <div class="get-grid">
+          <article class="get-card primary">
+            <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" /></svg>
+            <h3>Open it in your browser</h3>
+            <p>Works on iPad, Android tablets, Chromebooks, phones and computers at <strong>luminaac.app</strong>. Nothing to sign up for.</p>
+            <a class="btn btn-lit" href="https://luminaac.app/">Open My Voice</a>
+          </article>
+          <article class="get-card">
+            <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3" /><path d="M12 7v7M9 11l3 3 3-3" /></svg>
+            <h3>Add it to your home screen</h3>
+            <p>It opens like an app and keeps working with no internet.</p>
+            <a class="btn btn-ink" href="https://luminaac.app/">Go to luminaac.app</a>
+            <details class="how">
+              <summary>How to install</summary>
+              <p><strong>iPad and iPhone:</strong> open luminaac.app in Safari, tap Share, then Add to Home Screen.</p>
+              <p><strong>Android and Chromebook:</strong> open luminaac.app in Chrome, open the menu, then Install app.</p>
+            </details>
+          </article>
+          <article class="get-card">
+            <svg class="gi" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5" /><path d="M5 19h14" /></svg>
+            <h3>App Store and Google Play</h3>
+            <p>Native apps are on the way. They'll be free too.</p>
+            <span class="pill">Coming soon</span>
+          </article>
+        </div>
+        <p class="get-more reveal">For caregivers: <a href="https://luminaac.app/bridge.html">open the Bridge</a> · <a href="https://luminaac.app/guide.html">read the guide</a> · <a href="https://github.com/marcusdax/luminaac-ultimate">see the code</a></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot" data-sky="1">
+    <div class="wrap foot-in">
+      <p class="brand"><img src="/brand/logo-mark.svg" alt="" width="28" height="28" /><span>LuminAAC</span></p>
+      <p class="foot-line display">No one should have to pay to be heard.</p>
+      <p class="small">Free for families, forever · Open source (MIT) · Words stay on your devices unless you choose to sync</p>
+    </div>
+  </footer>
+
+  <script src="/welcome/vendor/gsap.min.js" defer></script>
+  <script src="/welcome/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="/welcome/vendor/SplitText.min.js" defer></script>
+  <script src="/welcome/vendor/lenis.min.js" defer></script>
+  <script src="/welcome/field.js" defer></script>
+  <script src="/welcome/site.js" defer></script>
+</body>
+</html>

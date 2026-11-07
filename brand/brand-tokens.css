@@ -13,3 +13,42 @@
   --mist: #90a4ae;         /* brand neutral */
   --grow: #4caf50;         /* success from brand palette (decorative) */
 }
+
+/* Website ("Night to light", see DESIGN-SITE.md). Marketing pages only;
+   the app keeps tokens.css. Builds on --lit, --dusk, --ink and --s* there. */
+:root {
+  /* colour */
+  --site-abyss: #080c11;        /* hero top, deepest night */
+  --site-dawn: #2b2622;         /* warm band between night and day */
+  --site-day: #f6f2ea;          /* closing "free forever" section, warm paper */
+  --site-ink-night: #eef2f4;    /* text on night, 16.4:1 on --night-sky */
+  --site-ink-night-soft: #a9b6bf; /* secondary on night, 8.9:1 */
+  --glow-lit: 0 0 48px rgba(242, 179, 61, 0.35);
+  --glow-sky: 0 0 40px rgba(100, 181, 246, 0.28);
+
+  /* type */
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --fs-hero: clamp(3.25rem, 8.5vw, 7rem);   --lh-hero: 1;
+  --fs-d1: clamp(2.5rem, 5.5vw, 4.5rem);    --lh-d1: 1.05;
+  --fs-d2: clamp(1.75rem, 3.2vw, 2.75rem);  --lh-d2: 1.15;
+  --fs-lead: 1.375rem;  --lh-lead: 1.45;
+  --fs-body: 1.125rem;  --lh-site-body: 1.6;
+  --fs-ui: 1rem;        --lh-ui: 1.4;
+  --fs-meta: 0.875rem;
+  --measure: 38rem;
+
+  /* space and layout */
+  --s8: 64px; --s9: 96px;
+  --sec: clamp(96px, 16vh, 200px);
+  --wrap: 72rem;
+  --gutter: clamp(16px, 4vw, 48px);
+
+  /* shape */
+  --r-card: 22px;
+  --r-media: 28px;
+
+  /* motion */
+  --t-reveal: 700ms;
+  --t-scene: 1200ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
