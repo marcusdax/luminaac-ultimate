@@ -30,16 +30,6 @@
   ],
   "rewrites": [
     {
-      "source": "/",
-      "has": [
-        {
-          "type": "host",
-          "value": "luminaac.org"
-        }
-      ],
-      "destination": "/welcome/index.html"
-    },
-    {
       "source": "/api/:path*",
       "destination": "/api/index"
     }
@@ -57,26 +47,15 @@
   ],
   "redirects": [
     {
-      "source": "/welcome",
+      "source": "/",
       "has": [
         {
           "type": "host",
           "value": "luminaac.org"
         }
       ],
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/welcome/",
-      "has": [
-        {
-          "type": "host",
-          "value": "luminaac.org"
-        }
-      ],
-      "destination": "/",
-      "permanent": true
+      "destination": "/welcome/",
+      "permanent": false
     }
   ]
 }
