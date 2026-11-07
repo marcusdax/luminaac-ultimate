@@ -30,6 +30,10 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 21 }
       - uses: android-actions/setup-android@v3
+        # The default package list includes the legacy "tools" package, which
+        # cmdline-tools 16+ no longer ships, so sdkmanager exits 1. Gradle
+        # installs the platform and build-tools it needs on its own.
+        with: { packages: platform-tools }
       - name: Add the Android project
         working-directory: native
         run: npm install && npm run add:android && npx cap sync android && node native-config.mjs android
