@@ -5,8 +5,8 @@ backend/test.mjs
 backend/data/
 native/
 tests/
-docs/
+/docs/
 *.md
 !PRIVACY.md
 !THIRD-PARTY.md
-tools/
+/tools/
