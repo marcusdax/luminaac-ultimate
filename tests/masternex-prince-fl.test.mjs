@@ -14,7 +14,11 @@ test('LuminAAC - MASTERNEX PRINCE TurboQuant 4-Bit Compression & Decompression',
   // 17 features: 4-bit packed is Math.ceil(17 / 2) = 9 bytes
   assert.equal(compressed.packedNibbles.length, 9);
   assert.equal(compressed.dim, 17);
-  assert.ok(compressed.rdp_epsilon > 0);
+  // With no noise there is no privacy: epsilon is infinite. The old check (> 0) passed
+  // either way; see docs/RESEARCH_EVALUATION.md section 5.
+  assert.equal(compressed.rdp_epsilon, Infinity);
+  // With the default noise (sigma 0.3) one release has RDP epsilon(4) = 4 / (2 * 0.09).
+  assert.ok(Math.abs(compressClientUpdate(rawDelta).rdp_epsilon - 4 / (2 * 0.3 ** 2)) < 1e-9);
 
   const decompressed = decompressClientUpdate(compressed);
   assert.equal(decompressed.length, 17);

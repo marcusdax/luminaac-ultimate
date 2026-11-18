@@ -301,3 +301,11 @@ Stars and last push dates come from the GitHub API on November 2, 2026. LuminAAC
 | [transistorsoft/capacitor-background-geolocation](https://github.com/transistorsoft/capacitor-background-geolocation) | 144 | MIT repo, but Android release builds need a paid licence key | **Avoid** for now. |
 
 **Takeaway:** none of the new features needed GPL code. Next candidates are OBF import and export, and transformers.js as the fallback for Vosk.
+
+## Round 5: enhancement milestones M1–M3 (November 18, 2026)
+
+The full evaluation for this round is in [docs/RESEARCH_EVALUATION.md](docs/RESEARCH_EVALUATION.md). It covers the models, libraries, datasets and clinical ideas, with licences, decisions and what still needs checking. In short:
+- **Adopted, on the device and opt-in:** all-MiniLM-L6-v2 (meaning search), SmolLM2-135M-Instruct (sentence helper, behind a watchdog), and four more Kokoro voices with pitch shaping that needs no download.
+- **Adopted, optional and outside the device:** Ollama, and an OpenAI-compatible service with the family's own key. Both are off by default; the key option needs a consent tick.
+- **Not downloaded yet:** willwade/AACConversations, for calibrating the watchdog.
+- **Audited, not connected:** `masternex-prince-fl.js`. Its privacy accounting overstates what it guarantees, and its robust aggregation can't be combined with `fl-core.js`'s secure aggregation.

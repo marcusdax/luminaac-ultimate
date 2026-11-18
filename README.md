@@ -63,6 +63,7 @@ A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as 
 | 17 | v0.18 | **Motion** (from [the motion concept](docs/MOTION-CONCEPT.md)): one motion gate with a three-step Movement setting; words travel from tile to sentence bar; a breathing Calm sky; slow shader skies in games; five new games (Lantern Sky, Tide Pool, Sound Garden, Aurora Feelings, a 3D Word Train); Bridge counters and sync beam; a scroll-story page, `about.html` |
 | 16 | v0.17 | **Sound Path B–D and Safety Links** (from [the Sound Path plan](docs/SOUND-PATH.md)): Watch my mouth (family clips on the device), Mouth Mirror (jaw and lips, camera off by default), Sound and treat; tracker cards with battery reminders, an "if found" QR page with no location, a wandering plan sheet, smart sensor events and the "going out together" door rule; Bluetooth near or far (Android/Chrome); research-mode wristband "calm check?" behind a separate consent; export of labelled sounds |
 | 14 | v0.14.2 to v0.15 | **Lock-up fix and shared boards.** Sound games, stories and Sound Path no longer freeze the page after one go (their pop-ups opened inside the hidden Talk view); the microphone is let go when a game closes. **Open Board Format** import and export (.obf and .obz) in the Caregiver area, so boards move to and from CoughDrop, Cboard, AsTeRICS Grid and other AAC apps. |
+| 18 | v0.18.1 to v0.20 | **Enhancement milestones M1–M3.** M1: one voice and log for every spoken thing, Explore quietly covers every button, the Bridge updates My Voice in the same tab, offline symbols, a "Now" row for Bridge rules, hold-to-choose and ignore-repeat-taps for unsteady hands, switch scanning that reaches every choice, and WCAG AA contrast in every theme. M2: partner modeling mode, gestalt scripts with NLA stages, a body map, choice boards and Bridge routines in Plans, Find a word, word endings, OBF label and vocalization. M3: lighter Kokoro voices with pitch and expressive tone, meaning search, an opt-in sentence helper with a watchdog (rules, on-device model, Ollama or the family's own key), and a draft communication report for SLPs with append-only corrections. See [the research evaluation](docs/RESEARCH_EVALUATION.md) |
 
 ## Architecture
 
@@ -149,9 +150,21 @@ node tests/nav.test.mjs               # 24 tests: redesign hubs, old links, the 
 node tests/play.test.mjs              # 29 tests: the eight word games, play world, tile layout, pose check
 node tests/obf.test.mjs               # 17 tests: Open Board Format export, .obz zip, import from other apps
 node tests/dialog-guard.test.mjs      # 11 tests: pop-ups can never lock the page
+node tests/contrast.test.mjs          # 212 colour pairs: WCAG AA text and parts in day, night, system dark and high contrast
+node tests/slp.test.mjs               # 56 tests: word endings, search, body map, scripts, choice boards, routines in Plans
+node tests/m3.test.mjs                # 89 tests: voice pitch, meaning search, sentence watchdog, communication report
+node tests/sw.test.mjs                # offline list matches the files; every page asset is cached
 # Browser checks (Playwright, with a static server on :8765):
 python3 tests/browser/talk-games.py   # plays every game, story and Sound Path game 3 times; nav must stay tappable
 python3 tests/browser/obf.py          # board export and import in the Caregiver area
+# M1–M3 (Node + Playwright: NODE_PATH=$(npm root -g) node <file>)
+node tests/browser/speech-explore.mjs # one voice, one log, Explore quietly
+node tests/browser/sync-offline.mjs   # same-tab Bridge updates, offline symbols
+node tests/browser/context-strip.mjs  # the "Now" row never moves the board
+node tests/browser/touch-tremor.mjs   # hold to choose, ignore repeat taps
+node tests/browser/scanning.mjs       # switch scanning reaches every choice
+node tests/browser/slp-m2.mjs         # modeling, scripts, body map, choices, find a word, word endings
+node tests/browser/ai-m3.mjs          # voice, meaning search, sentence helper and its consent gate, report
 ```
 
 ## Project structure

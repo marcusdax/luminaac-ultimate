@@ -2,6 +2,32 @@
 
 All notable changes. Versions match the service worker cache name in `sw.js`.
 
+## 0.20.0 (18 November 2026)
+Milestone M3 (features 14–17). Everything new is off by default except the built-in meaning search.
+### Added
+- **Voices:** Kokoro Sky, Nicole, Puck and Isabella. **Pitch** (+1 to +4 semitones) keeps word timing. **Expressive voice** brightens happy messages and softens sad ones (`voice-core.js`).
+- **Meaning search:** Find a word shows related board words ("thirsty": drink, water) from a built-in table. An optional on-device all-MiniLM-L6-v2 (23 MB) adds model matches. In the Bridge, moment explanations link to the signal sharing the most words or ideas, and say which (`semantic-core.js`).
+- **Sentence helper (✨):** choose built-in rules, SmolLM2-135M on the device, Ollama, or an OpenAI-compatible service with the family's own key (consent tick; only the message words are sent; the key is kept out of the data download). A watchdog keeps only sentences that use the child's words in order and add nothing but helper words. Helped messages are marked and left out of MLU (`expand-core.js`, `byok.js`).
+- **Communication report** in Bridge → Insights: what messages were for (requesting, protesting, commenting, social, asking), core vs fringe, MLU in words, and independent vs modeled. Each figure shows its source, the report is marked as a draft, corrections are kept as append-only history, and it downloads as CSV and JSON (`clinical-core.js`, `bridge-clinical.js`).
+- **Docs:** [docs/RESEARCH_EVALUATION.md](docs/RESEARCH_EVALUATION.md), including an audit of `masternex-prince-fl.js`.
+- Tests: `tests/m3.test.mjs` (89) and `tests/browser/ai-m3.mjs` (18).
+
+## 0.19.0 (18 November 2026)
+Milestone M2 (features 9–13).
+### Added
+- **Modeling mode:** adult presses get a numbered trail and their own log, and never count as the child's.
+- **Scripts (gestalts)** with NLA stages: stage 1 says the phrase whole, stage 2+ splits it at " / ".
+- **Body map** in Calm. Two quick phrases added at the end: "Stop" and "I need the bathroom".
+- **Choice boards** (2 to 8 options) made in the Bridge, and Bridge routines in Plans.
+- **Find a word** and **word endings** (eating, eats, ate; dogs).
+- OBF keeps label and vocalization apart.
+### Fixed
+- Bridge emoji fields that took only 4 characters.
+- The offline test had the cache version written in; it now reads it from `sw.js`.
+
+## 0.18.2 and 0.18.1 (18 November 2026)
+Milestone M1 (features 1–8): one voice and log for everything spoken; Explore quietly covers every button; same-tab Bridge updates; offline OpenMoji; a "Now" row for Bridge rules; hold-to-choose and ignore-repeat-taps; switch scanning that reaches every choice; WCAG AA contrast in every theme (`tests/contrast.test.mjs`).
+
 ## 0.18.0 (3 November 2026)
 Builds `docs/MOTION-CONCEPT.md`, increments M1 to M5. The board, tiles, word colours and pictures don't change.
 ### Added

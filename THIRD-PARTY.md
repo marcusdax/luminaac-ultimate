@@ -27,6 +27,10 @@ These files are vendored in `vendor/` and served from the app itself. There is n
 - **Models from the Hugging Face Hub**, downloaded once and cached by the browser:
   - `onnx-community/wav2vec2-base-Speech_Emotion_Recognition-ONNX` (q8, about 95 MB). This is an ONNX conversion of a wav2vec2-base fine-tune on acted-speech emotion datasets. Check its model card for the licence and for dataset licences before commercial use.
   - `onnx-community/Kokoro-82M-v1.0-ONNX` (q8, about 92 MB), Apache-2.0, plus its voice files.
+  - `Xenova/all-MiniLM-L6-v2` (q8, about 23 MB), Apache-2.0. Only when "Meaning search" is turned on (v0.20).
+  - `HuggingFaceTB/SmolLM2-135M-Instruct` (4-bit ONNX, about 118 MB), Apache-2.0. Only when the sentence helper is set to "Small model on this device" (v0.20).
+- **Ollama** (MIT, [ollama/ollama](https://github.com/ollama/ollama)), on the family's own computer at `localhost:11434`. Only when the sentence helper is set to Ollama. Nothing is bundled.
+- **An OpenAI-compatible service with the family's own key.** Only when the sentence helper is set to it and a grown-up has ticked consent. Only the message words are sent. The key is stored in `luminaac:byok` on the device and is never in "Download my data". The service's own terms apply.
 - **YouTube IFrame Player API** (`www.youtube.com/iframe_api`) with the privacy-enhanced host `www.youtube-nocookie.com`, only when a child opens a video a caregiver added. Governed by the YouTube API Services Terms and Developer Policies, not an open-source licence. We keep YouTube's player and branding, don't download, cache or alter videos, and don't hide ads. Thumbnails (`i.ytimg.com`) load only if a caregiver turns them on. The service worker never caches YouTube.
 - **Capacitor** 7 (MIT) and `@capacitor-community/background-geolocation` (MIT). These are only in the `native/` scaffold and aren't installed or vendored.
 
@@ -54,3 +58,6 @@ LuminAAC's own code is MIT. Two picture sets don't fit that licence, so take car
 - **OpenMoji (CC BY-SA 4.0) in `vendor/openmoji/`.** These are vendored in the repository. Share-alike applies to the pictures themselves, not to the MIT code around them. You must keep the attribution, and any modified pictures must stay CC BY-SA 4.0. They aren't MIT-licensed even though they ship in an MIT repository.
 - **ARASAAC (CC BY-NC-SA 4.0).** These aren't vendored; they load from ARASAAC's servers only when turned on. The non-commercial clause means a paid plan or commercial deployment can't use ARASAAC pictograms without permission from the Government of Aragón. Before charging, turn ARASAAC off and use OpenMoji or another commercially licensed set (for example Mulberry, CC BY-SA), or get a licence.
 - **Speech-emotion model.** Check the model card and its training-dataset licences before commercial use (see above).
+
+## Added in v0.19 and v0.20
+No new vendored code. `slp-core.js`, `voice-core.js`, `semantic-core.js`, `expand-core.js`, `clinical-core.js` and `byok.js` were written for LuminAAC. The local-first "bring your own key" order follows the idea in [K-Dense BYOK](https://github.com/marcusdax/k-dense-byok); no code was copied. Where each model, dataset and clinical idea comes from is in [docs/RESEARCH_EVALUATION.md](docs/RESEARCH_EVALUATION.md).

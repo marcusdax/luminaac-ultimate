@@ -23,7 +23,7 @@
 - **OpenMoji fallback.** Fallback pictures are decorative (`alt=""`). The word label is always visible text.
 
 ## Known gaps
-- Eye-gaze not built (eye trackers that drive the pointer work with dwell); two-switch step scanning not built.
+- Eye-gaze not built (eye trackers that drive the pointer work with dwell). Two-switch step scanning was added later; see "M1–M3" below.
 - Recorded moments have no captions; caregivers' annotation text acts as a description.
 - ARASAAC pictograms load when online; words with no ARASAAC match now use local OpenMoji pictures, but a few emoji still depend on platform fonts in non-tile places.
 - Leaflet's map itself is only partly keyboard-operable (pan/zoom yes, placing a zone no) — the form is the accessible path.
@@ -41,3 +41,16 @@
 - An automated sweep of all 12 Bridge pages and every My Voice view, in both layouts, at 1440×960 and 390×844, found no control under 24×24 px, no control without an accessible name, no ALL-CAPS text and no sideways scrolling, with motion reduced.
 - The simpler layout is now the default, so the child's screen has no Bridge link: the only ways out are Calm and the press-and-hold Caregiver door.
 - The older layout's Bridge header no longer wraps into three-line buttons on a phone, and the tab strip keeps the open tab in view.
+
+## M1–M3 (v0.18.1 to v0.20, November 2026)
+- **Contrast in every theme.** `tests/contrast.test.mjs` checks 212 colour pairs in day, night, night set by the device's dark mode, and high contrast: text at 4.5:1 and meaningful parts (word-type bands, borders, the focus ring next to every tile colour) at 3:1. All pass. Before M1, 34 failed. axe-core finds no contrast problems on My Voice or the Bridge in any theme.
+- **Focus ring.** Dark gold (`--focus`) in day, bright gold in the dark themes, so it shows at 3:1 or more next to every tile.
+- **Unsteady hands.** Two settings in the Bridge, both off by default: "Hold a button this long to choose it" (0.3 to 1 s, with a filling ring, which is a still ring with reduced motion) and "After a choice, ignore taps for" (0.5 to 2 s). Only touch and mouse taps are filtered, so keyboard, switch and dwell go straight through. "I need help" is never paused. Buttons act on release (WCAG 2.5.2).
+- **Switch scanning.** Every control can now be reached, including section headers (`<summary>`) and checkboxes. Space and Enter are left alone while typing in a form. Spoken previews wait for the child's own speech to finish. Board size uses `--board-zoom` rather than CSS `zoom`.
+- **Motor planning.** New things never move the board. The "Now" row shares the Next line, the Scripts tab comes last, new quick phrases go at the end, and the modeling banner and sentence helper float over the page. Browser tests compare tile positions before and after.
+- **Body map.** Each body part is a real button, at least 24 px, with no two overlapping (unit test). Touch, keyboard, dwell and switch scanning all reach it.
+- **Find a word.** A native `<dialog>` with a labelled search field and a live result count. Choosing a result opens the word's folder and lights its button (a still ring with reduced motion).
+- **Modeling mode.** A fixed banner with a "Stop modeling" button. The numbered trail is a ring plus a number, not colour alone.
+- **Sentence helper.** A group with a heading. The child's own words come first, the status line is `role="status"`, and Escape closes it.
+- **Communication report.** A real table with a caption and header cells. The correction selects have labels. The "Draft" note is `role="note"`.
+- axe-core (WCAG 2.0 to 2.2 A and AA rules) finds no violations on any of these screens in day, night or high contrast.
