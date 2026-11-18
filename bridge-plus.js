@@ -74,7 +74,7 @@ $("#rewardPick").addEventListener("change", (e) => { db().practice.reward = e.ta
 // ---------- Access settings (applied live in My Voice by access.js) ----------
 function renderAccess() {
   const f = $("#formAccess"), a = db().access;
-  f.mode.value = a.mode; f.size.value = a.size; f.dwell.value = String(a.dwell); f.scan.checked = !!a.scan; f.scanMs.value = String(a.scanMs); f.safety.checked = a.safety !== false;
+  f.mode.value = a.mode; f.size.value = a.size; f.dwell.value = String(a.dwell); f.acceptMs.value = String(a.acceptMs || 0); f.tapDebounce.value = String(a.tapDebounce || 0); f.scan.checked = !!a.scan; f.scanMs.value = String(a.scanMs); f.safety.checked = a.safety !== false;
   const c = { method: "rowcol", switches: 1, firstHold: 500, loops: 3, debounce: 250, auditory: false, ...(a.scanCfg || {}) };
   f.method.value = c.method; f.switches.value = String(c.switches); f.firstHold.value = String(c.firstHold); f.loops.value = String(c.loops); f.debounce.value = String(c.debounce); f.auditory.checked = !!c.auditory;
   f.querySelector(".scan-opts").hidden = !a.scan;
@@ -82,7 +82,7 @@ function renderAccess() {
 }
 $("#formAccess").addEventListener("change", (e) => {
   const f = e.currentTarget, a = db().access;
-  a.mode = f.mode.value; a.size = +f.size.value; a.dwell = +f.dwell.value; a.scan = f.scan.checked; a.scanMs = +f.scanMs.value; a.safety = f.safety.checked;
+  a.mode = f.mode.value; a.size = +f.size.value; a.dwell = +f.dwell.value; a.acceptMs = +f.acceptMs.value; a.tapDebounce = +f.tapDebounce.value; a.scan = f.scan.checked; a.scanMs = +f.scanMs.value; a.safety = f.safety.checked;
   a.scanCfg = { method: f.method.value, switches: +f.switches.value, firstHold: +f.firstHold.value, loops: +f.loops.value, debounce: +f.debounce.value, auditory: f.auditory.checked };
   B.save("Changed how My Voice responds"); renderAccess(); B.toast("Saved. My Voice updates right away.");
 });

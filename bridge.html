@@ -160,6 +160,11 @@
             <label>Button size <span class="soft" id="sizeOut"></span><input type="range" name="size" min="80" max="160" step="10" /></label>
             <label>Select by resting the pointer (dwell)
               <select name="dwell"><option value="0">Off</option><option value="800">0.8 seconds</option><option value="1200">1.2 seconds</option><option value="2000">2 seconds</option></select></label>
+            <label>Hold a button this long to choose it
+              <select name="acceptMs"><option value="0">Off: a tap chooses</option><option value="300">0.3 seconds</option><option value="500">0.5 seconds</option><option value="1000">1 second</option></select></label>
+            <label>After a choice, ignore taps for
+              <select name="tapDebounce"><option value="0">Off</option><option value="500">0.5 seconds</option><option value="1000">1 second</option><option value="2000">2 seconds</option></select></label>
+            <p class="soft small">For shaky or unsteady hands: a held press stops accidental brushes, and the pause stops double picks. "I need help" is never paused.</p>
             <label class="check"><input type="checkbox" name="scan" /> Switch scanning</label>
             <fieldset class="scan-opts"><legend>Scanning</legend>
               <label>Switches

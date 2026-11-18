@@ -47,7 +47,7 @@ export function seed() {
     // Phase 2 (folded in from LuminAAC-Repository, luminaac, LuminAAC-Advanced and the spec doc)
     alerts: [],
     feedback: [],
-    access: { mode: "standard", size: 100, dwell: 0, scan: false, scanMs: 1500, safety: true, potty: false, sound: false },
+    access: { mode: "standard", size: 100, dwell: 0, acceptMs: 0, tapDebounce: 0, scan: false, scanMs: 1500, safety: true, potty: false, sound: false },
     stories: [
       { id: "st1", title: "Going to the dentist", kind: "story", steps: [
         { e: "🚗", text: "We drive to the dentist." },
