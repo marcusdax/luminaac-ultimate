@@ -17,7 +17,7 @@ svg { display: block; }
 [hidden] { display: none !important; }
 
 :focus-visible {
-  outline: 3px solid var(--lumen);
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
   border-radius: 6px;
 }
@@ -69,7 +69,7 @@ main:focus { outline: none; }
 :root[data-theme="contrast"] .strip { border: 2px solid var(--ink); }
 .strip-words { display: flex; flex-wrap: wrap; gap: 0.15em 0.4em; font-size: var(--fs-xl); font-weight: 800; line-height: var(--lh-tight); }
 .strip-words:empty { display: none; }
-.strip-empty { font-size: var(--fs-md); opacity: 0.75; }
+.strip-empty { font-size: var(--fs-md); opacity: 0.85; }
 .strip-words:not(:empty) + .strip-empty { display: none; }
 
 .word {

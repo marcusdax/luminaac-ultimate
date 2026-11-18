@@ -15,11 +15,16 @@
   /* Brand: the lit sentence strip */
   --dusk: #22313d;         /* strip background */
   --dusk-ink: #c8d3dc;     /* resting words on strip */
-  --lumen: #f2b33d;        /* lit word, focus ring, brand glow */
+  --sos-ink: #4a2600;      /* "I need help" label */
+  --home-ink: #12385f;     /* "I want to go home" label */
+  --warm-ink: #4a2600;     /* text on the warm ember tint */
+  --lumen: #f2b33d;        /* lit word, brand glow */
+  --ok-ink: #287741;       /* success as small text: --ok is 4.1:1 on paper, this is 4.7:1 */
+  --focus: #9b7327;        /* focus ring: light gold was 1.6:1 on day backgrounds; this is 3.2:1+ on every day surface */
   --lumen-soft: rgba(242, 179, 61, 0.22);
 
   /* Word classes (band = strong edge, tint = tile fill) */
-  --wc-people: #c99a00;      --wc-people-tint: #fbf1cc;
+  --wc-people: #a78000;      --wc-people-tint: #fbf1cc;  /* was #c99a00: 2.3:1 on its tile; the band must reach 3:1 */
   --wc-action: #2f8a4c;      --wc-action-tint: #dcefe1;
   --wc-describe: #2f6fb3;    --wc-describe-tint: #dbe7f5;
   --wc-thing: #c7651c;       --wc-thing-tint: #fae3cf;
@@ -90,6 +95,8 @@
 
 /* Night: dim, warm-leaning dark for evenings and light sensitivity */
 :root[data-theme="night"] {
+  --focus: var(--lumen); --ok-ink: var(--ok);
+  --ember-deep: #f0a04b; --sky-deep: #7cb8f0; --sos-ink: #ffe2b8; --home-ink: #dcecfb; --ember-tint: #3a2a1a; --warm-ink: var(--ink); /* brand "deep" text colours are for light backgrounds */
   --fog: #151c22;
   --paper: #1e2830;
   --paper-raised: #25313a;
@@ -120,6 +127,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
+    --focus: var(--lumen); --ok-ink: var(--ok);
+    --ember-deep: #f0a04b; --sky-deep: #7cb8f0; --sos-ink: #ffe2b8; --home-ink: #dcecfb; --ember-tint: #3a2a1a; --warm-ink: var(--ink);
     --fog: #151c22; --paper: #1e2830; --paper-raised: #25313a;
     --ink: #e6ecef; --ink-soft: #a9b6bf; --line: #34424d;
     --dusk: #0e141a; --dusk-ink: #8f9ea9;
@@ -143,6 +152,9 @@
 
 /* Contrast: pure black and white, color kept only on the band */
 :root[data-theme="contrast"] {
+  --focus: var(--lumen); --ok-ink: var(--ok);
+  --alert: #ff5a50; --ok: #4cff7a;
+  --ember-deep: #ffb35c; --sky-deep: #8cc8ff; --sos-ink: #ffffff; --home-ink: #ffffff; --ember-tint: #000000; --warm-ink: #ffffff;  /* the day reds and greens were too dark on black (red 3.6:1) */
   --fog: #000000;
   --paper: #000000;
   --paper-raised: #000000;
