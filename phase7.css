@@ -6,7 +6,7 @@
 .topic-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: var(--r-chip); border: 2px solid var(--line); background: var(--paper); font-weight: 600; cursor: pointer; }
 .topic-chip:has(input:checked) { border-color: var(--sky-deep); background: var(--sky-tint); color: #12385f; }
 .topic-chip input { width: 20px; height: 20px; min-height: 0; accent-color: var(--sky-deep); }
-.topic-chip:has(input:focus-visible) { outline: 3px solid var(--lumen); outline-offset: 2px; }
+.topic-chip:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
 .form-error { color: #8a231d; background: #fbe4e1; border-radius: 10px; padding: 8px 12px; margin: 0; font-weight: 600; }
 .video-row { align-items: flex-start !important; }
 .video-e { font-size: 28px; line-height: 1; }
@@ -54,7 +54,7 @@
 .mv-talk h3 { margin: var(--s4) 0 var(--s2); font-size: var(--fs-md); }
 .mv-talk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: var(--s2); }
 .mv-word { min-height: 64px; border-radius: var(--r-tile); border: 2px solid var(--wc-thing); background: var(--wc-thing-tint); color: var(--ink); font: 700 var(--fs-md) var(--font); cursor: pointer; padding: 6px; }
-.mv-word:focus-visible, .mv-choice:focus-visible, .mv-drum:focus-visible { outline: 4px solid var(--lumen); outline-offset: 3px; }
+.mv-word:focus-visible, .mv-choice:focus-visible, .mv-drum:focus-visible { outline: 4px solid var(--focus); outline-offset: 3px; }
 .mv-vtile .pic img { width: 100%; max-width: 120px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; }
 .mv-gnote { grid-column: 1 / -1; margin: 0; color: var(--ink-soft); font-weight: 600; }
 .mv-game { width: min(640px, 96vw); }

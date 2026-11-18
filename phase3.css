@@ -1,7 +1,7 @@
 /* Phase 3: safe zones, accounts, devices, feelings, shared learning. Uses the same tokens. */
 .zone-map { position: relative; z-index: 0; isolation: isolate; height: 300px; border-radius: var(--r-tile); border: 1px solid var(--line); margin-bottom: var(--s2, 8px); background: var(--fog); }
 .zone-map.offline { height: 120px; opacity: .6; }
-.zone-map:focus-visible { outline: 4px solid var(--lumen); outline-offset: 3px; }
+.zone-map:focus-visible { outline: 4px solid var(--focus); outline-offset: 3px; }
 .leaflet-container { font: inherit; }
 .leaflet-tooltip.zone-label { background: var(--paper-raised); color: var(--ink); border: 1px solid var(--line); box-shadow: none; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
 .leaflet-tooltip.zone-label::before { display: none; }

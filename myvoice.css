@@ -6,9 +6,9 @@
   border-radius: var(--r-chip); border: 2px solid var(--sky-deep);
   background: var(--sky-tint); color: #12385f; font: 600 var(--fs-md)/1 var(--font); cursor: pointer;
 }
-.mv-chip.is-top { box-shadow: 0 0 0 0 var(--lumen-soft); animation: mvGlow 2.4s var(--ease) infinite; border-color: var(--ember-deep); background: var(--ember-tint); color: #4a2600; }
+.mv-chip.is-top { box-shadow: 0 0 0 0 var(--lumen-soft); animation: mvGlow 2.4s var(--ease) infinite; border-color: var(--ember-deep); background: var(--ember-tint); color: var(--warm-ink); }
 @keyframes mvGlow { 50% { box-shadow: 0 0 0 10px var(--lumen-soft); } }
-.mv-chip:focus-visible, .mv-explore:focus-within { outline: 4px solid var(--lumen); outline-offset: 3px; }
+.mv-chip:focus-visible, .mv-explore:focus-within { outline: 4px solid var(--focus); outline-offset: 3px; }
 .mv-empty, .mv-context { color: var(--ink-soft); font-size: var(--fs-sm); margin: 0; }
 .mv-explore { display: inline-flex; align-items: center; gap: var(--s2); min-height: var(--target-min); padding: 0 var(--s4); border-radius: var(--r-chip); background: var(--paper); border: 1px solid var(--line); font-weight: 600; }
 .mv-explore input { width: 22px; height: 22px; accent-color: var(--sky-deep); }
@@ -33,11 +33,11 @@ body.still .mv-chip.is-top { animation: none; }
 .mv-safety { display: flex; gap: var(--s3); flex-wrap: wrap; }
 .mv-sos {
   min-height: 56px; padding: 0 var(--s5); border-radius: var(--r-chip); cursor: pointer;
-  border: 2px solid var(--ember-deep); background: var(--paper); color: #4a2600; font: 800 var(--fs-md)/1 var(--font);
+  border: 2px solid var(--ember-deep); background: var(--paper); color: var(--sos-ink); font: 800 var(--fs-md)/1 var(--font);
   display: inline-flex; align-items: center; gap: var(--s2);
 }
-.mv-sos.is-home { border-color: var(--sky-deep); color: #12385f; }
-.mv-sos:focus-visible, .mv-none:focus-visible, .mv-pbtn:focus-visible, .mv-close:focus-visible, .mv-undo:focus-visible { outline: 4px solid var(--lumen); outline-offset: 3px; }
+.mv-sos.is-home { border-color: var(--sky-deep); color: var(--home-ink); }
+.mv-sos:focus-visible, .mv-none:focus-visible, .mv-pbtn:focus-visible, .mv-close:focus-visible, .mv-undo:focus-visible { outline: 4px solid var(--focus); outline-offset: 3px; }
 .mv-none { min-height: var(--target-min); padding: 0 var(--s4); border-radius: var(--r-chip); border: 1px dashed var(--line); background: transparent; color: var(--ink-soft); font: 600 var(--fs-sm)/1 var(--font); cursor: pointer; flex: none; }
 .mv-undo { margin-left: var(--s2); min-height: 36px; padding: 0 var(--s3); border-radius: 999px; border: 1px solid currentColor; background: transparent; color: inherit; font-weight: 700; cursor: pointer; }
 .mv-player { border: 0; border-radius: var(--r-sheet); padding: var(--s5); width: min(560px, 94vw); background: var(--paper); color: var(--ink); text-align: center; }
@@ -61,7 +61,7 @@ body.still .mv-chip.is-top { animation: none; }
 
 /* ---------- Access modes (access.js) ---------- */
 /* Button size (Bridge, 80–160%) scales the tiles through a variable, not CSS zoom:
-   zoom is applied unevenly across browsers and pushed a large board off the side.
+   zoom is non-standard and also changes the size the page measures for each element.
    Columns stay fixed, so a bigger setting means taller tiles with larger pictures and words. */
 .grid .tile { min-height: calc(var(--tile-min) * var(--board-zoom, 1)); }
 .grid .tile .pic { font-size: calc(2.4rem * var(--board-zoom, 1)); height: calc(56px * var(--board-zoom, 1)); }
