@@ -2,7 +2,12 @@
 export const MODELS = {
   ser: { id: "onnx-community/wav2vec2-base-Speech_Emotion_Recognition-ONNX", mb: 95, name: "speech feelings model" },
   tts: { id: "onnx-community/Kokoro-82M-v1.0-ONNX", mb: 92, name: "natural voice (Kokoro)" },
+  asr: { id: "onnx-community/whisper-tiny", mb: 150, name: "speech recognition (Whisper)" },
+  predict: { id: "Xenova/distilgpt2", mb: 85, name: "word prediction" },
 };
+// MMS covers 1,107 languages; each model is ~50 MB and cached after first use.
+export const MMS_MB = 50;
+export const mmsTtsModelId = (lang) => `facebook/mms-tts-${lang}`;
 export const KOKORO_VOICES = [
   ["af_heart", "Heart, American English"], ["af_bella", "Bella, American English"], ["am_michael", "Michael, American English"],
   ["bf_emma", "Emma, British English"], ["bm_george", "George, British English"],
@@ -32,7 +37,20 @@ function ask(task, msg, { onProgress, onNote, transfer = [] } = {}) {
 export const load = (task, opts) => ask(task, { type: "load" }, opts);
 // Has this model been downloaded before (works offline)?
 export async function cached(task) {
-  try { const c = await caches.open("transformers-cache"); return (await c.keys()).some((r) => r.url.includes(MODELS[task].id) && r.url.endsWith(".onnx")); } catch { return false; }
+  try {
+    const c = await caches.open("transformers-cache");
+    const id = MODELS[task]?.id ?? (task?.startsWith("tts-mms") ? mmsTtsModelId(task.slice(8) || "eng") : null);
+    if (!id) return false;
+    return (await c.keys()).some((r) => r.url.includes(id) && r.url.endsWith(".onnx"));
+  } catch { return false; }
+}
+// Check if the MMS model for a specific language is cached
+export async function cachedMms(lang) {
+  try {
+    const c = await caches.open("transformers-cache");
+    const id = mmsTtsModelId(lang);
+    return (await c.keys()).some((r) => r.url.includes(id) && r.url.endsWith(".onnx"));
+  } catch { return false; }
 }
 // Decode any recording and resample to 16 kHz mono, as wav2vec2 expects.
 export async function to16k(blob) {
@@ -63,3 +81,38 @@ export async function speakKokoro(text, voice, opts = {}) {
   return r;
 }
 export const stopKokoro = () => { try { player?.stop(); } catch {} };
+
+// ---- Whisper ASR ----
+// Transcribe a recording or Float32Array to text. lang is a Whisper language name
+// ("english", "spanish", "french", …). translate:true converts to English.
+export async function transcribe(input, opts = {}) {
+  const audio = input instanceof Float32Array ? input : await to16k(input);
+  const copy = new Float32Array(audio);
+  return ask("asr", { type: "transcribe", audio: copy, lang: opts.lang, translate: opts.translate }, { ...opts, transfer: [copy.buffer] });
+}
+
+// ---- Neural word prediction ----
+// Returns { predictions: string[], backend, ms } for next-word suggestions.
+// text is the current sentence bar content (e.g. "I want").
+export const predictWords = (text, opts = {}) =>
+  ask("predict", { type: "complete", text: (text || "").trimEnd() + " ", count: opts.count || 5 }, opts);
+
+// ---- MMS multilingual TTS ----
+// lang is an ISO 639-3 code supported by facebook/mms-tts (e.g. "spa", "fra", "hin").
+// Returns { audio: Float32Array, rate: number, backend, ms }.
+export const synthMmsTts = (text, lang, opts = {}) =>
+  ask(`tts-mms-${lang || "eng"}`, { type: "speak", text }, opts);
+
+let mmsPlayer = null;
+export async function speakMms(text, lang, opts = {}) {
+  const r = await synthMmsTts(text, lang, opts);
+  mmsPlayer?.stop?.();
+  const ctx = (speakMms.ctx ||= new (window.AudioContext || window.webkitAudioContext)());
+  if (ctx.state === "suspended") await ctx.resume();
+  const buf = ctx.createBuffer(1, r.audio.length, r.rate); buf.copyToChannel(r.audio, 0);
+  const src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination);
+  mmsPlayer = src; opts.onStart?.(buf.duration);
+  await new Promise((ok) => { src.onended = ok; src.start(); });
+  return r;
+}
+export const stopMms = () => { try { mmsPlayer?.stop(); } catch {} };

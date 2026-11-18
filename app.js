@@ -3,6 +3,7 @@
 import { CORE, FOLDERS, QUICK, SCALE, CALM_NEEDS, PLANS } from "./vocab.js";
 import { KOKORO_VOICES } from "./ai.js";
 import { hasVoice, hasPhoto, playVoice, applyPhoto } from "./symbols.js";
+import { initPredictionBar, updatePredictions, hidePredictionBar, getTtsLang, speakWithMms } from "./neural-features.js";
 import { buildOBZ, readOBZ, wordsFromBoard, mergeWords } from "./obf-core.js";
 import { flyTo, swap, pillMove } from "./motion-gate.js";
 import { mountCalmSky } from "./shader-sky.js";
@@ -81,6 +82,16 @@ function say(text, opts = {}) {
     speechSynthesis?.cancel?.();
     playVoice(text).then((ok) => (ok ? onEnd?.() : say(text, { ...opts, synth: true })));
     return;
+  }
+  if (!opts.system && !opts.synth) {
+    const mmsLang = getTtsLang();
+    if (mmsLang !== "eng") {
+      speakWithMms(text, mmsLang, {
+        onProgress: (p) => window.dispatchEvent(new CustomEvent("voice:progress", { detail: p })),
+      }).then((r) => { if (r !== null) { onEnd?.(); return; } say(text, { ...opts, synth: true }); })
+        .catch(() => { toast("MMS voice failed; using system voice."); say(text, { ...opts, system: true }); });
+      return;
+    }
   }
   if (String(settings.voice || "").startsWith("kokoro:") && !opts.system) {
     // Natural voice runs on this device in a worker; any failure falls back to the system voice.
@@ -178,6 +189,7 @@ function addWord(item, src) {
   if (src) flyTo(src, $("#stripWords .word:last-child")); // the word travels to the strip (docs/MOTION-CONCEPT.md)
   if (settings.speakOnTap) say(item.w);
   renderNext();
+  updatePredictions(messageText());
 }
 
 // ---------- Next-word ideas (learned locally from what's been said) ----------
@@ -661,10 +673,15 @@ bindCareLock();
 loadVoices();
 if ("speechSynthesis" in window) speechSynthesis.onvoiceschanged = loadVoices;
 
+initPredictionBar($("#strip"), (word) => {
+  const item = lexicon.get(word.toLowerCase()) || { w: word, c: "little" };
+  addWord(item, null);
+});
+
 $("#btnSpeak").addEventListener("click", speakMessage);
 $("#strip").addEventListener("click", speakMessage);
-$("#btnBack").addEventListener("click", () => { state.words.pop(); renderStrip(); renderNext(); });
-$("#btnClear").addEventListener("click", () => { state.words = []; renderStrip(); renderNext(); });
+$("#btnBack").addEventListener("click", () => { state.words.pop(); renderStrip(); renderNext(); updatePredictions(messageText()); });
+$("#btnClear").addEventListener("click", () => { state.words = []; renderStrip(); renderNext(); hidePredictionBar(); });
 $("#breatheToggle").addEventListener("click", () => (state.breathing ? stopBreathing() : startBreathing()));
 $$(".nav-btn[data-view]").forEach((b) => b.addEventListener("click", () => show(b.dataset.view)));
 
