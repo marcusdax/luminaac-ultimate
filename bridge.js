@@ -1,4 +1,5 @@
 // The Bridge: caregiver portal. Capture, annotate, learn, share, protect.
+import { linkSignal } from "./semantic-core.js";
 import { load, persist, uid, confidence, putMedia, getMedia, clearMedia, speak, ROLES, seed } from "./shared.js";
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -244,12 +245,13 @@ function smart() {
   const text = $("#annText").value.toLowerCase();
   const box = $("#annSmart"); box.textContent = "";
   if (text.length < 3) return;
-  const words = text.match(/[a-z']{3,}/g) || [];
-  const hit = db.signals.find((s) => words.some((w) => (s.meaning + " " + s.phrase + " " + s.name).toLowerCase().includes(w) && !["the", "and", "she", "his", "her", "wants", "want"].includes(w)));
+  // The signal that shares the most words or everyday ideas with the explanation (semantic-core.js).
+  const link = linkSignal(text, db.signals);
+  const hit = link?.signal;
   if (hit) {
     const b = Object.assign(document.createElement("button"), { type: "button", className: "chip", textContent: `Link to "${hit.name}"` });
     b.addEventListener("click", () => { $("#annPhrase").value = hit.phrase; $("#annCues").value = hit.cues.join(", "); box.dataset.link = hit.id; box.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); });
-    box.append("Sounds like a signal you've taught before. ", b);
+    box.append(`Sounds like a signal you've taught before (both mention ${link.why.slice(0, 3).map((w) => `"${w}"`).join(", ")}). `, b);
   } else if (!$("#annPhrase").value) {
     const guess = phraseFrom(text);
     if (guess) { const b = Object.assign(document.createElement("button"), { type: "button", className: "chip", textContent: `Use "${guess}"` }); b.addEventListener("click", () => ($("#annPhrase").value = guess)); box.append("Words My Voice could offer: ", b); }

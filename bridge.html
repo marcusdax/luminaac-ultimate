@@ -295,6 +295,16 @@
           <section class="card" aria-labelledby="h-gprog"><h2 id="h-gprog">Sound games</h2><div id="gameProgress"></div></section>
           <section class="card" aria-labelledby="h-digest"><div class="card-head"><h2 id="h-digest">This week</h2><button class="btn" type="button" id="btnReport">Print a summary for a therapist</button></div><ul class="digest" id="digestList"></ul></section>
         </div>
+        <!-- M3: communication report for SLPs (bridge-clinical.js, clinical-core.js) -->
+        <section class="card clin" aria-labelledby="h-clin">
+          <div class="card-head"><h2 id="h-clin">Communication report</h2>
+            <label>Period <select id="clinRange"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option></select></label></div>
+          <p class="clin-draft" role="note"><b>Draft. Caregiver or SLP review required.</b> These figures come from simple rules on this device, not from an assessment. Each one says which messages and which rule it used. Check the messages below and correct any that are read wrongly.</p>
+          <div id="clinBody"></div>
+          <details class="clin-rows"><summary>Check the messages (<span id="clinCount">0</span>)</summary><div id="clinRows"></div></details>
+          <details class="clin-hist"><summary>Correction history (<span id="clinRevCount">0</span>)</summary><ol class="mini-list" id="clinHist"></ol></details>
+          <div class="row"><button class="btn" type="button" id="clinCsv">Download messages (CSV)</button><button class="btn quiet" type="button" id="clinJson">Download report (JSON)</button></div>
+        </section>
       </section>
 
       <!-- VIDEOS AND GAMES (phase 7) -->
@@ -747,6 +757,7 @@
   <script type="module" src="bridge.js"></script>
   <script type="module" src="bridge-plus.js"></script>
   <script type="module" src="bridge-slp.js"></script>
+  <script type="module" src="bridge-clinical.js"></script>
   <script type="module" src="bridge-p3.js"></script>
   <script type="module" src="bridge-p4.js"></script>
   <script src="vendor/simplify.js" defer></script>

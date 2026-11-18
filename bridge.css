@@ -262,3 +262,14 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { border-color
 .ble-state { font-size: 1.15rem; margin: 0 0 4px; }
 .iot-photo { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; }
 .iot-research { border: 1px dashed var(--line); border-radius: 10px; padding: var(--s2) var(--s3); }
+
+/* M3: communication report */
+.clin { margin-top: var(--s5); }
+.clin-draft { padding: var(--s3) var(--s4); border-left: 6px solid var(--ember-deep); background: var(--ember-tint); color: var(--warm-ink); border-radius: 10px; }
+.clin-table { width: 100%; border-collapse: collapse; margin: var(--s3) 0; }
+.clin-table th, .clin-table td { text-align: left; padding: var(--s2) var(--s3); border-bottom: 1px solid var(--line); vertical-align: top; }
+.clin .stats { grid-template-columns: repeat(3, 1fr); }
+.clin .stat small { display: block; margin-top: var(--s2); }
+.clin-rows, .clin-hist { margin: var(--s3) 0; }
+.clin-rows select { min-height: 44px; font: inherit; }
+@media (max-width: 700px) { .clin .stats { grid-template-columns: 1fr; } }

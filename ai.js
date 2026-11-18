@@ -1,17 +1,17 @@
 // Page-side client for ai-worker.js: lazy, opt-in, cached, with progress.
+import { VOICES } from "./voice-core.js";
 export const MODELS = {
   ser: { id: "onnx-community/wav2vec2-base-Speech_Emotion_Recognition-ONNX", mb: 95, name: "speech feelings model" },
   tts: { id: "onnx-community/Kokoro-82M-v1.0-ONNX", mb: 92, name: "natural voice (Kokoro)" },
   asr: { id: "onnx-community/whisper-tiny", mb: 150, name: "speech recognition (Whisper)" },
   predict: { id: "Xenova/distilgpt2", mb: 85, name: "word prediction" },
+  embed: { id: "Xenova/all-MiniLM-L6-v2", mb: 23, name: "meaning search" },
+  expand: { id: "HuggingFaceTB/SmolLM2-135M-Instruct", mb: 118, name: "sentence helper" },
 };
 // MMS covers 1,107 languages; each model is ~50 MB and cached after first use.
 export const MMS_MB = 50;
 export const mmsTtsModelId = (lang) => `facebook/mms-tts-${lang}`;
-export const KOKORO_VOICES = [
-  ["af_heart", "Heart, American English"], ["af_bella", "Bella, American English"], ["am_michael", "Michael, American English"],
-  ["bf_emma", "Emma, British English"], ["bm_george", "George, British English"],
-];
+export const KOKORO_VOICES = VOICES;
 const workers = {}, pending = new Map(); let seq = 0;
 function worker(task) {
   if (workers[task]) return workers[task];
@@ -68,6 +68,8 @@ export async function classifySpeech(input, opts) {
   return ask("ser", { type: "classify", audio: copy }, { ...opts, transfer: [copy.buffer] });
 }
 export const synthesize = (text, voice, opts = {}) => ask("tts", { type: "speak", text, voice, speed: opts.speed }, opts);
+// opts.playbackRate above 1 raises the pitch (see voice-core.js); the caller slows
+// opts.speed by the same amount, so the words take the same time.
 let player = null;
 export async function speakKokoro(text, voice, opts = {}) {
   const r = await synthesize(text, voice, opts);
@@ -76,7 +78,8 @@ export async function speakKokoro(text, voice, opts = {}) {
   if (ctx.state === "suspended") await ctx.resume();
   const buf = ctx.createBuffer(1, r.audio.length, r.rate); buf.copyToChannel(r.audio, 0);
   const src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination);
-  player = src; opts.onStart?.(buf.duration);
+  const pr = Number(opts.playbackRate) || 1; src.playbackRate.value = pr;
+  player = src; opts.onStart?.(buf.duration / pr);
   await new Promise((ok) => { src.onended = ok; src.start(); });
   return r;
 }
@@ -116,3 +119,11 @@ export async function speakMms(text, lang, opts = {}) {
   return r;
 }
 export const stopMms = () => { try { mmsPlayer?.stop(); } catch {} };
+
+// ---- Meaning search (all-MiniLM-L6-v2) ----
+// Returns one 384-number vector per text, normalised, so a dot product is the cosine.
+export const embed = (texts, opts = {}) => ask("embed", { type: "embed", texts: texts.map((t) => String(t).slice(0, 200)) }, opts);
+
+// ---- Sentence helper (SmolLM2-135M-Instruct) ----
+// Returns { text } with the model's raw reply. expand-core.js checks every line.
+export const expandText = (promptText, opts = {}) => ask("expand", { type: "expand", prompt: promptText }, opts);
