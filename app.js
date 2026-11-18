@@ -581,7 +581,10 @@ function bindCareForms() {
   $("#testVoice").addEventListener("click", () => say("Hello. This is my voice."));
 
   $("#exportBtn").addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify({ exported: new Date().toISOString(), settings, ...data, pictoIds: undefined }, null, 2)], { type: "application/json" });
+    // The backup holds the talker's data and the Bridge document (signals, stories,
+    // My things, exploration), so one file restores the whole device.
+    let bridge = null; try { bridge = JSON.parse(localStorage.getItem("luminaac:bridge")); } catch {}
+    const blob = new Blob([JSON.stringify({ exported: new Date().toISOString(), settings, ...data, pictoIds: undefined, bridge }, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `luminaac-${new Date().toISOString().slice(0, 10)}.json`;
@@ -589,9 +592,11 @@ function bindCareForms() {
     URL.revokeObjectURL(a.href);
   });
   $("#resetBtn").addEventListener("click", () => {
-    if (!confirm("Erase message history, word counts and moments on this device? Custom words and settings stay.")) return;
+    if (!confirm("Erase message history, word counts, exploring taps and moments on this device? Custom words and settings stay.")) return;
     data.log = []; data.counts = {}; data.pairs = {}; data.moments = [];
     ["log", "counts", "pairs", "moments"].forEach(save);
+    // Exploring taps are history too; they live in the Bridge document.
+    try { const b = JSON.parse(localStorage.getItem("luminaac:bridge")); if (b) { b.exploration = []; localStorage.setItem("luminaac:bridge", JSON.stringify(b)); dispatchEvent(new CustomEvent("luminaac:bridge-updated")); } } catch {}
     renderCare();
     renderNext();
     toast("History erased");

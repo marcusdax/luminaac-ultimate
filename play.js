@@ -2,7 +2,7 @@
 // with "All done" always in the top-right corner, a scene, and the child's real
 // board tiles (same colours, pictures and Talk columns) as the controller.
 // Rules live in play-core.js. Turns and the World stay on this device.
-import { load, persist, speak } from "./shared.js";
+import { load, persist, speak, onBridgeChange } from "./shared.js";
 import { CORE } from "./vocab.js";
 import { level, pitch } from "./games.js";
 import * as P from "./play-core.js";
@@ -470,7 +470,7 @@ function renderMenu() {
   const door = document.querySelector(".pk-calm-door"); if (door) door.hidden = !P.shown(s).some((g) => g.id === "weather");
 }
 renderMenu();
-addEventListener("storage", (e) => { if (e.key === "luminaac:bridge") renderMenu(); });
+onBridgeChange(renderMenu);
 const calm = $("view-calm");
 if (calm) {
   const door = document.createElement("button"); door.type = "button"; door.className = "ghost-btn pk-calm-door";

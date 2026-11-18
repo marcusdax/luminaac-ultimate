@@ -9,7 +9,7 @@
 // Increment B adds Watch my mouth (a family member's own short clip, kept on the
 // device), Mouth Mirror (camera, off by default: a face copies jaw and lips, nothing
 // recorded) and Sound and treat (pairing a sound with a favourite thing, SLP-led).
-import { load, getMedia } from "./shared.js";
+import { load, getMedia, onBridgeChange } from "./shared.js";
 import * as C from "./sound-core.js";
 import * as St from "./sound-store.js";
 import { level, pitch, judgeTry, praise, stickerFor } from "./games.js";
@@ -442,6 +442,6 @@ document.getElementById("view-talk")?.addEventListener("click", async (e) => {
 });
 
 St.onChange(renderEntry);
-addEventListener("storage", (e) => { if (e.key === "luminaac:bridge") renderEntry(); });
+onBridgeChange(renderEntry);
 renderEntry();
 window.__soundPath = { start: (id) => start(GAMES.find((g) => g.id === id) || GAMES[0]) };

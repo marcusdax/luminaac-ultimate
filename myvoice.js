@@ -1,7 +1,7 @@
 // "My Voice" additions to the Talk view: proactive suggestions from learned
 // signals, context pages, the Personality page, Play-moment buttons, and
 // Exploration mode (browse without speaking; taps are logged for caregivers).
-import { load, persist, suggest, activeRules, getMedia, speak, partOfDay, recordFeedback, raiseAlert, MILESTONES } from "./shared.js";
+import { load, persist, suggest, activeRules, getMedia, speak, partOfDay, recordFeedback, raiseAlert, MILESTONES, onBridgeChange } from "./shared.js";
 import { hasVoice, playVoice, applyPhoto } from "./symbols.js";
 
 const talk = document.getElementById("view-talk");
@@ -218,5 +218,5 @@ document.addEventListener("click", (e) => {
   logExplore(t.dataset.w || t.textContent.trim());
 }, true);
 
-window.addEventListener("storage", (e) => { if (e.key === "luminaac:bridge") render(); });
+onBridgeChange(render);
 render();
