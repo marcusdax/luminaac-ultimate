@@ -87,7 +87,7 @@ function say(text, opts = {}) {
     const starts = [...text.matchAll(/\S+/g)].map((m) => m.index); let timer;
     speechSynthesis?.cancel?.();
     import("./ai.js").then((ai) => ai.speakKokoro(text, settings.voice.slice(7), {
-      speed: Number(settings.rate) || 1,
+      speed: (Number(settings.rate) || 1) * (opts.rate || 1),
       onProgress: (p) => window.dispatchEvent(new CustomEvent("voice:progress", { detail: p })),
       onStart: (secs) => { let i = 0; onWord?.(0); window.dispatchEvent(new CustomEvent("voice:progress", { detail: { pct: 100, done: true } })); timer = setInterval(() => { i += 1; if (i < starts.length) onWord?.(starts[i]); else clearInterval(timer); }, (secs * 1000) / Math.max(1, starts.length)); },
     })).then(() => { clearInterval(timer); onEnd?.(); })
@@ -99,7 +99,7 @@ function say(text, opts = {}) {
   const u = new SpeechSynthesisUtterance(text);
   const v = voices.find((x) => x.name === settings.voice);
   if (v) u.voice = v;
-  u.rate = Number(settings.rate);
+  u.rate = Number(settings.rate) * (opts.rate || 1);
   let gotBoundary = false;
   let timer;
   u.onboundary = (e) => {
@@ -127,7 +127,13 @@ function record(text, kind = "message") {
   data.log.push({ t: Date.now(), text, kind });
   if (data.log.length > 5000) data.log.splice(0, data.log.length - 5000);
   save("log");
+  dispatchEvent(new CustomEvent("luminaac:log", { detail: { text, kind } }));
 }
+
+// One voice for the whole talker. Other modules (Suggestions, I need help, Stories,
+// Practice, My things) speak through this, so they use the chosen voice and speed,
+// a caregiver's own recordings, and the same message log as the board.
+window.luminaacVoice = { say: (text, opts = {}) => say(text, opts), record };
 
 // ---------- Strip ----------
 function renderStrip(fresh = false) {
