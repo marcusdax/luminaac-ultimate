@@ -86,6 +86,11 @@
         <div class="next" role="group" aria-label="Next word ideas">
           <span class="next-label" id="nextLabel">Next</span>
           <div class="next-row" id="nextRow"></div>
+          <!-- Context words share this line, so the board below never moves (motor planning). -->
+          <div class="ctx" role="group" aria-labelledby="ctxLabel" id="ctx" hidden>
+            <span class="next-label" id="ctxLabel">Now</span>
+            <div class="next-row ctx-row" id="ctxRow"></div>
+          </div>
         </div>
         <div class="folders" role="tablist" aria-label="Word folders" id="folders"></div>
         <div class="grid" id="grid" role="grid" aria-label="Word board"></div>

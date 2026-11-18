@@ -1,6 +1,7 @@
 // LuminAAC app. Vanilla ES modules, no build step, works offline
 // (except optional ARASAAC pictures). All data lives in localStorage.
-import { CORE, FOLDERS, QUICK, SCALE, CALM_NEEDS, PLANS } from "./vocab.js";
+import { CORE, FOLDERS, QUICK, SCALE, CALM_NEEDS, PLANS, CONTEXT_PAGES } from "./vocab.js";
+import { load as loadBridge, activeRules, onBridgeChange } from "./shared.js";
 import { KOKORO_VOICES } from "./ai.js";
 import { hasVoice, hasPhoto, playVoice, applyPhoto } from "./symbols.js";
 import { initPredictionBar, updatePredictions, hidePredictionBar, getTtsLang, speakWithMms } from "./neural-features.js";
@@ -281,6 +282,44 @@ function renderGrid() {
   const used = [...new Set(words.map((w) => w.c))];
   $("#legend").innerHTML = used.map((c) => `<span data-c="${c}"><i></i>${CLASS_NAMES[c]}</span>`).join("");
   loadPictos(grid);
+}
+
+// ---------- Context strip ("Now: School") ----------
+// Words for the pages the Bridge's rules say matter right now, in their own row.
+// The core grid and folders never move, so motor patterns stay the same.
+function contextWords(page) {
+  const k = String(page || "").trim().toLowerCase();
+  if (!k) return [];
+  const folder = FOLDERS.find((f) => f.id === k || f.label.toLowerCase() === k);
+  const base = CONTEXT_PAGES[k] || folder?.words || [];
+  const custom = data.custom.filter((x) => x.f === folder?.id || String(x.f || "").toLowerCase() === k);
+  return [...custom, ...base].map((x) => lexicon.get(x.w.toLowerCase()) || x);
+}
+function renderContext() {
+  const box = $("#ctx"), row = $("#ctxRow");
+  if (!box) return;
+  let rules = [];
+  try { rules = activeRules(loadBridge()); } catch {}
+  const seen = new Set(), pages = [], words = [];
+  for (const r of rules) {
+    const ws = contextWords(r.page);
+    if (!ws.length) continue;
+    pages.push(r.page);
+    for (const w of ws) if (!seen.has(w.w.toLowerCase())) { seen.add(w.w.toLowerCase()); words.push(w); }
+  }
+  row.textContent = "";
+  box.hidden = !words.length;
+  if (!words.length) return;
+  $("#ctxLabel").textContent = `Now: ${pages.join(", ")}`;
+  words.slice(0, 8).forEach((item) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "next-chip ctx-chip";
+    b.dataset.c = item.c; b.dataset.w = item.w;
+    b.textContent = item.w; // text only, like the Next chips beside it
+    b.addEventListener("click", () => addWord(item, b));
+    row.append(b);
+  });
 }
 
 function renderQuick() {
@@ -674,6 +713,9 @@ rebuildLexicon();
 applySettings();
 renderStrip();
 renderQuick();
+renderContext();
+onBridgeChange(renderContext);             // a rule added or removed in the Bridge
+setInterval(renderContext, 5 * 60 * 1000); // rules start and end with the clock
 renderNext();
 renderFolders();
 renderGrid();
