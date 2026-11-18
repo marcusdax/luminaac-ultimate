@@ -1,7 +1,7 @@
 // My Voice, Phase 7: "My videos" (only videos a caregiver added, privacy-enhanced
 // player, no autoplay or suggestions, then "talk about it") and gentle sound games.
 // Engagement and game turns are written to this device only (db.videos, db.games).
-import { load, persist } from "./shared.js";
+import { load, persist, onBridgeChange } from "./shared.js";
 import { TOPICS, NOCOOKIE, PLAYER_VARS, closeSession, stripWords, topicPages, videoStats, topicInterest } from "./interests.js";
 import { SOUND_PICS, FIRST_SOUNDS, ECHO_SOUNDS, matchRound, firstRound, level, pitch, judgeTry, stickerFor, praise, streak, shuffle } from "./games.js";
 
@@ -49,7 +49,7 @@ function init() {
   const stories = mv.querySelector(".mv-stories");
   (stories || mv.lastElementChild).after(...host.children);
   renderVideos(); renderGames(); renderTopics();
-  addEventListener("storage", (e) => { if (e.key === "luminaac:bridge") { renderVideos(); renderGames(); renderTopics(); } });
+  onBridgeChange(() => { renderVideos(); renderGames(); renderTopics(); });
   $("mvTClose").addEventListener("click", () => $("mvTopic").close());
   $("mvVClose").addEventListener("click", closeVideo);
   $("mvVideo").addEventListener("close", closeVideo);

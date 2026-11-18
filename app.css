@@ -151,6 +151,11 @@ main:focus { outline: none; }
 .next { display: flex; align-items: center; gap: var(--s3); margin: var(--s3) 0; min-height: 48px; }
 .next-label { color: var(--ink-soft); font-size: var(--fs-xs); font-weight: 600; flex: none; }
 .next-row { display: flex; gap: var(--s2); overflow-x: auto; }
+/* "Now: School" context words sit on the Next line, after a divider, so they never push the board down. */
+.ctx { display: flex; align-items: center; gap: var(--s3); min-width: 0; padding-left: var(--s3); border-left: 2px solid var(--line); }
+.ctx[hidden] { display: none; }
+.next > .next-row { min-width: 0; flex: 0 1 auto; max-width: 55%; }
+.ctx { flex: 1 1 auto; }
 .next-chip {
   flex: none; min-height: 44px; padding: 0 var(--s4);
   background: var(--wc-tint); color: var(--ink);

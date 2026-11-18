@@ -1,7 +1,7 @@
 // "My Voice" additions to the Talk view: proactive suggestions from learned
 // signals, context pages, the Personality page, Play-moment buttons, and
 // Exploration mode (browse without speaking; taps are logged for caregivers).
-import { load, persist, suggest, activeRules, getMedia, speak, partOfDay, recordFeedback, raiseAlert, MILESTONES } from "./shared.js";
+import { load, persist, suggest, activeRules, getMedia, speak, partOfDay, recordFeedback, raiseAlert, MILESTONES, onBridgeChange } from "./shared.js";
 import { hasVoice, playVoice, applyPhoto } from "./symbols.js";
 
 const talk = document.getElementById("view-talk");
@@ -65,7 +65,7 @@ function render() {
   renderStories();
   const rules = activeRules(db).map((r) => r.page);
   document.getElementById("mvContext").textContent =
-    `It's ${partOfDay()} at ${db.profile.place}` + (rules.length ? ` · showing ${rules.join(", ")} words first` : "");
+    `It's ${partOfDay()} at ${db.profile.place}` + (rules.length ? ` · ${rules.join(", ")} words are in the Now row` : "");
   const pt = document.getElementById("mvPersonality");
   pt.textContent = "";
   db.personality.forEach((p) => {
@@ -210,6 +210,7 @@ function logExplore(word) {
 // and plan "say" chips (capture phase: no speech, nothing added to the strip).
 // "I need help" / "Take me home" are never caught, so safety always speaks.
 export const EXPLORE_SELECTOR = ".grid .tile, .next-row .tile, .next-row .next-chip, .quick .phrase, .step-says .say-chip";
+// (.ctx-row .ctx-chip is a .next-row .next-chip, so the Now row is covered too.)
 document.addEventListener("click", (e) => {
   if (!exploring()) return;
   const t = e.target.closest(EXPLORE_SELECTOR);
@@ -218,5 +219,5 @@ document.addEventListener("click", (e) => {
   logExplore(t.dataset.w || t.textContent.trim());
 }, true);
 
-window.addEventListener("storage", (e) => { if (e.key === "luminaac:bridge") render(); });
+onBridgeChange(render);
 render();

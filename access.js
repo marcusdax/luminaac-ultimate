@@ -1,7 +1,7 @@
 // Access options for My Voice, set from the Bridge (Vocabulary → "How My Voice responds").
 // From the spec: age-appropriate modes (pediatric / adult / senior), dynamic button
 // sizing, dwell-click, and switch scanning (1 switch = Space/Enter, 2 switches = Tab to move).
-import { load } from "./shared.js";
+import { load, onBridgeChange } from "./shared.js";
 import { settings, rowsOf, Scanner } from "./scan-core.js";
 
 const root = document.documentElement;
@@ -84,5 +84,5 @@ document.addEventListener("keydown", (e) => {
   startScan(); // resume after a pause
 });
 
-window.addEventListener("storage", (e) => { if (e.key === "luminaac:bridge") apply(); });
+onBridgeChange(apply);
 apply();

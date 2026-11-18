@@ -6,7 +6,7 @@
 //  • Model weights from the Hugging Face hub are cached by Transformers.js itself
 //    ("transformers-cache"); Human's models are vendored locally under vendor/human.
 //  • The backend API (/api/…) and map tiles are never cached here.
-const VERSION = "luminaac-v0.18.0";
+const VERSION = "luminaac-v0.18.1";
 const SHELL = `${VERSION}-shell`, CDN = `${VERSION}-cdn`;
 const FILES = [
   "./", "index.html", "bridge.html", "guide.html", "guide.css", "manifest.webmanifest", "bridge.webmanifest", "favicon.svg",
@@ -18,6 +18,9 @@ const FILES = [
   "vendor/leaflet/images/marker-icon.png", "vendor/leaflet/images/marker-icon-2x.png", "vendor/leaflet/images/marker-shadow.png",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png",
 ];
+// Board symbols (OpenMoji), so a picture never seen before still shows offline. tests/sw.test.mjs keeps this in step with vendor/openmoji/.
+const OPENMOJI = ["1F198.svg", "1F300.svg", "1F333.svg", "1F34C.svg", "1F34E.svg", "1F355.svg", "1F357.svg", "1F358.svg", "1F35D.svg", "1F36A.svg", "1F373.svg", "1F37D.svg", "1F388.svg", "1F3A0.svg", "1F3A7.svg", "1F3B5.svg", "1F3C1.svg", "1F3CA.svg", "1F3E0.svg", "1F3EB.svg", "1F418.svg", "1F420.svg", "1F42D.svg", "1F440.svg", "1F446.svg", "1F449.svg", "1F44B.svg", "1F44D.svg", "1F455.svg", "1F45F.svg", "1F465.svg", "1F466.svg", "1F467.svg", "1F468-200D-1F469-200D-1F467.svg", "1F468.svg", "1F469.svg", "1F474.svg", "1F475.svg", "1F49B.svg", "1F4A7.svg", "1F4AC.svg", "1F4AD.svg", "1F4B3.svg", "1F4CB.svg", "1F4CD.svg", "1F4D6.svg", "1F4DA.svg", "1F4DD.svg", "1F4ED.svg", "1F4F1.svg", "1F4FA.svg", "1F501.svg", "1F506.svg", "1F50A.svg", "1F527.svg", "1F552.svg", "1F57A.svg", "1F58D.svg", "1F5E3.svg", "1F5FA.svg", "1F602.svg", "1F60A.svg", "1F60C.svg", "1F610.svg", "1F620.svg", "1F622.svg", "1F624.svg", "1F628.svg", "1F634.svg", "1F645.svg", "1F64B.svg", "1F64F.svg", "1F68C.svg", "1F697.svg", "1F6AA.svg", "1F6AB.svg", "1F6B6.svg", "1F6BB.svg", "1F6BD.svg", "1F6CF.svg", "1F6D2.svg", "1F6DD.svg", "1F912.svg", "1F914.svg", "1F915.svg", "1F917.svg", "1F929.svg", "1F92B.svg", "1F932.svg", "1F937.svg", "1F95B.svg", "1F963.svg", "1F964.svg", "1F96A.svg", "1F971.svg", "1F9B7.svg", "1F9C3.svg", "1F9D1-200D-1F3EB.svg", "1F9D1-200D-2695.svg", "1F9D1.svg", "1F9D2.svg", "1F9E3.svg", "1F9E5.svg", "1F9F1.svg", "1F9F4.svg", "1F9F8.svg", "1FA7A.svg", "1FA91.svg", "1FAA5.svg", "1FAE7.svg", "1FAF4.svg", "1FAF6.svg", "2194.svg", "23F3.svg", "23F8.svg", "2600.svg", "261D.svg", "26BD.svg", "2705.svg", "270B.svg", "274C.svg", "2753.svg", "2757.svg", "2795.svg", "2B50.svg", "2B55.svg"];
+FILES.push(...OPENMOJI.map((f) => "vendor/openmoji/" + f));
 const CDN_HOSTS = ["cdn.jsdelivr.net", "fonts.googleapis.com", "fonts.gstatic.com"];
 
 self.addEventListener("install", (e) => {

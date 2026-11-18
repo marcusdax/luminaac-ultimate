@@ -183,3 +183,21 @@ export const PLANS = [
     ],
   },
 ];
+
+// Words for context pages that are not board folders (the Bridge's "When pages show up
+// first" rules). A rule can also name any folder ("Food & drink", "places"); see
+// contextWords() in app.js. These sit in their own strip: the core board never moves.
+export const CONTEXT_PAGES = {
+  school: [
+    { w: "teacher", c: "people", e: "🧑‍🏫" }, { w: "friend", c: "people", e: "🧒" },
+    { w: "help", c: "action", e: "🙋" }, { w: "bathroom", c: "thing", e: "🚻" },
+    { w: "break", c: "thing", e: "⏸️" }, { w: "lunch", c: "thing", e: "🥪" },
+    { w: "play", c: "action", e: "🧸" }, { w: "all done", c: "social", e: "✅" },
+  ],
+  bedtime: [
+    { w: "bath", c: "thing", e: "🛁" }, { w: "pajamas", c: "thing", e: "👕" },
+    { w: "teeth", c: "thing", e: "🪥" }, { w: "book", c: "thing", e: "📖" },
+    { w: "hug", c: "action", e: "🤗" }, { w: "light", c: "thing", e: "💡" },
+    { w: "tired", c: "describe", e: "🥱" }, { w: "goodnight", c: "social", e: "🌙" },
+  ],
+};

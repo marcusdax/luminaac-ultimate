@@ -135,7 +135,22 @@ export function raiseAlert(kind, message, extra = {}) {
   return a;
 }
 export function persist(db) {
-  try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {}
+  let json;
+  try {
+    json = JSON.stringify(db);
+    if (localStorage.getItem(KEY) === json) return; // nothing changed: no save, no event
+    localStorage.setItem(KEY, json);
+  } catch { return; }
+  // The browser's "storage" event only reaches other tabs. Tell this page too, after
+  // the current handler finishes, so every module redraws from the same data.
+  if (typeof window !== "undefined") queueMicrotask(() => window.dispatchEvent(new CustomEvent("luminaac:bridge-updated")));
+}
+
+// Run fn whenever the Bridge document changes, in this tab or another one.
+export function onBridgeChange(fn) {
+  if (typeof window === "undefined") return;
+  window.addEventListener("storage", (e) => { if (e.key === KEY) fn(); });
+  window.addEventListener("luminaac:bridge-updated", () => fn());
 }
 export const uid = (p = "x") => p + Math.random().toString(36).slice(2, 9);
 
