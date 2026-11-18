@@ -456,3 +456,8 @@ form input:not([type="radio"]):not([type="checkbox"]):not([type="range"]), form 
 .neural-settings { display: flex; flex-direction: column; gap: 12px; }
 .neural-settings .settings-h3 { font-size: var(--fs-sm); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; opacity: .6; margin: 0 0 4px; }
 .neural-settings .settings-note { font-size: var(--fs-xs, .75rem); opacity: .65; margin: 0; min-height: 1em; }
+
+/* Hold to choose (access.js): a ring fills while the press is held long enough. */
+.accepting { animation: accept-fill var(--accept-ms, 500ms) linear forwards; }
+@keyframes accept-fill { from { box-shadow: inset 0 0 0 0 var(--lumen); } to { box-shadow: inset 0 0 0 5px var(--lumen); } }
+@media (prefers-reduced-motion: reduce) { .accepting { animation: none; box-shadow: inset 0 0 0 5px var(--lumen); } }

@@ -30,6 +30,36 @@ document.addEventListener("pointerout", (e) => {
   clearTimeout(dwellTimer); t.classList.remove("dwelling");
 });
 
+// ---------- Touch: hold to choose, ignore repeat taps (tremor and unsteady hands) ----------
+// Buttons already act on release: a click needs the press and the release on the same
+// button, so sliding off cancels (WCAG 2.5.2). These two settings add, per child:
+//  acceptMs     the press must last this long before it counts (brushing past a tile does nothing)
+//  tapDebounce  after a choice, further taps are ignored for this long (no double picks)
+// Only pointer taps are filtered: keyboard, switch and dwell clicks (detail 0) pass through.
+// It listens on window in the capture phase, so it runs before any other click handler.
+let press = null, lastPick = -Infinity;
+const touchTarget = (el) => el?.closest?.("main button, main .tile, .mv-player button");
+const clearAccept = () => document.querySelectorAll(".accepting").forEach((x) => x.classList.remove("accepting"));
+window.addEventListener("pointerdown", (e) => {
+  const t = touchTarget(e.target);
+  press = t ? { t, at: performance.now() } : null;
+  clearAccept();
+  if (t && cfg.acceptMs > 0) { t.style.setProperty("--accept-ms", `${cfg.acceptMs}ms`); t.classList.add("accepting"); }
+}, true);
+window.addEventListener("pointerup", clearAccept, true);
+window.addEventListener("pointercancel", () => { clearAccept(); press = null; }, true);
+window.addEventListener("click", (e) => {
+  const t = touchTarget(e.target);
+  if (!t || e.detail === 0) return;
+  const now = performance.now();
+  const held = press && press.t === t ? now - press.at : 0;
+  const tooShort = cfg.acceptMs > 0 && held < cfg.acceptMs;
+  const tooSoon = cfg.tapDebounce > 0 && now - lastPick < cfg.tapDebounce && !t.closest(".mv-sos"); // safety always gets through
+  press = null;
+  if (tooShort || tooSoon) { e.stopImmediatePropagation(); e.preventDefault(); return; }
+  lastPick = now;
+}, true);
+
 // ---------- Switch scanning (logic in scan-core.js) ----------
 let scanner = null, els = [], lastPress = 0, holdTimer = 0;
 function items() {
