@@ -84,9 +84,14 @@ function render() {
 
 function exploring() { return document.getElementById("mvExplore").checked; }
 
+// Things the child chooses to say are logged like board messages; narration
+// (story steps, practice models) is spoken but not logged.
+const logMsg = (text, kind) => window.luminaacVoice?.record(text, kind);
+
 function say(text, meta = {}) {
   if (exploring()) { logExplore(text); return; }
   speak(text);
+  logMsg(text, meta.signal ? "suggestion" : "message");
   if (meta.signal) {
     db = load();
     const s = db.signals.find((x) => x.id === meta.signal);
@@ -113,6 +118,7 @@ document.getElementById("mvSafety").addEventListener("click", (e) => {
   const b = e.target.closest(".mv-sos"); if (!b) return;
   const msg = b.dataset.kind === "home" ? "I want to go home" : "I need help";
   speak(msg);
+  logMsg(msg, "sos");
   const a = raiseAlert(b.dataset.kind, msg);
   const t = document.getElementById("toast");
   t.innerHTML = ""; t.append(`Told your grown-ups: "${msg}". `);
@@ -178,6 +184,7 @@ function playPractice(id) {
 
 async function playOrSay(p) {
   if (exploring()) return logExplore(p.label);
+  logMsg(p.label, "mything");
   if (!p.momentId && hasVoice(p.label) && (await playVoice(p.label))) return;
   if (p.momentId) {
     const blob = await getMedia(p.momentId).catch(() => null);
@@ -199,10 +206,16 @@ function logExplore(word) {
   persist(db);
 }
 
-// Exploration mode also catches taps on the main board (capture phase, no speech).
-talk.addEventListener("click", (e) => {
-  const t = e.target.closest(".grid .tile, .next-row .tile");
-  if (t && exploring()) { e.stopPropagation(); logExplore(t.dataset.w || t.textContent.trim()); }
+// Exploration mode also catches taps on board tiles, next-word chips, quick phrases
+// and plan "say" chips (capture phase: no speech, nothing added to the strip).
+// "I need help" / "Take me home" are never caught, so safety always speaks.
+export const EXPLORE_SELECTOR = ".grid .tile, .next-row .tile, .next-row .next-chip, .quick .phrase, .step-says .say-chip";
+document.addEventListener("click", (e) => {
+  if (!exploring()) return;
+  const t = e.target.closest(EXPLORE_SELECTOR);
+  if (!t) return;
+  e.stopPropagation(); e.preventDefault();
+  logExplore(t.dataset.w || t.textContent.trim());
 }, true);
 
 window.addEventListener("storage", (e) => { if (e.key === "luminaac:bridge") render(); });

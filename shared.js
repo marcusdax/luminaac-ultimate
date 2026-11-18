@@ -193,6 +193,10 @@ export async function clearMedia() {
 }
 
 export function speak(text, rate = 0.9) {
+  // In My Voice, route through the talker's configured voice (natural voice, device
+  // voice, recorded clips). 0.9 is the old default, so a lower rate stays slower.
+  const v = typeof window !== "undefined" && window.luminaacVoice;
+  if (v) { v.say(text, { rate: rate / 0.9 }); return; }
   if (!("speechSynthesis" in window)) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
