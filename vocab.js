@@ -128,6 +128,9 @@ export const QUICK = [
   { w: "Yes", c: "social", e: "✅" },
   { w: "No", c: "negate", e: "❌" },
   { w: "Wait, I'm still talking", c: "social", e: "✋" },
+  // Added at the end so the phrases above keep their places.
+  { w: "Stop", c: "negate", e: "🛑" },
+  { w: "I need the bathroom", c: "thing", e: "🚻" },
 ];
 
 // 5-point scale, adapted from common self-regulation scales.

@@ -13,5 +13,13 @@ const files = JSON.parse("[" + /const FILES = \[([\s\S]*?)\];/.exec(src)[1].repl
 const missing = files.filter((f) => f !== "./" && !existsSync(new URL("../" + f, import.meta.url)));
 t("every app-shell file in sw.js exists", missing.length === 0, missing.join(","));
 
+// Every local script and stylesheet the two pages load must work offline too.
+for (const page of ["index.html", "bridge.html"]) {
+  const html = readFileSync(new URL("../" + page, import.meta.url), "utf8");
+  const refs = [...html.matchAll(/<(?:script[^>]*\ssrc|link[^>]*rel="stylesheet"[^>]*\shref)="([^"]+)"/g)].map((m) => m[1]).filter((u) => !/^(https?:)?\/\//.test(u));
+  const notCached = refs.filter((u) => !files.includes(u));
+  t(`every script and stylesheet ${page} loads is precached`, notCached.length === 0, notCached.join(","));
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

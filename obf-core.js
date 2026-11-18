@@ -26,7 +26,7 @@ export function toOBF(boards, { locale = "en", author = "LuminAAC" } = {}) {
     const images = [], buttons = [];
     const add = (word, i, extra = {}) => {
       const id = `${b.id}-${i}`, [bg, border] = WC[word.c] || WC.thing;
-      const btn = { id, label: word.w, background_color: hex2rgb(bg), border_color: hex2rgb(border), ...extra };
+      const btn = { id, label: word.w, ...(word.say ? { vocalization: word.say } : {}), background_color: hex2rgb(bg), border_color: hex2rgb(border), ...extra };
       if (word.e) { images.push({ id: `img-${id}`, data: emojiSvg(word.e), content_type: "image/svg+xml", width: 100, height: 100 }); btn.image_id = `img-${id}`; }
       if (word.c && KINDS.includes(word.c)) btn.ext_luminaac_kind = word.c;
       buttons.push(btn);
@@ -48,10 +48,14 @@ export function wordsFromBoard(board) {
   const out = [], seen = new Set();
   for (const b of board.buttons) {
     if (b.load_board || b.hidden) continue;
-    const w = String(b.vocalization || b.label || "").trim().slice(0, 40);
+    // The label is what the button shows; the vocalization (if any) is what it says.
+    const w = String(b.label || b.vocalization || "").trim().slice(0, 40);
+    const said = String(b.vocalization || "").trim().slice(0, 120);
     if (!w || seen.has(w.toLowerCase())) continue; seen.add(w.toLowerCase());
     const c = KINDS.includes(b.ext_luminaac_kind) ? b.ext_luminaac_kind : guessKind(b.background_color);
-    out.push({ w, e: emojiOf(imgs[b.image_id]) || "", c });
+    const word = { w, e: emojiOf(imgs[b.image_id]) || "", c };
+    if (said && said.toLowerCase() !== w.toLowerCase()) word.say = said;
+    out.push(word);
   }
   return out;
 }
@@ -134,6 +138,6 @@ export const buildOBZ = (boards, opts) => { const { manifest, files } = toOBF(bo
 // Merge imported words into custom words for a folder; skips words already there.
 export function mergeWords(custom, existing, words, folder) {
   const have = new Set([...existing, ...custom.map((x) => x.w)].map((w) => w.toLowerCase())), add = [];
-  for (const w of words) if (!have.has(w.w.toLowerCase())) { have.add(w.w.toLowerCase()); add.push({ w: w.w, e: w.e || "⭐", c: w.c, f: folder }); }
+  for (const w of words) if (!have.has(w.w.toLowerCase())) { have.add(w.w.toLowerCase()); add.push({ w: w.w, e: w.e || "⭐", c: w.c, f: folder, ...(w.say ? { say: w.say } : {}) }); }
   return add;
 }

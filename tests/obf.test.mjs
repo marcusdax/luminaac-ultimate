@@ -31,7 +31,13 @@ const other = { format: FORMAT, id: "b1", name: "Snacks", buttons: [{ id: "1", l
 const defl = execFileSync("python3", ["-c", "import sys,zipfile,io;b=io.BytesIO();z=zipfile.ZipFile(b,'w',zipfile.ZIP_DEFLATED);z.writestr('manifest.json','{\"format\":\"open-board-0.1\",\"root\":\"boards/b1.obf\"}');z.writestr('boards/b1.obf',sys.stdin.read());z.close();sys.stdout.buffer.write(b.getvalue())"], { input: JSON.stringify(other) });
 const got = await readOBZ(new Uint8Array(defl), inflate);
 t("reads deflate-compressed .obz from other apps", got[0].name === "Snacks" && got[0].words.length === 2);
-t("uses vocalization, skips folder links, hidden and duplicate buttons", got[0].words.map((w) => w.w).join("|") === "apple|eat now");
+t("keeps the label, skips folder links, hidden and duplicate buttons", got[0].words.map((w) => w.w).join("|") === "apple|eat");
+t("keeps the vocalization as what the button says", got[0].words[1].say === "eat now" && got[0].words[0].say === undefined);
+{
+  const rt = toOBF([{ id: "core", name: "Core", words: [{ w: "drink", say: "I want a drink", c: "thing" }] }]).files["boards/core.obf"];
+  t("export writes the vocalization", rt.buttons[0].label === "drink" && rt.buttons[0].vocalization === "I want a drink");
+  t("vocalization survives merging into custom words", mergeWords([], [], wordsFromBoard(rt), "food")[0].say === "I want a drink");
+}
 t("guesses the kind of word from the colour", got[0].words[0].c === "thing" && got[0].words[1].c === "action" && guessKind("") === "thing");
 
 let threw = ""; try { wordsFromBoard({ nope: 1 }); } catch (e) { threw = e.message; }
