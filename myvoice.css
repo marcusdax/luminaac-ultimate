@@ -60,7 +60,13 @@ body.still .mv-chip.is-top { animation: none; }
 @media (max-width: 760px) { .mv-sos { flex: 1; justify-content: center; font-size: var(--fs-sm); } }
 
 /* ---------- Access modes (access.js) ---------- */
-.grid { zoom: var(--board-zoom, 1); }
+/* Button size (Bridge, 80–160%) scales the tiles through a variable, not CSS zoom:
+   zoom is applied unevenly across browsers and pushed a large board off the side.
+   Columns stay fixed, so a bigger setting means taller tiles with larger pictures and words. */
+.grid .tile { min-height: calc(var(--tile-min) * var(--board-zoom, 1)); }
+.grid .tile .pic { font-size: calc(2.4rem * var(--board-zoom, 1)); height: calc(56px * var(--board-zoom, 1)); }
+.grid .tile .pic img { width: calc(56px * var(--board-zoom, 1)); height: calc(56px * var(--board-zoom, 1)); }
+.grid .tile .label { font-size: calc(1.125rem * var(--board-zoom, 1)); }
 :root[data-mode="large"] { font-size: 118%; }
 :root[data-mode="large"] .tile { border-width: 3px; }
 :root[data-mode="large"] .tile .label { font-size: 1.15em; font-weight: 800; }

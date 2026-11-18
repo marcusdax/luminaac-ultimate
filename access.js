@@ -61,11 +61,13 @@ window.addEventListener("click", (e) => {
 }, true);
 
 // ---------- Switch scanning (logic in scan-core.js) ----------
-let scanner = null, els = [], lastPress = 0, holdTimer = 0;
+let scanner = null, els = [], lastPress = 0, holdTimer = 0, previewing = null;
 function items() {
   const dlg = document.querySelector("dialog[open]");
   const scope = dlg || document;
-  return [...scope.querySelectorAll(dlg ? "button" : "main button, main .tile, nav .nav-btn")].filter((el) => el.offsetParent !== null && !el.disabled && !el.closest("details:not([open]) > :not(summary)"));
+  // Section headers (<summary>) and checkboxes are choices too: "My things", "Explore quietly".
+  const sel = dlg ? "button, summary, input[type=checkbox]" : "main button, main .tile, main summary, main input[type=checkbox], nav .nav-btn";
+  return [...scope.querySelectorAll(sel)].filter((el) => (el.offsetParent !== null || el.closest("label")?.offsetParent) && !el.disabled && !el.closest("details:not([open]) > :not(summary)"));
 }
 const sc = () => settings(cfg);
 function paint(idx) {
@@ -73,13 +75,20 @@ function paint(idx) {
   const group = idx.map((i) => els[i]).filter(Boolean);
   group.forEach((el) => el.classList.add(group.length > 1 ? "scan-row" : "scan-hi"));
   if (group[0]) { group[0].focus({ preventScroll: false }); }
+  // Auditory scanning: a quiet preview of each item. It never talks over the child: if
+  // a message (or anything that isn't our own preview) is speaking, the preview waits.
   if (sc().auditory && group.length && window.speechSynthesis) {
+    if (window.luminaacVoice?.busy || (speechSynthesis.speaking && !previewing)) return;
     const words = group.length > 1 ? `row, ${label(group[0])}` : label(group[0]);
     const u = new SpeechSynthesisUtterance(words); u.volume = 0.5; u.rate = 1.1;
-    speechSynthesis.cancel(); speechSynthesis.speak(u);
+    u.onend = u.onerror = () => { if (previewing === u) previewing = null; };
+    if (previewing) speechSynthesis.cancel(); // replace our own previous preview only
+    previewing = u; speechSynthesis.speak(u);
   }
 }
-const label = (el) => (el.getAttribute("aria-label") || el.dataset.w || el.textContent || "").trim().split(",")[0].slice(0, 40);
+const label = (el) => (el.getAttribute("aria-label") || el.dataset.w || (el.matches("input") ? el.closest("label")?.textContent : el.textContent) || "").trim().split(",")[0].slice(0, 40);
+// Typing in a text field (Caregiver forms) must keep Space and Enter for typing.
+const typing = (el) => el?.isContentEditable || (el?.matches?.("input, textarea, select") && !el.matches("input[type=checkbox], input[type=radio], input[type=button], input[type=submit]"));
 function build() {
   const all = items(), nav = all.filter((e) => e.closest("nav")), body = all.filter((e) => !e.closest("nav"));
   els = [...body, ...nav]; // the board first, the app's tab bar last as its own row
@@ -101,7 +110,7 @@ function startScan() {
 }
 function stopScan() { stopTimer(); scanner = null; paint([]); }
 document.addEventListener("keydown", (e) => {
-  if (!cfg.scan) return;
+  if (!cfg.scan || typing(e.target)) return;
   const sel = e.key === " " || e.key === "Enter", move = sc().switches === 2 && (e.key === "Tab" || e.key === "ArrowRight");
   if (!sel && !move) return;
   e.preventDefault();

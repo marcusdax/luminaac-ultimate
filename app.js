@@ -76,7 +76,16 @@ function loadVoices() {
   sel.value = settings.voice;
 }
 
+// True while the talker is saying something in any voice (device, natural, recorded),
+// so scanning previews never talk over the child. Clears itself if a voice never ends.
+let busy = false, busyTimer = 0;
 function say(text, opts = {}) {
+  if (!opts.tracked) {
+    busy = true; clearTimeout(busyTimer);
+    busyTimer = setTimeout(() => (busy = false), Math.max(5000, String(text).length * 200));
+    const end = opts.onEnd;
+    opts = { ...opts, tracked: true, onEnd: () => { busy = false; clearTimeout(busyTimer); end?.(); } };
+  }
   const { onWord, onEnd } = opts;
   // A caregiver's own recording of this exact word or phrase wins over any synthetic voice.
   if (!opts.system && !opts.synth && hasVoice(text)) {
@@ -145,7 +154,7 @@ function record(text, kind = "message") {
 // One voice for the whole talker. Other modules (Suggestions, I need help, Stories,
 // Practice, My things) speak through this, so they use the chosen voice and speed,
 // a caregiver's own recordings, and the same message log as the board.
-window.luminaacVoice = { say: (text, opts = {}) => say(text, opts), record };
+window.luminaacVoice = { say: (text, opts = {}) => say(text, opts), record, get busy() { return busy; } };
 
 // ---------- Strip ----------
 function renderStrip(fresh = false) {
