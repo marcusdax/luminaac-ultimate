@@ -425,3 +425,29 @@ form input:not([type="radio"]):not([type="checkbox"]):not([type="range"]), form 
 .still *, .still *::before, .still *::after { animation: none !important; transition: none !important; }
 /* Family photo symbols: square, rounded, fill the picture spot */
 .tile .pic img.sym-photo, .mv-ptile .pic img.sym-photo { width: 56px; height: 56px; object-fit: cover; border-radius: 10px; }
+
+/* ---------- Neural word prediction bar ---------- */
+.pred-bar {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 6px 8px; min-height: 36px;
+  background: var(--surface-alt, #f5f5f5);
+  border-bottom: 1px solid var(--border, rgba(0,0,0,.1));
+  animation: fadeIn .15s ease;
+}
+.pred-bar[hidden] { display: none; }
+.pred-btn {
+  padding: 4px 12px; border-radius: 999px;
+  background: var(--accent-soft, rgba(99,102,241,.12));
+  color: var(--accent, #6366f1);
+  border: 1px solid var(--accent-soft, rgba(99,102,241,.2));
+  font-size: var(--fs-sm, .85rem); font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+  transition: background .1s, transform .1s;
+}
+.pred-btn:hover { background: var(--accent-soft2, rgba(99,102,241,.22)); }
+.pred-btn:active { transform: scale(.96); }
+
+/* ---------- Neural settings panel ---------- */
+.neural-settings { display: flex; flex-direction: column; gap: 12px; }
+.neural-settings .settings-h3 { font-size: var(--fs-sm); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; opacity: .6; margin: 0 0 4px; }
+.neural-settings .settings-note { font-size: var(--fs-xs, .75rem); opacity: .65; margin: 0; min-height: 1em; }
