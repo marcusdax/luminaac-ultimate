@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="app.css" />
   <link rel="stylesheet" href="brand/brand-tokens.css" />
   <link rel="stylesheet" href="myvoice.css" />
+  <link rel="stylesheet" href="slp.css" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="phase3.css" />
   <link rel="stylesheet" href="phase4.css" />
@@ -41,6 +42,9 @@
         <span class="strip-empty" id="stripEmpty">Tap words to build a message</span>
       </button>
       <div class="strip-actions">
+        <button class="icon-btn" id="btnFind" type="button" aria-label="Find a word">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        </button>
         <button class="icon-btn" id="btnBack" type="button" aria-label="Delete last word">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h11v14H9l-6-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9.5l5 5M17 9.5l-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
@@ -114,6 +118,10 @@
           </div>
         </div>
 
+        <!-- Body map: where it hurts and how it feels (myvoice-body.js) -->
+        <button class="ghost-btn body-open" id="bodyOpen" type="button" aria-expanded="false" aria-controls="bodyMap"><span aria-hidden="true">🤕</span> Something hurts or feels wrong</button>
+        <section class="body-map" id="bodyMap" aria-label="Show where it hurts" hidden></section>
+
         <aside class="partner-card" id="partnerCard" hidden>
           <h2 class="h2">For the person helping</h2>
           <ul class="partner-list">
@@ -130,6 +138,7 @@
       <section class="view" id="view-plans" aria-label="Plans" hidden>
         <div class="plan-picker" id="planPicker" role="tablist" aria-label="Choose a plan"></div>
         <div class="first-then" id="firstThen" aria-live="polite"></div>
+        <div class="choice-board" id="choiceBoard" hidden></div>
         <ol class="steps" id="steps"></ol>
       </section>
 
@@ -142,6 +151,12 @@
         <p class="note">Everything here stays on this device. Nothing is uploaded. Need help? <a href="guide.html">Open the caretaker guide</a>.</p>
 
         <div class="care-grid">
+          <article class="panel" id="modelPanel">
+            <h2 class="h2">Show how to say it (modeling)</h2>
+            <p class="soft">Press the child's own buttons as you talk, so they see where words live. While modeling is on, your presses light up a numbered trail and are kept apart: they don't count as the child's words, in history, word counts or next-word ideas.</p>
+            <button class="solid-btn" type="button" id="modelToggle" aria-pressed="false">Start modeling</button>
+          </article>
+
           <article class="panel">
             <h2 class="h2">This week</h2>
             <dl class="stats" id="stats"></dl>
@@ -236,6 +251,10 @@
                 <button class="ghost-btn" type="button" id="testVoice">Test voice</button>
               </fieldset>
               <fieldset>
+                <legend>Modeling</legend>
+                <label class="check"><input type="checkbox" name="modelSpeak" /> Speak aloud while modeling</label>
+              </fieldset>
+              <fieldset>
                 <legend>Motion</legend>
                 <label class="check"><input type="checkbox" name="stillness" /> Keep the screen still (no animation)</label>
               </fieldset>
@@ -253,6 +272,22 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
+  <!-- Shown while a grown-up is modeling. Fixed, so the board never moves. -->
+  <div class="model-banner" id="modelBanner" role="status" hidden>
+    <span><b>Modeling</b> · these presses aren't counted as the child's</span>
+    <button class="ghost-btn" type="button" id="modelStop">Stop modeling</button>
+  </div>
+
+  <dialog class="find-dialog" id="findDialog" aria-labelledby="findTitle">
+    <form id="findForm" class="find-form" role="search">
+      <label class="find-label" id="findTitle" for="findInput">Find a word</label>
+      <input id="findInput" type="search" autocomplete="off" maxlength="40" placeholder="Type a word" />
+      <button class="ghost-btn" type="button" id="findClose">Close</button>
+    </form>
+    <p class="soft" id="findStatus" role="status" aria-live="polite"></p>
+    <ul class="find-results" id="findResults"></ul>
+  </dialog>
+
   <script type="module" src="app.js"></script>
   <script type="module" src="myvoice.js"></script>
   <script type="module" src="access.js"></script>
@@ -265,6 +300,7 @@
   <script type="module" src="potty.js"></script>
   <script type="module" src="myvoice-sound.js"></script>
   <script type="module" src="myvoice-redesign.js"></script>
+  <script type="module" src="myvoice-body.js"></script>
   <script src="pwa.js" defer></script>
 </body>
 </html>

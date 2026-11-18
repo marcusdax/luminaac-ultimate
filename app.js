@@ -6,6 +6,7 @@ import { KOKORO_VOICES } from "./ai.js";
 import { hasVoice, hasPhoto, playVoice, applyPhoto } from "./symbols.js";
 import { initPredictionBar, updatePredictions, hidePredictionBar, getTtsLang, speakWithMms } from "./neural-features.js";
 import { buildOBZ, readOBZ, wordsFromBoard, mergeWords } from "./obf-core.js";
+import { wordForms, searchWords, scriptParts, scriptText, canMix, allPlans, choiceSentence } from "./slp-core.js";
 import { flyTo, swap, pillMove } from "./motion-gate.js";
 import { mountCalmSky } from "./shader-sky.js";
 
@@ -26,7 +27,7 @@ const store = {
 
 const DEFAULTS = {
   theme: "auto", cols: "6", pictos: true, labelsTop: false,
-  voice: "", rate: 0.9, speakOnTap: true, stillness: false,
+  voice: "", rate: 0.9, speakOnTap: true, stillness: false, modelSpeak: true,
 };
 const settings = { ...DEFAULTS, ...store.get("settings", {}) };
 const data = {
@@ -41,7 +42,11 @@ const data = {
 const save = (k) => store.set(k, data[k]);
 
 // ---------- State ----------
-const state = { words: [], folder: "core", view: "talk", plan: PLANS[0].id, unlocked: false, breathing: null };
+const state = { words: [], folder: "core", view: "talk", plan: PLANS[0].id, unlocked: false, breathing: null, modeling: false, trail: [] };
+
+// The Bridge document (scripts, choice boards, routines). Read fresh: the Bridge can change it.
+const bridgeDoc = () => { try { return loadBridge(); } catch { return {}; } };
+const scripts = () => (bridgeDoc().scripts || []).filter((x) => x?.text);
 
 const CLASS_NAMES = {
   people: "People", action: "Actions", describe: "Describing", thing: "Things & places",
@@ -49,6 +54,7 @@ const CLASS_NAMES = {
 };
 
 function folderWords(id) {
+  if (id === "scripts") return scripts().map((sc) => ({ w: scriptText(sc), e: sc.e || "💬", c: "social", script: sc }));
   const base = id === "core" ? CORE : FOLDERS.find((f) => f.id === id)?.words ?? [];
   return base.concat(data.custom.filter((x) => x.f === id));
 }
@@ -168,7 +174,7 @@ function renderStrip(fresh = false) {
   });
   $("#strip").setAttribute("aria-label", state.words.length ? `Message: ${messageText()}. Tap to speak.` : "Message is empty");
 }
-const messageText = () => state.words.map((w) => w.w).join(" ");
+const messageText = () => state.words.map((w) => w.say || w.w).join(" ");
 
 function speakMessage() {
   if (!state.words.length) { toast("Add a word first"); return; }
@@ -176,7 +182,14 @@ function speakMessage() {
   const spans = $$("#stripWords .word");
   const starts = [];
   let pos = 0;
-  state.words.forEach((w) => { starts.push(pos); pos += w.w.length + 1; });
+  state.words.forEach((w) => { starts.push(pos); pos += (w.say || w.w).length + 1; });
+  // Partner modeling: speak (unless set to silent) but keep it out of the child's
+  // history, word counts and next-word ideas. It goes to its own log.
+  if (state.modeling) {
+    if (settings.modelSpeak) say(text);
+    recordModel(text);
+    return;
+  }
   say(text, {
     onWord(ci) {
       let idx = starts.findLastIndex((s) => s <= ci);
@@ -200,10 +213,12 @@ function speakMessage() {
 }
 
 function addWord(item, src) {
+  if (item.script) return tapScript(item.script, src);
   state.words.push(item);
   renderStrip(true);
   if (src) flyTo(src, $("#stripWords .word:last-child")); // the word travels to the strip (docs/MOTION-CONCEPT.md)
-  if (settings.speakOnTap) say(item.w);
+  if (state.modeling) markTrail(item.w);
+  if (settings.speakOnTap && (!state.modeling || settings.modelSpeak)) say(item.say || item.w);
   renderNext();
   updatePredictions(messageText());
 }
@@ -231,6 +246,24 @@ function renderNext() {
       .slice(0, 5);
     $("#nextLabel").textContent = "Next";
   }
+  // Word endings for the last word (eat -> eating, eats, ate; dog -> dogs). A tap swaps it.
+  const forms = last && !last.script ? wordForms(last) : [];
+  forms.forEach((f) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "next-chip morph-chip";
+    b.dataset.c = last.c;
+    b.textContent = f;
+    b.setAttribute("aria-label", `Change ${last.w} to ${f}`);
+    b.addEventListener("click", () => {
+      const base = state.words.at(-1);
+      state.words[state.words.length - 1] = { ...base, w: f, say: undefined, from: base.from || base.w };
+      renderStrip(true); renderNext(); updatePredictions(messageText());
+      if (settings.speakOnTap && (!state.modeling || settings.modelSpeak)) say(f);
+    });
+    row.append(b);
+  });
+  if (forms.length) ideas = ideas.slice(0, Math.max(2, 5 - forms.length));
   ideas.forEach((w) => {
     const item = lexicon.get(w.toLowerCase()) || { w, c: "little" };
     const b = document.createElement("button");
@@ -261,6 +294,7 @@ function tile(item, onTap) {
   label.textContent = item.w;
   b.append(pic, label);
   applyPhoto(pic, item.w); // a photo symbol replaces the picture when a caregiver added one
+  if (item.script) { b.classList.add("script-tile"); b.setAttribute("aria-label", `${item.w}, script${canMix(item.script) ? ", in parts" : ""}`); }
   b.addEventListener("click", () => onTap(item, b));
   return b;
 }
@@ -268,7 +302,11 @@ function tile(item, onTap) {
 function renderFolders() {
   const bar = $("#folders");
   bar.textContent = "";
-  [{ id: "core", label: "Core words", e: "⭐" }, ...FOLDERS].forEach((f) => {
+  // Scripts (whole phrases) get their own tab at the end, so the other tabs never move.
+  const tabs = [{ id: "core", label: "Core words", e: "⭐" }, ...FOLDERS];
+  if (scripts().length) tabs.push({ id: "scripts", label: "Scripts", e: "💬" });
+  else if (state.folder === "scripts") state.folder = "core";
+  tabs.forEach((f) => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "folder";
@@ -288,9 +326,107 @@ function renderGrid() {
   grid.textContent = "";
   const words = folderWords(state.folder);
   words.forEach((w) => grid.append(tile(w, addWord)));
+  paintTrail();
   const used = [...new Set(words.map((w) => w.c))];
   $("#legend").innerHTML = used.map((c) => `<span data-c="${c}"><i></i>${CLASS_NAMES[c]}</span>`).join("");
   loadPictos(grid);
+}
+
+// ---------- Gestalt scripts ----------
+// Stage 1: a whole phrase, said at once. Stage 2 and up, with parts marked by "/":
+// each part goes to the strip as its own piece, so it can be mixed with others.
+function tapScript(sc, src) {
+  const text = scriptText(sc);
+  if (!canMix(sc)) {
+    if (!state.modeling || settings.modelSpeak) say(text);
+    state.modeling ? recordModel(text) : record(text, "gestalt");
+    if (state.modeling) markTrail(text);
+    return;
+  }
+  for (const part of scriptParts(sc.text)) state.words.push({ w: part, c: "social", e: sc.e, from: "script" });
+  renderStrip(true);
+  if (src) flyTo(src, $("#stripWords .word:last-child"));
+  if (state.modeling) markTrail(text);
+  if (settings.speakOnTap && (!state.modeling || settings.modelSpeak)) say(text);
+  renderNext();
+  updatePredictions(messageText());
+}
+
+// ---------- Partner modeling (Aided Language Stimulation) ----------
+// An adult shows how to say something by pressing the child's own buttons. Those
+// presses are not the child's words, so they never reach the message log, word
+// counts or next-word ideas. They go to luminaac:modeling instead.
+function recordModel(text) {
+  const log = store.get("modeling", []);
+  log.push({ t: Date.now(), text, kind: "modeling" });
+  store.set("modeling", log.slice(-2000));
+  dispatchEvent(new CustomEvent("luminaac:modeling", { detail: { text } }));
+}
+function markTrail(w) {
+  state.trail.push(String(w).toLowerCase());
+  if (state.trail.length > 12) state.trail.shift();
+  paintTrail();
+}
+// Each modeled button keeps a numbered gold ring, so the child sees the path the adult took.
+function paintTrail() {
+  $$(".tile.modeled, .next-chip.modeled").forEach((t) => { t.classList.remove("modeled"); delete t.dataset.step; });
+  if (!state.modeling) return;
+  state.trail.forEach((w, i) => {
+    const t = $$("#grid .tile").find((x) => (x.dataset.w || "").toLowerCase() === w);
+    if (t) { t.classList.add("modeled"); t.dataset.step = String(i + 1); }
+  });
+}
+function setModeling(on) {
+  state.modeling = on;
+  state.trail = [];
+  document.body.classList.toggle("modeling", on);
+  $("#modelBanner").hidden = !on;
+  $("#modelToggle").setAttribute("aria-pressed", String(on));
+  $("#modelToggle").textContent = on ? "Stop modeling" : "Start modeling";
+  paintTrail();
+}
+
+// ---------- Find a word ----------
+// Search every folder. Choosing a result adds the word and opens its folder with the
+// button lit, so next time the child knows where it lives.
+function findSources() {
+  const mine = (id) => data.custom.filter((x) => x.f === id);
+  return [{ id: "core", label: "Core words", words: [...CORE, ...mine("core")] },
+    ...FOLDERS.map((f) => ({ id: f.id, label: f.label, words: [...f.words, ...mine(f.id)] })),
+    ...(scripts().length ? [{ id: "scripts", label: "Scripts", words: folderWords("scripts") }] : [])];
+}
+function renderFind() {
+  const q = $("#findInput").value, list = $("#findResults");
+  const hits = searchWords(q, findSources());
+  list.textContent = "";
+  $("#findStatus").textContent = !q.trim() ? "" : hits.length ? `${hits.length} found` : "No words found. A grown-up can add it in Caregiver.";
+  hits.forEach(({ item, folder }) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "find-hit";
+    b.dataset.c = item.c;
+    b.innerHTML = `<span class="pic" aria-hidden="true"></span><span class="find-w"></span><span class="find-f"></span>`;
+    $(".pic", b).textContent = item.e || "";
+    $(".find-w", b).textContent = item.w;
+    $(".find-f", b).textContent = `in ${folder.label}`;
+    b.addEventListener("click", () => {
+      $("#findDialog").close();
+      if (state.view !== "talk") show("talk");
+      state.folder = folder.id; renderFolders(); renderGrid();
+      const t = $$("#grid .tile").find((x) => x.dataset.w === item.w);
+      if (t) { t.classList.add("found"); setTimeout(() => t.classList.remove("found"), 2600); t.scrollIntoView({ block: "nearest" }); }
+      addWord(item, t || null);
+    });
+    li.append(b); list.append(li);
+  });
+}
+function bindFind() {
+  const dlg = $("#findDialog");
+  $("#btnFind").addEventListener("click", () => { $("#findInput").value = ""; renderFind(); dlg.showModal(); $("#findInput").focus(); });
+  $("#findInput").addEventListener("input", renderFind);
+  $("#findClose").addEventListener("click", () => dlg.close());
+  $("#findForm").addEventListener("submit", (e) => { e.preventDefault(); $("#findResults .find-hit")?.click(); });
 }
 
 // ---------- Context strip ("Now: School") ----------
@@ -468,10 +604,14 @@ function stopBreathing() {
 const calmSky = mountCalmSky($("#breathe"));
 
 // ---------- Plans ----------
+const planList = () => allPlans(PLANS, bridgeDoc().stories || []);
+const choiceList = () => (bridgeDoc().choices || []).filter((c) => c?.options?.length >= 2);
 function renderPlans() {
   const picker = $("#planPicker");
   picker.textContent = "";
-  PLANS.forEach((p) => {
+  const plans = planList(), choices = choiceList();
+  if (!plans.some((p) => p.id === state.plan) && !choices.some((c) => "choice:" + c.id === state.plan)) state.plan = plans[0].id;
+  [...plans, ...choices.map((c) => ({ id: "choice:" + c.id, title: c.title, e: c.e || "🤔" }))].forEach((p) => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "folder";
@@ -483,7 +623,11 @@ function renderPlans() {
     picker.append(b);
   });
 
-  const plan = PLANS.find((p) => p.id === state.plan);
+  const board = choices.find((c) => "choice:" + c.id === state.plan);
+  $("#choiceBoard").hidden = !board;
+  $("#firstThen").hidden = $("#steps").hidden = !!board;
+  if (board) { renderChoice(board); dispatchEvent(new CustomEvent("mv:plans")); return; }
+  const plan = plans.find((p) => p.id === state.plan);
   const done = new Set(data.plans[plan.id] || []);
   const current = plan.steps.findIndex((_, i) => !done.has(i));
 
@@ -528,6 +672,35 @@ function renderPlans() {
     list.append(li);
   });
   dispatchEvent(new CustomEvent("mv:plans"));
+}
+
+// A choice board: 2 to 8 big pictures. Picking one says it and lights it.
+function renderChoice(board) {
+  const box = $("#choiceBoard");
+  box.textContent = "";
+  const h = document.createElement("h2");
+  h.className = "h2 choice-q";
+  h.textContent = board.title;
+  const grid = document.createElement("div");
+  grid.className = "choice-grid";
+  grid.style.setProperty("--n", String(board.options.length));
+  board.options.forEach((opt) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "choice-opt";
+    b.innerHTML = `<span class="pic" aria-hidden="true"></span><span class="label"></span>`;
+    $(".pic", b).textContent = opt.e || "";
+    $(".label", b).textContent = opt.w;
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => {
+      $$(".choice-opt", grid).forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      const text = choiceSentence(board, opt);
+      if (!state.modeling || settings.modelSpeak) say(text);
+      state.modeling ? recordModel(text) : record(text, "choice");
+    });
+    grid.append(b);
+  });
+  box.append(h, grid);
 }
 
 // ---------- Caregiver ----------
@@ -616,11 +789,12 @@ function bindCareForms() {
   form.rate.value = settings.rate;
   form.speakOnTap.checked = settings.speakOnTap;
   form.stillness.checked = settings.stillness;
+  form.modelSpeak.checked = settings.modelSpeak;
   form.addEventListener("change", () => {
     Object.assign(settings, {
       theme: form.theme.value, cols: form.cols.value, pictos: form.pictos.checked,
       labelsTop: form.labelsTop.checked, voice: form.voice.value, rate: Number(form.rate.value),
-      speakOnTap: form.speakOnTap.checked, stillness: form.stillness.checked,
+      speakOnTap: form.speakOnTap.checked, stillness: form.stillness.checked, modelSpeak: form.modelSpeak.checked,
     });
     store.set("settings", settings);
     applySettings();
@@ -732,6 +906,10 @@ renderCalm();
 bindCareForms();
 bindOBF();
 bindCareLock();
+bindFind();
+$("#modelToggle").addEventListener("click", () => { const on = !state.modeling; setModeling(on); if (on) { show("talk"); toast("Modeling is on. Your presses won't count as the child's words."); } });
+$("#modelStop").addEventListener("click", () => setModeling(false));
+onBridgeChange(() => { renderFolders(); if (state.folder === "scripts") renderGrid(); if (state.view === "plans") renderPlans(); });
 loadVoices();
 if ("speechSynthesis" in window) speechSynthesis.onvoiceschanged = loadVoices;
 
@@ -749,9 +927,10 @@ $$(".nav-btn[data-view]").forEach((b) => b.addEventListener("click", () => show(
 
 // ---------- Open Board Format import and export (v0.15) ----------
 function myBoards() {
-  const mine = (id) => data.custom.filter((x) => x.f === id).map(({ w, e, c }) => ({ w, e, c }));
-  return [{ id: "core", name: "Core words", words: [...CORE, ...mine("core")].map(({ w, e, c }) => ({ w, e, c })), cols: 6 },
-    ...FOLDERS.map((f) => ({ id: f.id, name: f.label, e: f.e, words: [...f.words, ...mine(f.id)].map(({ w, e, c }) => ({ w, e, c })), cols: 4 }))];
+  const pick = ({ w, e, c, say }) => (say ? { w, e, c, say } : { w, e, c });
+  const mine = (id) => data.custom.filter((x) => x.f === id).map(pick);
+  return [{ id: "core", name: "Core words", words: [...CORE, ...mine("core")].map(pick), cols: 6 },
+    ...FOLDERS.map((f) => ({ id: f.id, name: f.label, e: f.e, words: [...f.words, ...mine(f.id)].map(pick), cols: 4 }))];
 }
 async function inflateRaw(u8) {
   const s = new Blob([u8]).stream().pipeThrough(new DecompressionStream("deflate-raw"));

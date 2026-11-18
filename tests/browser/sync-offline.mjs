@@ -9,6 +9,8 @@ import { createRequire } from "node:module";
 import assert from "node:assert/strict";
 import { readdirSync } from "node:fs";
 const { chromium } = createRequire(import.meta.url)("playwright");
+// The cache name follows sw.js, so bumping the version never breaks this test.
+const SW_VERSION = /const VERSION = "([^"]+)"/.exec((await import("node:fs")).readFileSync(new URL("../../sw.js", import.meta.url), "utf8"))[1];
 
 const BASE = process.argv[2] || "http://localhost:8765";
 const results = [];
@@ -89,7 +91,7 @@ await check("Service worker stores every OpenMoji symbol for offline use", async
     return { n: 0 };
   });
   assert.equal(got.n, want.length);
-  assert.match(got.shell, /v0\.18\.1/);
+  assert.equal(got.shell, `${SW_VERSION}-shell`);
 });
 
 await check("No page errors", () => assert.deepEqual(errors, []));

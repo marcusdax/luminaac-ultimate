@@ -57,6 +57,9 @@ export function seed() {
       { id: "st2", title: "Morning routine", kind: "routine", steps: [
         { e: "🚽", text: "Bathroom", link: "potty" }, { e: "🪥", text: "Brush teeth" }, { e: "👕", text: "Get dressed" }, { e: "🥣", text: "Breakfast" } ] },
     ],
+    // M2: choice boards (Plans on My Voice) and gestalt scripts (Scripts tab).
+    choices: [{ id: "ch1", title: "What snack?", e: "🍎", lead: "I want", options: [{ e: "🍎", w: "apple" }, { e: "🧀", w: "cheese" }, { e: "🥨", w: "pretzels" }] }],
+    scripts: [],
     practice: { reward: "stars", targets: [
       { id: "pr1", sound: "m", word: "more", e: "➕", tries: [] },
       { id: "pr2", sound: "b", word: "bubble", e: "🫧", tries: [] },
