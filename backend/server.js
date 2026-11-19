@@ -9,7 +9,7 @@
 // file named by the key's SHA-256 hash, so the key itself is never written down.
 // Share links use a separate random token that only unlocks a role-scoped view.
 import { createServer } from "node:http";
-import { randomBytes, randomUUID, createHash } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import * as store from "./store.js";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -18,11 +18,6 @@ import * as acc from "./accounts.js";
 import { verifyRegistration, verifyAssertion } from "./webauthn.js";
 import * as fl from "./flserver.js";
 import * as mailer from "./mailer.js";
-import * as potty from "./potty.js";
-import * as yt from "./youtube.js";
-import * as wp from "./webpush.js";
-import * as summary from "./summary.js";
-import { hookEvent, exitRule, calmCheck, foundView } from "../safety-core.js";
 
 const PORT = Number(process.env.PORT || 3001);
 const ORIGINS = (process.env.ALLOWED_ORIGINS || "*").split(",").map((s) => s.trim());
@@ -79,31 +74,88 @@ function who(req) {
 }
 // Permissions per role. Share scopes (SCOPES below) decide what a read-only role sees.
 const PERMS = {
-  parent: ["sync:read", "sync:write", "alerts:read", "alerts:write", "share", "devices", "family", "fl:write", "predict", "potty:read", "potty:write", "chat"],
-  teacher: ["sync:scoped", "alerts:read", "alerts:write", "fl:write", "chat"],
-  therapist: ["sync:scoped", "fl:write", "predict", "chat"],
-  family: ["sync:scoped", "alerts:read", "alerts:write", "fl:write", "chat"],
-  child: ["sync:child", "alerts:write", "location:write", "fl:write", "potty:read", "potty:write"],
+  parent: ["sync:read", "sync:write", "alerts:read", "alerts:write", "share", "devices", "family", "fl:write", "predict"],
+  teacher: ["sync:scoped", "alerts:read", "alerts:write", "fl:write"],
+  therapist: ["sync:scoped", "fl:write", "predict"],
+  family: ["sync:scoped", "alerts:read", "alerts:write", "fl:write"],
+  child: ["sync:child", "alerts:write", "location:write", "fl:write"],
 };
 const can = (w, perm) => (w.role === "child" ? w.scopes || PERMS.child : PERMS[w.role] || []).includes(perm);
 // What a paired My Voice device may read: only what it needs to run (no notes, team, audit, alerts).
 function childView(doc) {
   if (!doc) return null;
-  if (doc.e2ee) return { version: 2, scope: "child", e2eeChild: doc.e2eeChild || null }; // end-to-end encrypted: the server can't read it
-
-  const { profile = {}, signals = [], stories = [], practice, access, safety, videos, games, potty: pp } = doc;
-  return { version: 2, scope: "child", profile: { child: profile.child, place: profile.place }, signals: signals.map(({ id, name, phrase, cues, contexts, confirmations, rejections, moods }) => ({ id, name, phrase, cues, contexts, confirmations, rejections, moods })), stories, practice, access, safety: safety && { consent: safety.consent, zones: safety.zones, sendLocation: safety.sendLocation, water: safety.water },
-    // Phase 7: the video list and game settings only. Watch history and game turns stay on each device.
-    videos: videos && { on: videos.on, thumbs: videos.thumbs, list: (videos.list || []).map(({ id, yt, start, title, e, topics, words }) => ({ id, yt, start, title, e, topics, words })),
-      channels: (videos.channels || []).map(({ id, playlist, name, e, on, videos: vs }) => ({ id, playlist, name, e, on, videos: vs })) },
-    games: games && { settings: games.settings, goals: games.goals },
-    // Potty Path: the plan and whether it is paused. Never the toilet log, screening or reasons.
-    potty: pp && { protocol: pp.protocol, paused: !!pp.paused } };
+  const { profile = {}, signals = [], stories = [], practice, access, safety, rules = [], personality = [], gestalts = [], choiceBoards = [], schedules = [], importedBoards = [] } = doc;
+  return {
+    version: 2,
+    scope: "child",
+    profile: { child: profile.child, place: profile.place },
+    signals: signals.map(({ id, name, phrase, cues, contexts, confirmations, rejections, moods }) => ({ id, name, phrase, cues, contexts, confirmations, rejections, moods })),
+    stories,
+    practice,
+    access,
+    rules,
+    personality,
+    // Setup a paired My Voice needs to run (no pain log, no notes).
+    gestalts,
+    choiceBoards,
+    schedules,
+    importedBoards,
+    safety: safety && { consent: safety.consent, zones: safety.zones, sendLocation: safety.sendLocation },
+  };
 }
 const failedLogins = new Map(); // email -> [timestamps]
 const claimTries = new Map(); // ip -> [timestamps]
 const mailTries = new Map(); // "email:<addr>" or "ip:<addr>" -> [timestamps]
 const tokenTries = new Map(); // ip -> [timestamps] for token redemption
+const telemetryTries = new Map(); // family -> [timestamps] for child telemetry pushes
+
+const PROTECTED_TELEMETRY_KEYS = new Set([
+  "signals", "rules", "safety", "account", "privacy", "access", "notes", "team",
+  "moments", "stories", "practice", "profile", "doc", "audit", "fl", "emoBase", "alerts", "shares",
+]);
+function coerceTs(raw) {
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.round(n) : Date.now();
+}
+function sanitizeTelemetryLog(x) {
+  if (!isObj(x) || typeof x.text !== "string" || !x.text.trim()) return null;
+  const out = {
+    t: coerceTs(x.t ?? x.ts),
+    text: x.text.trim().slice(0, 500),
+    kind: typeof x.kind === "string" && x.kind.trim() ? x.kind.trim().slice(0, 32) : "message",
+    mode: x.mode === "modeling" ? "modeling" : "child",
+    actor: x.actor === "partner" ? "partner" : "child",
+  };
+  if (typeof x.fn === "string" && x.fn.trim()) out.fn = x.fn.trim().slice(0, 40);
+  if (Array.isArray(x.words)) {
+    out.words = x.words.slice(0, 60).map((w) => String(w || "").trim().slice(0, 60)).filter(Boolean);
+  }
+  return out;
+}
+function sanitizeTelemetryExploration(x) {
+  if (!isObj(x) || typeof x.word !== "string" || !x.word.trim()) return null;
+  return { t: coerceTs(x.t), word: x.word.trim().slice(0, 120) };
+}
+function sanitizeTelemetryFeedback(x) {
+  if (!isObj(x) || typeof x.accepted !== "boolean") return null;
+  const conf = x.confidence === null || x.confidence === undefined ? null : Number(x.confidence);
+  return {
+    t: coerceTs(x.t),
+    accepted: x.accepted,
+    signalId: typeof x.signalId === "string" && x.signalId.trim() ? x.signalId.trim().slice(0, 64) : null,
+    confidence: Number.isFinite(conf) ? Math.min(1, Math.max(0, conf)) : null,
+    pod: typeof x.pod === "string" ? x.pod.slice(0, 24) : null,
+    place: typeof x.place === "string" ? x.place.slice(0, 32) : null,
+    mood: typeof x.mood === "string" ? x.mood.slice(0, 24) : null,
+    intent: typeof x.intent === "string" ? x.intent.slice(0, 32) : null,
+  };
+}
+function dedupeMerge(existing = [], incoming = [], keyFn, limit) {
+  const m = new Map();
+  for (const it of existing) m.set(keyFn(it), it);
+  for (const it of incoming) m.set(keyFn(it), it);
+  return [...m.values()].sort((a, b) => a.t - b.t).slice(-limit);
+}
 function appUrl(req) { // where links in emails point; APP_URL wins over the request's Origin
   const u = process.env.APP_URL || req.headers.origin || "http://localhost:8765";
   return u.replace(/\/+$/, "");
@@ -134,12 +186,6 @@ function authOut(u, family, role, token) {
 }
 const LOC = (l) => isObj(l) && Number.isFinite(l.lat) && Number.isFinite(l.lng) && Math.abs(l.lat) <= 90 && Math.abs(l.lng) <= 180 ? { lat: +l.lat.toFixed(5), lng: +l.lng.toFixed(5), acc: Math.min(Math.round(Number(l.acc) || 0), 100000) } : null;
 const LOC_KEEP_MS = 24 * 3600e3; // precise location on alerts is dropped after 24 hours
-const sha = (s) => createHash("sha256").update(String(s)).digest("hex");
-const hookIndex = new Map(); // sha256(sensor link secret) -> family id
-const hookTries = new Map();
-const SENSOR_KINDS = ["door", "gate", "window", "pool", "motion", "bed", "wearable", "other"];
-const SENSOR_SAYS = { door: "door opened", gate: "gate opened", window: "window opened", pool: "pool alarm", motion: "movement seen", bed: "out of bed", wearable: "tracker alert" };
-const ROLE_NAME = { parent: "Parent", teacher: "Teacher", therapist: "Therapist", family: "Family" };
 const isObj = (v) => v && typeof v === "object" && !Array.isArray(v);
 const audit = (d, what) => { d.audit = [{ t: Date.now(), what }, ...(d.audit || [])].slice(0, 100); };
 
@@ -152,7 +198,6 @@ const SCOPES = {
 };
 function scopedView(doc, role) {
   const s = SCOPES[role] || SCOPES.family;
-  if (doc?.e2ee) return { child: "", role, encrypted: true, generated: new Date().toISOString() };
   const out = { child: doc?.profile?.child || "", role, generated: new Date().toISOString() };
   if (s.signals) out.signals = (doc?.signals || []).map(({ name, cues, meaning, phrase, confirmations, rejections }) => ({ name, cues, meaning, phrase, confidence: Math.round(((confirmations + 1) / (confirmations + rejections + 2)) * 100) }));
   if (s.meanings) out.moments = (doc?.moments || []).filter((m) => m.meaning).map(({ t, context, meaning, intent }) => ({ t, context, meaning, intent }));
@@ -167,78 +212,12 @@ function broadcast(key, event, data) {
   for (const res of listeners.get(key) || []) res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
 }
 
-// ---------- Web Push ----------
-const URGENT_KINDS = ["help", "home", "danger-enter", "silent"];
-const ALERT_TITLE = { help: "Help needed", home: "Wants to go home", "danger-enter": "Entered a danger area", "danger-leave": "Left a danger area", "zone-enter": "Arrived", "zone-leave": "Left a place", silent: "Device went quiet", back: "Sharing again", sensor: "Sensor", "calm-check": "Calm check?", potty: "Toilet", custom: "Message" };
-const isUrgent = (a) => !!a.urgent || URGENT_KINDS.includes(a.kind);
-const pushLog = []; // last few results, for tests and the status route
-// Send to everyone in the family whose preferences allow it. Only short text goes
-// in the payload, never a location. Dead subscriptions are removed.
-async function notify(key, ev) {
-  const d = store.read(key), subs = wp.recipients(d.push, ev);
-  if (!subs.length) return [];
-  const k = wp.keys(store.DIR);
-  const out = await Promise.all(subs.map(async (s) => ({ id: s.id, ...(await wp.send(s, ev.payload, k, { urgency: ev.urgent ? "high" : "normal", ttl: ev.urgent ? 600 : 3600, topic: ev.topic })) })));
-  const gone = out.filter((r) => r.gone).map((r) => r.id);
-  if (gone.length) store.update(key, (x) => { x.push = (x.push || []).filter((s) => !gone.includes(s.id)); });
-  pushLog.unshift(...out.map((r) => ({ ...r, type: ev.type, t: Date.now() }))); pushLog.length = Math.min(pushLog.length, 50);
-  return out;
-}
-// Urgent alerts fall back to email for signed-in members (verified address, alerts role)
-// who have no browser that accepted the push, unless they turned the fallback off.
-// One email per person per alert kind every 10 minutes.
-const mailedAt = new Map();
-async function emailFallback(key, a, results) {
-  if (!isUrgent(a)) return 0;
-  const d = store.read(key), okIds = new Set(results.filter((r) => r.status >= 200 && r.status < 300).map((r) => r.id));
-  let n = 0;
-  for (const u of Object.values(acc.db().users)) {
-    const mem = u.memberships.find((m) => m.family === key);
-    if (!mem || !u.emailVerified || !(PERMS[mem.role] || []).includes("alerts:read")) continue;
-    const subs = (d.push || []).filter((s) => s.uid === u.id);
-    if (subs.some((s) => okIds.has(s.id)) || subs.some((s) => s.prefs?.emailFallback === false)) continue;
-    const k = `${u.id}:${a.kind}`; if (Date.now() - (mailedAt.get(k) || 0) < 10 * 60e3) continue;
-    mailedAt.set(k, Date.now()); n++;
-    await mailer.send({ to: u.email, subject: `Urgent: ${ALERT_TITLE[a.kind] || "alert"} from LuminAAC`, text: `${a.message || ALERT_TITLE[a.kind]}\n\nFrom: ${a.from || "My Voice"}\nTime: ${new Date(a.t).toUTCString()}\n\nOpen the Bridge to see where and to say you're on it: ${process.env.APP_URL || ""}/bridge.html#today\n\nYou get this email because no phone or computer of yours accepted the notification. Turn this off in the Bridge under Account and devices, Notifications.\n` }).catch((e) => console.error("alert mail failed:", e.message));
-  }
-  return n;
-}
-const alertOut = (key, a) => notify(key, alertEvent(a)).then((r) => emailFallback(key, a, r).then(() => r));
-const soon = (pr, ms = 2500) => Promise.race([pr.catch(() => []), new Promise((r) => setTimeout(() => r([]), ms))]);
-function alertEvent(a) {
-  const urgent = isUrgent(a);
-  return { type: "alert", urgent, topic: a.kind, payload: { kind: "alert", title: `${urgent ? "Urgent: " : ""}${ALERT_TITLE[a.kind] || "Alert"}`, body: (a.message || `${a.from || "My Voice"}: ${ALERT_TITLE[a.kind] || a.kind}`).slice(0, 140), tag: "alert-" + a.id, url: "bridge.html#today", urgent } };
-}
-export { notify, pushLog, emailFallback };
-
-// Weekly summary: the family turns it on; each person picks push (in Notifications)
-// and/or email here. Every email carries a one-click unsubscribe link.
-const unsubToken = (fam, uid) => createHash("sha256").update(`unsub:${fam}:${uid}:${process.env.UNSUB_SECRET || wp.keys(store.DIR).privateKey}`).digest("base64url").slice(0, 32);
-export async function sendWeekly(now = Date.now(), base = process.env.APP_URL || "") {
-  let sent = 0;
-  for (const fam of store.list()) {
-    const d = store.read(fam);
-    if (!summary.due(d.summaryCfg, now) || d.doc?.e2ee) continue; // encrypted families: the server can't count anything, so no summary
-    const s = summary.build(d, now);
-    store.update(fam, (x) => { x.summaryCfg.last = now; });
-    const r = await notify(fam, { type: "summary", topic: "weekly", payload: { kind: "summary", title: s.title, body: s.short, tag: "weekly", url: "bridge.html#insights" } }).catch(() => []);
-    sent += r.filter((x) => x.status >= 200 && x.status < 300).length;
-    for (const uid of d.summaryCfg.emails || []) {
-      const u = acc.userById(uid); if (!u || !u.emailVerified || !u.memberships.some((m) => m.family === fam)) continue;
-      const link = `${base.replace(/\/+$/, "")}/api/summary/unsubscribe?f=${fam}&u=${uid}&t=${unsubToken(fam, uid)}`;
-      await mailer.send({ to: u.email, subject: s.title, headers: { "List-Unsubscribe": `<${link}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
-        text: `${s.lines.join("\n")}\n\nOpen the Bridge for the full picture: ${base}/bridge.html#insights\n\nThis summary has counts only. It never includes notes, places, videos or recordings.\nStop these emails: ${link}\n` }).then(() => sent++).catch((e) => console.error("weekly mail failed:", e.message));
-    }
-  }
-  return sent;
-}
-
 // ---------- routes ----------
 async function route(req, res, url) {
   const p = url.pathname.replace(/\/+$/, "") || "/";
   const M = req.method;
 
-  if (p === "/api/health" && M === "GET") return ok(res, { status: "ok", version: "0.15.0", uptime: Math.round(process.uptime()), time: new Date().toISOString() });
+  if (p === "/api/health" && M === "GET") return ok(res, { status: "ok", version: "0.4.0", uptime: Math.round(process.uptime()), time: new Date().toISOString() });
 
   // Public: read a share link (no family key needed)
   let m;
@@ -250,73 +229,6 @@ async function route(req, res, url) {
     if (!sh || sh.revoked) return fail(res, 404, "Share link not found");
     if (sh.expires && sh.expires < Date.now()) return fail(res, 410, "Share link expired");
     return ok(res, scopedView(d.doc, sh.role));
-  }
-
-  // Public: the "if found" page for a QR sticker. Only fields the caregiver chose.
-  if ((m = /^\/api\/found\/([A-Za-z0-9_-]{20,})$/.exec(p)) && M === "GET") {
-    const fam = shareIndex.get(m[1]), f = fam && store.read(fam).found;
-    if (!f || f.token !== m[1]) return fail(res, 404, "This page has been switched off");
-    return ok(res, foundView(f.fields));
-  }
-
-  // ---- Sensor webhooks (public: the secret is in the URL) ----
-  // Door, gate and pool sensors, smart-home hubs (Home Assistant, SmartThings,
-  // IFTTT, Alexa routines through IFTTT) and trackers that can call a URL post here.
-  if ((m = /^\/api\/hooks\/([A-Za-z0-9_-]{24,})$/.exec(p)) && (M === "POST" || M === "GET")) {
-    const th = sha(m[1]), family = hookIndex.get(th);
-    if (!family) return fail(res, 404, "Unknown sensor link");
-    if (limited(hookTries, th, 30, 10 * 60e3)) return fail(res, 429, "Too many alerts from this sensor. Wait a few minutes.");
-    bump(hookTries, th);
-    const b = M === "POST" ? await body(req).catch(() => ({})) : Object.fromEntries(url.searchParams);
-    const sensor = store.read(family).sensors?.find((x) => x.tokenHash === th);
-    if (!sensor) return fail(res, 404, "Unknown sensor link");
-    const ev = hookEvent(b, sensor), now = Date.now();
-    store.update(family, (d) => { const x = d.sensors?.find((y) => y.id === sensor.id); if (x) { x.last = now; if (ev.loc) x.lastLoc = { ...ev.loc, t: now }; } });
-    // Research mode: heart-rate readings only count for a wristband a parent gave
-    // separate consent for. They never reach the child's device and are kept 1 hour.
-    if (ev.research) {
-      if (!sensor.research) return ok(res, { ignored: true }, "Research mode is off for this sensor");
-      if (ev.hr == null) return fail(res, 400, "Validation failed", "hr must be a heart rate");
-      let r;
-      store.update(family, (d) => {
-        const x = d.sensors.find((y) => y.id === sensor.id);
-        x.hr = [...(x.hr || []).filter((y) => now - y.t < 3600e3), { t: now, hr: ev.hr, ...(b.moving && { moving: true }) }].slice(-400);
-        r = calmCheck(x.hr, { rest: x.rest ?? null, lastNudge: x.nudged || 0 }, now);
-        if (r.nudge) x.nudged = now;
-      });
-      if (r.nudge) raise(family, { kind: "calm-check", from: sensor.name, message: r.why, sensor: sensor.id, caregiverOnly: true });
-      return ok(res, { nudge: r.nudge });
-    }
-    if (ev.event === "location") return ok(res, { stored: !!ev.loc });
-    let urgent = ev.urgent, why = "";
-    if (ev.rule === "exit" && urgent) {
-      const d = store.read(family);
-      const tab = Object.values(acc.db().devices).filter((v) => v.family === family && !v.revoked && v.lastLoc).sort((x, y) => y.lastLoc.t - x.lastLoc.t)[0];
-      const hr = new Date(now).getHours();
-      const r = exitRule({ out: d.outUntil || 0, tablet: tab ? { last: tab.lastLoc, prev: tab.prevLoc } : null, quietFrom: hr >= 21 || hr < 6 ? 21 : null }, now);
-      urgent = r.urgent; why = r.why;
-    }
-    const a = raise(family, { kind: "sensor", from: sensor.name, message: ev.message + (why ? ` ${why}` : ""), sensor: sensor.id, ...(ev.event && { event: ev.event }), ...(ev.loc && { loc: ev.loc }), ...(urgent && { urgent: true }) });
-    return ok(res, { id: a.id, t: a.t });
-  }
-
-  // ---- YouTube channel lookup (public, read-only, youtube.com only) ----
-  if (p === "/api/summary/unsubscribe" && (M === "GET" || M === "POST")) {
-    const f = url.searchParams.get("f") || "", u = url.searchParams.get("u") || "", t = url.searchParams.get("t") || "";
-    const good = /^[a-f0-9]{32}$/.test(f) && t.length === 32 && t === unsubToken(f, u);
-    if (good) store.update(f, (d) => { if (d.summaryCfg) d.summaryCfg.emails = (d.summaryCfg.emails || []).filter((x) => x !== u); });
-    res.writeHead(good ? 200 : 400, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-    return res.end(`<!doctype html><meta name="viewport" content="width=device-width"><title>LuminAAC</title><body style="font:18px/1.5 system-ui;max-width:32rem;margin:3rem auto;padding:0 1rem"><h1 style="font-size:1.4rem">${good ? "You're unsubscribed" : "That link didn't work"}</h1><p>${good ? "You won't get the weekly summary by email any more. You can turn it back on in the Bridge." : "It may be incomplete. You can turn the summary off in the Bridge under Progress."}</p></body>`);
-  }
-  if (p === "/api/cron/weekly" && (M === "GET" || M === "POST")) {
-    const sec = process.env.CRON_SECRET;
-    if (!sec || req.headers.authorization !== `Bearer ${sec}`) return fail(res, 401, "Unauthorized");
-    return ok(res, { sent: await sendWeekly() });
-  }
-  if (p === "/api/push/key" && M === "GET") return ok(res, { publicKey: wp.keys(store.DIR).publicKey });
-  if (p === "/api/youtube" && M === "GET") {
-    try { return ok(res, await yt.channel(url.searchParams.get("channel"))); }
-    catch (e) { return fail(res, e.status || 502, e.message); }
   }
 
   // ---- Accounts (public endpoints) ----
@@ -525,175 +437,70 @@ async function route(req, res, url) {
     if ((m = /^\/api\/fl\/round\/([\w-]+)\/reveal$/.exec(p)) && M === "POST") { const b = await body(req); return R(await fl.reveal(m[1], b.client, b, P)); }
   }
 
-  // ---- Weekly summary ----
-  if (p === "/api/summary" || p === "/api/summary/preview") {
-    if (!can(w, "alerts:read") && !can(w, "chat")) return deny();
-    const d = store.read(key), cfg = d.summaryCfg || { on: false, emails: [] };
-    const me = w.user ? cfg.emails?.includes(w.user.id) : false;
-    if (p === "/api/summary/preview" && M === "GET") return ok(res, { ...summary.build(d), on: !!cfg.on, emailMe: me, canEmail: !!w.user?.emailVerified, last: cfg.last || null });
-    if (p === "/api/summary" && M === "PUT") {
-      const b = await body(req);
-      if (typeof b.on === "boolean" && w.role !== "parent") return deny();
-      if (typeof b.emailMe === "boolean" && !w.user) return fail(res, 400, "Validation failed", "sign in to get the summary by email");
-      if (b.emailMe && !w.user.emailVerified) return fail(res, 400, "Validation failed", "confirm your email address first");
-      const out = store.update(key, (x) => { const c = (x.summaryCfg ||= { on: false, emails: [], last: 0 }); if (typeof b.on === "boolean") { c.on = b.on; audit(x, `Weekly summary turned ${b.on ? "on" : "off"}`); } if (typeof b.emailMe === "boolean") c.emails = b.emailMe ? [...new Set([...(c.emails || []), w.user.id])] : (c.emails || []).filter((y) => y !== w.user.id); return { on: c.on, emailMe: w.user ? c.emails.includes(w.user.id) : false }; });
-      return ok(res, out, "Saved");
-    }
-  }
-
-  // ---- Web Push subscriptions (one per browser; preferences are per person) ----
-  if (p === "/api/push" || p.startsWith("/api/push/")) {
-    if (!can(w, "alerts:read") && !can(w, "chat")) return deny();
-    const mine = (s) => (w.user ? s.uid === w.user.id : !s.uid) || w.role === "parent";
-    const QUIET = (q) => isObj(q) ? { on: !!q.on, from: /^\d\d:\d\d$/.test(q.from) ? q.from : "21:00", to: /^\d\d:\d\d$/.test(q.to) ? q.to : "07:00", tz: String(q.tz || "UTC").slice(0, 60) } : { on: false, from: "21:00", to: "07:00", tz: "UTC" };
-    const PREFS = (b = {}) => ({ alerts: b.alerts !== false, urgentOnly: !!b.urgentOnly, chat: b.chat !== false, summary: !!b.summary, emailFallback: b.emailFallback !== false, quiet: QUIET(b.quiet) });
-    const out = (s) => ({ id: s.id, name: s.name, role: s.role, prefs: s.prefs, created: s.created, mine: w.user ? s.uid === w.user.id : !s.uid });
-    if (p === "/api/push" && M === "GET") return ok(res, (store.read(key).push || []).filter(mine).map(out));
-    if (p === "/api/push" && M === "POST") {
-      const b = await body(req), sub = b.subscription || {};
-      let ep; try { ep = new URL(sub.endpoint); } catch { return fail(res, 400, "Validation failed", "subscription.endpoint must be a URL"); }
-      if (ep.protocol !== "https:" && !process.env.PUSH_ALLOW_HTTP) return fail(res, 400, "Validation failed", "endpoint must be https");
-      if (!/^[A-Za-z0-9_-]{80,100}$/.test(sub.keys?.p256dh || "") || !/^[A-Za-z0-9_-]{16,32}$/.test(sub.keys?.auth || "")) return fail(res, 400, "Validation failed", "subscription.keys are missing");
-      const s = store.update(key, (d) => {
-        d.push = (d.push || []).filter((x) => x.endpoint !== sub.endpoint);
-        const x = { id: randomUUID(), endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth }, name: String(b.name || "This browser").slice(0, 60), role: w.role, canChat: can(w, "chat"), canAlerts: can(w, "alerts:read"), ...(w.user && { uid: w.user.id }), prefs: PREFS(b.prefs), created: Date.now() };
-        d.push = [...d.push, x].slice(-50); audit(d, "Notifications turned on for a browser"); return x;
-      });
-      return ok(res, out(s), "Notifications are on for this browser");
-    }
-    if (p === "/api/push/test" && M === "POST") {
-      const b = await body(req), d = store.read(key), s = (d.push || []).find((x) => x.id === b.id && mine(x));
-      if (!s) return fail(res, 404, "Subscription not found");
-      const r = await wp.send(s, { kind: "test", title: "LuminAAC test", body: "Notifications are working.", tag: "test", url: "bridge.html" }, wp.keys(store.DIR), { ttl: 60 });
-      return r.status >= 200 && r.status < 300 ? ok(res, r, "Test sent") : fail(res, 502, "The push service did not accept it", String(r.status || r.error));
-    }
-    if ((m = /^\/api\/push\/([\w-]+)$/.exec(p)) && (M === "PUT" || M === "DELETE")) {
-      const b = M === "PUT" ? await body(req) : {};
-      const s = store.update(key, (d) => { const x = (d.push || []).find((y) => y.id === m[1] && mine(y)); if (!x) return null; if (M === "DELETE") d.push = d.push.filter((y) => y !== x); else x.prefs = PREFS({ ...x.prefs, ...b.prefs, quiet: { ...x.prefs.quiet, ...(b.prefs?.quiet || {}) } }); return x; });
-      if (!s) return fail(res, 404, "Subscription not found");
-      return M === "DELETE" ? ok(res, undefined, "Notifications are off for this browser") : ok(res, out(s), "Saved");
-    }
-  }
-
-  // ---- Team chat (parents, teachers, therapists, family; never the child's device) ----
-  if (p === "/api/chat") {
-    if (!can(w, "chat")) return deny();
-    if (M === "GET") { const since = Number(url.searchParams.get("since") || 0); return ok(res, (store.read(key).chat || []).filter((c) => c.t > since).slice(-200)); }
-    if (M === "POST") {
-      const b = await body(req), sealed = /^e2ee:v1:[\w-]+$/.test(String(b.text || "")), text = String(b.text || "").trim().slice(0, sealed ? 6000 : 1000);
-      if (!text) return fail(res, 400, "Validation failed", "text is required");
-      const c = { id: String(b.id || randomUUID()).slice(0, 64), t: Date.now(), text, role: w.role, from: String(w.user?.name || b.from || ROLE_NAME[w.role] || "Parent").slice(0, 60), ...(w.user && { uid: w.user.id }) };
-      store.update(key, (d) => { if ((d.chat ||= []).some((x) => x.id === c.id)) return; d.chat = [...d.chat, c].slice(-500); });
-      broadcast(key, "chat", c);
-      await soon(notify(key, { type: "chat", excludeUid: w.user?.id, topic: "chat", payload: { kind: "chat", title: `${c.from} in team chat`, body: sealed ? "New message. Open the Bridge to read it." : text.slice(0, 120), tag: "chat", url: "bridge.html#team" } }));
-      return ok(res, c);
-    }
-  }
-  if ((m = /^\/api\/chat\/([\w-]+)$/.exec(p)) && M === "DELETE") {
-    if (!can(w, "chat")) return deny();
-    const gone = store.update(key, (d) => { const x = (d.chat || []).find((y) => y.id === m[1]); if (!x || (w.role !== "parent" && x.uid !== w.user?.id)) return false; d.chat = d.chat.filter((y) => y !== x); return true; });
-    return gone ? ok(res, undefined, "Message deleted") : fail(res, 404, "Message not found");
-  }
-  // One cheap check for anything new, so pages can poll instead of holding a stream open.
-  if (p === "/api/updates" && M === "GET") {
-    const since = Number(url.searchParams.get("since") || 0), d = store.read(key), cut = Date.now() - LOC_KEEP_MS;
-    return ok(res, { now: Date.now(), version: d.version,
-      alerts: can(w, "alerts:read") ? d.alerts.filter((a) => a.t > since).map((a) => (a.loc && a.t < cut ? { ...a, loc: null } : a)) : [],
-      chat: can(w, "chat") ? (d.chat || []).filter((c) => c.t > since) : [] });
-  }
-
-  // ---- "We're going out together": door alerts stay calm until then ----
-  if (p === "/api/safety/out") {
-    if (w.kind === "device" || !can(w, "alerts:read")) return deny();
-    if (M === "GET") return ok(res, { until: store.read(key).outUntil || 0 });
-    if (M === "POST") {
-      const b = await body(req), mins = Math.min(12 * 60, Math.max(0, Number(b.minutes) || 0)), until = mins ? Date.now() + mins * 60e3 : 0;
-      store.update(key, (d) => { d.outUntil = until; audit(d, until ? `Going out together for ${mins} minutes` : "Back home"); });
-      return ok(res, { until });
-    }
-  }
-  // ---- "If found" page (parents choose every field; revocable) ----
-  if (p === "/api/found") {
-    if (!can(w, "share")) return deny();
-    if (M === "GET") { const f = store.read(key).found; return ok(res, f ? { path: `/api/found/${f.token}`, fields: f.fields, created: f.created } : null); }
-    if (M === "POST") {
-      const b = await body(req), fields = foundView(b || {}), old = store.read(key).found;
-      const token = old?.token || randomBytes(18).toString("base64url");
-      store.update(key, (d) => { d.found = { token, fields, created: old?.created || Date.now(), updated: Date.now() }; audit(d, old ? "If-found page updated" : "If-found page created"); });
-      shareIndex.set(token, key); saveIndex();
-      return ok(res, { path: `/api/found/${token}`, fields });
-    }
-    if (M === "DELETE") {
-      const old = store.update(key, (d) => { const f = d.found; delete d.found; if (f) audit(d, "If-found page switched off"); return f; });
-      if (old) { shareIndex.delete(old.token); saveIndex(); }
-      return ok(res, undefined, "Switched off");
-    }
-  }
-
-  // ---- Sensors and wearables (parents set them up) ----
-  if (p === "/api/sensors") {
-    if (!can(w, "devices")) return deny();
-    if (M === "GET") return ok(res, (store.read(key).sensors || []).map(({ tokenHash, hr, ...x }) => x));
-    if (M === "POST") {
-      const b = await body(req), name = String(b.name || "").trim().slice(0, 60);
-      if (!name) return fail(res, 400, "Validation failed", "name is required");
-      const kind = SENSOR_KINDS.includes(b.kind) ? b.kind : "other", token = randomBytes(24).toString("base64url");
-      const research = kind === "wearable" && b.research === true && b.consent === true;
-      const sn = { id: randomUUID(), name, kind, urgent: typeof b.urgent === "boolean" ? b.urgent : ["pool", "door", "gate", "wearable"].includes(kind), created: Date.now(), last: null, tokenHash: sha(token), ...(research && { research: true, rest: Number(b.rest) > 40 && Number(b.rest) < 160 ? Math.round(b.rest) : null }) };
-      store.update(key, (d) => { (d.sensors ||= []).push(sn); audit(d, `Sensor added: ${name}${research ? " (research mode, consent given)" : ""}`); });
-      hookIndex.set(sn.tokenHash, key); saveHooks();
-      const { tokenHash, ...out } = sn;
-      return ok(res, { ...out, path: `/api/hooks/${token}` }, "Copy this link now. It is shown only once.");
-    }
-  }
-  if ((m = /^\/api\/sensors\/([\w-]+)$/.exec(p)) && M === "DELETE") {
-    if (!can(w, "devices")) return deny();
-    const sn = store.update(key, (d) => { const x = (d.sensors || []).find((y) => y.id === m[1]); if (x) { d.sensors = d.sensors.filter((y) => y !== x); audit(d, `Sensor removed: ${x.name}`); } return x; });
-    if (!sn) return fail(res, 404, "Sensor not found");
-    hookIndex.delete(sn.tokenHash); saveHooks();
-    return ok(res, undefined, "Sensor removed. Its link no longer works.");
-  }
-
-  // ---- End-to-end encryption key exchange (the server only relays public keys and wrapped keys) ----
-  if (p === "/api/e2ee/requests" && M === "POST") {
-    const b = await body(req), pub = b.pub;
-    if (!isObj(pub) || pub.kty !== "EC" || pub.crv !== "P-256" || typeof pub.x !== "string" || typeof pub.y !== "string" || "d" in pub) return fail(res, 400, "Validation failed", "pub must be a public P-256 key");
-    const r = { id: randomUUID(), t: Date.now(), name: String(b.name || (w.kind === "device" ? w.device?.name : w.user?.name) || "A device").slice(0, 60), role: w.role, pub: { kty: "EC", crv: "P-256", x: pub.x.slice(0, 64), y: pub.y.slice(0, 64) }, grant: null };
-    store.update(key, (d) => { d.e2eeReq = [...(d.e2eeReq || []).filter((x) => Date.now() - x.t < 864e5), r].slice(-20); audit(d, `Encryption key requested by ${r.name}`); });
-    return ok(res, { id: r.id });
-  }
-  if (p === "/api/e2ee/requests" && M === "GET") {
-    if (!can(w, "devices")) return deny();
-    return ok(res, (store.read(key).e2eeReq || []).filter((x) => !x.grant && Date.now() - x.t < 864e5).map(({ grant, ...x }) => x));
-  }
-  if ((m = /^\/api\/e2ee\/requests\/([\w-]+)$/.exec(p))) {
-    if (M === "PUT") {
-      if (!can(w, "devices")) return deny();
-      const b = await body(req);
-      if (!/^e2ee:v1:[\w-]+$/.test(String(b.wrapped || "")) || !isObj(b.from)) return fail(res, 400, "Validation failed", "wrapped and from are required");
-      const done = store.update(key, (d) => { const x = (d.e2eeReq || []).find((y) => y.id === m[1]); if (!x) return false; x.grant = { wrapped: String(b.wrapped).slice(0, 2000), from: { kty: "EC", crv: "P-256", x: String(b.from.x).slice(0, 64), y: String(b.from.y).slice(0, 64) } }; audit(d, `Encryption key shared with ${x.name}`); return true; });
-      return done ? ok(res, undefined, "Shared") : fail(res, 404, "Request not found");
-    }
-    if (M === "GET") {
-      const x = (store.read(key).e2eeReq || []).find((y) => y.id === m[1]);
-      if (!x) return fail(res, 404, "Request not found");
-      if (x.grant) store.update(key, (d) => { d.e2eeReq = (d.e2eeReq || []).filter((y) => y.id !== m[1]); }); // hand over once
-      return ok(res, { grant: x.grant });
-    }
-    if (M === "DELETE") {
-      if (!can(w, "devices")) return deny();
-      store.update(key, (d) => { d.e2eeReq = (d.e2eeReq || []).filter((y) => y.id !== m[1]); });
-      return ok(res, undefined, "Declined");
-    }
-  }
-
   // ---- Sync ----
   if (p === "/api/sync" && M === "GET") {
     const d = store.read(key);
-    if (can(w, "sync:read")) return ok(res, { doc: d.doc, version: d.version, updated: d.updated, role: w.role });
+    if (can(w, "sync:read")) return ok(res, { doc: d.doc, telemetry: d.telemetry || { log: [], exploration: [], feedback: [], updated: 0 }, version: d.version, updated: d.updated, role: w.role });
     if (can(w, "sync:child")) return ok(res, { doc: childView(d.doc), version: d.version, updated: d.updated, role: "child" });
     if (can(w, "sync:scoped")) return ok(res, { doc: null, view: scopedView(d.doc, w.role), version: d.version, updated: d.updated, role: w.role });
     return deny();
+  }
+  if (p === "/api/sync/telemetry" && M === "POST") {
+    if (!can(w, "sync:child") && !can(w, "sync:write")) return deny();
+    if (limited(telemetryTries, key, 60, 60e3)) return fail(res, 429, "Too many telemetry updates. Try again shortly.");
+    bump(telemetryTries, key);
+    const b = await body(req);
+    if (!isObj(b)) return fail(res, 400, "Validation failed", "Body must be a JSON object");
+    const keys = Object.keys(b);
+    for (const k of keys) {
+      if (PROTECTED_TELEMETRY_KEYS.has(k)) {
+        return w.role === "child"
+          ? fail(res, 403, "Child devices cannot modify caregiver settings", k)
+          : fail(res, 400, "Validation failed", `Unexpected field: ${k}`);
+      }
+      if (!["log", "exploration", "feedback"].includes(k)) {
+        return fail(res, 400, "Validation failed", `Unknown telemetry field: ${k}`);
+      }
+    }
+    if (!keys.length) return fail(res, 400, "Validation failed", "Provide at least one of log, exploration, or feedback");
+    for (const k of keys) {
+      if (!Array.isArray(b[k]) || b[k].length > 200) {
+        return fail(res, 400, "Validation failed", `${k} must be an array of at most 200 items`);
+      }
+    }
+    const cleanLog = [], cleanExp = [], cleanFb = [];
+    for (const item of b.log || []) {
+      const s = sanitizeTelemetryLog(item);
+      if (!s) return fail(res, 400, "Validation failed", "Invalid log entry");
+      cleanLog.push(s);
+    }
+    for (const item of b.exploration || []) {
+      const s = sanitizeTelemetryExploration(item);
+      if (!s) return fail(res, 400, "Validation failed", "Invalid exploration entry");
+      cleanExp.push(s);
+    }
+    for (const item of b.feedback || []) {
+      const s = sanitizeTelemetryFeedback(item);
+      if (!s) return fail(res, 400, "Validation failed", "Invalid feedback entry");
+      cleanFb.push(s);
+    }
+    const result = store.update(key, (d) => {
+      d.telemetry ||= { log: [], exploration: [], feedback: [], updated: 0 };
+      if (cleanLog.length) d.telemetry.log = dedupeMerge(d.telemetry.log, cleanLog, (it) => `${it.t}|${it.text}|${it.kind || ""}`, 5000);
+      if (cleanExp.length) d.telemetry.exploration = dedupeMerge(d.telemetry.exploration, cleanExp, (it) => `${it.t}|${it.word}`, 1000);
+      if (cleanFb.length) d.telemetry.feedback = dedupeMerge(d.telemetry.feedback, cleanFb, (it) => `${it.t}|${it.signalId || ""}|${it.accepted}`, 2000);
+      d.telemetry.updated = Date.now();
+      if (isObj(d.doc)) {
+        if (cleanExp.length) d.doc.exploration = dedupeMerge(d.doc.exploration || [], cleanExp, (it) => `${it.t}|${it.word}`, 500);
+        if (cleanFb.length) d.doc.feedback = dedupeMerge(d.doc.feedback || [], cleanFb, (it) => `${it.t}|${it.signalId || ""}|${it.accepted}`, 2000);
+      }
+      return {
+        accepted: { log: cleanLog.length, exploration: cleanExp.length, feedback: cleanFb.length },
+        totals: { log: d.telemetry.log.length, exploration: d.telemetry.exploration.length, feedback: d.telemetry.feedback.length },
+        updated: d.telemetry.updated,
+      };
+    });
+    return ok(res, result);
   }
   if (p.startsWith("/api/sync") && !can(w, "sync:write")) return deny();
   if (p.startsWith("/api/share") && !can(w, "share")) return deny();
@@ -713,20 +520,6 @@ async function route(req, res, url) {
     store.remove(key);
     const A = acc.db(); for (const dv of Object.values(A.devices)) if (dv.family === key) dv.revoked = true; acc.save();
     return ok(res, undefined, "All server data for this family was deleted, and its paired devices were signed out");
-  }
-
-  // ---- Potty Path events (opt-in, separate from the document; may be end-to-end encrypted) ----
-  if (p === "/api/potty/events") {
-    if (M === "POST") {
-      if (!can(w, "potty:write")) return deny();
-      const b = await body(req);
-      const out = store.update(key, (d) => { const r = potty.post(d, b); if (r.added) audit(d, "Updated toilet log"); return r; });
-      if (out.error) return fail(res, 400, "Validation failed", out.error);
-      if (out.added) broadcast(key, "potty", { cursor: out.cursor });
-      return ok(res, out);
-    }
-    if (M === "GET") { if (!can(w, "potty:read")) return deny(); return ok(res, potty.since(store.read(key), url.searchParams.get("since"))); }
-    if (M === "DELETE") { if (!can(w, "sync:write")) return deny(); const n = store.update(key, (d) => { const x = potty.wipe(d); audit(d, "Deleted toilet log"); return x; }); return ok(res, { deleted: n }, "Toilet log deleted from the server"); }
   }
 
   // ---- Sharing ----
@@ -759,7 +552,7 @@ async function route(req, res, url) {
     dv.sharing = b.sharing !== false; dv.lastBeat = Date.now();
     const floor = Number(process.env.DEADMAN_FLOOR_MIN ?? 5); // lower only for demos/tests
     dv.silentAfterMin = Math.min(1440, Math.max(floor, Number(b.silentAfterMin) || dv.silentAfterMin || DEADMAN_MIN()));
-    if (loc) { if (dv.lastLoc) dv.prevLoc = dv.lastLoc; dv.lastLoc = { ...loc, t: Date.now() }; }
+    if (loc) dv.lastLoc = { ...loc, t: Date.now() };
     dv.silentSince = null; acc.save();
     if (was) raise(dv.family, { kind: "back", message: `${dv.name} is sharing location again`, from: dv.name, ...(loc && { loc }) });
     return ok(res, { sharing: dv.sharing, silentAfterMin: dv.silentAfterMin, nextBeatSec: Math.min(300, dv.silentAfterMin * 20) });
@@ -783,12 +576,12 @@ async function route(req, res, url) {
   }
   if (p === "/api/alerts" && M === "POST") {
     const b = await body(req);
-    if (!["help", "home", "custom", "sensor", "zone-enter", "zone-leave", "danger-enter", "danger-leave", "potty"].includes(b.kind)) return fail(res, 400, "Validation failed", "kind must be help, home, custom, potty, zone-enter, zone-leave, danger-enter or danger-leave");
+    if (!["help", "home", "custom", "zone-enter", "zone-leave"].includes(b.kind)) return fail(res, 400, "Validation failed", "kind must be help, home, custom, zone-enter or zone-leave");
     const loc = b.loc ? LOC(b.loc) : null;
     if (b.loc && !loc) return fail(res, 400, "Validation failed", "loc must be { lat, lng, acc }");
-    const a = { id: String(b.id || randomUUID()).slice(0, 64), kind: b.kind, message: String(b.message || "").slice(0, 200), t: Number(b.t) || Date.now(), ack: null, from: String(b.from || w.device?.name || "My Voice").slice(0, 60), ...(loc && { loc }), ...(b.zone && { zone: String(b.zone).slice(0, 60) }), ...(b.water === true && { water: true }), ...(b.kind === "danger-enter" && { urgent: true }) };
+    const a = { id: String(b.id || randomUUID()).slice(0, 64), kind: b.kind, message: String(b.message || "").slice(0, 200), t: Number(b.t) || Date.now(), ack: null, from: String(b.from || w.device?.name || "My Voice").slice(0, 60), ...(loc && { loc }), ...(b.zone && { zone: String(b.zone).slice(0, 60) }) };
     const dup = store.update(key, (d) => { if (d.alerts.some((x) => x.id === a.id)) return true; d.alerts = [a, ...d.alerts].slice(0, 500); audit(d, `Alert: ${a.kind}`); return false; });
-    if (!dup) { broadcast(key, "alert", a); await soon(alertOut(key, a), 4000); }
+    if (!dup) broadcast(key, "alert", a);
     return ok(res, a);
   }
   if ((m = /^\/api\/alerts\/([\w-]+)\/ack$/.exec(p)) && M === "POST") {
@@ -840,14 +633,13 @@ async function route(req, res, url) {
   return fail(res, 404, "Not found", `${M} ${p}`);
 }
 
-export async function handle(req, res) {
+export const server = createServer(async (req, res) => {
   cors(req, res);
   if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
   const url = new URL(req.url, "http://x");
   try { await route(req, res, url); }
   catch (e) { if (!res.headersSent) fail(res, e.status || 500, e.status ? e.message : "Server error", e.status ? undefined : e.message); }
-}
-export const server = createServer(handle);
+});
 
 // ---------- dead-man check ----------
 const DEADMAN_MIN = () => Number(process.env.DEADMAN_MINUTES || 30);
@@ -855,7 +647,6 @@ function raise(family, x) {
   const a = { id: randomUUID(), t: Date.now(), ack: null, message: "", ...x };
   store.update(family, (d) => { d.alerts = [a, ...d.alerts].slice(0, 500); audit(d, `Alert: ${a.kind}`); });
   broadcast(family, "alert", a);
-  alertOut(family, a).catch(() => {});
   return a;
 }
 export function checkDeadman(now = Date.now()) {
@@ -875,18 +666,9 @@ export function checkDeadman(now = Date.now()) {
 setInterval(() => { try { checkDeadman(); } catch (e) { console.error("dead-man check:", e.message); } }, Number(process.env.DEADMAN_CHECK_MS || 60000)).unref();
 
 // Share tokens map to a family id (a hash), persisted so links survive restarts.
-const IDX = join(store.DIR, "_shares.json"), HOOKS = join(store.DIR, "_hooks.json");
+const IDX = join(store.DIR, "_shares.json");
+try { for (const [t, f] of Object.entries(JSON.parse(readFileSync(IDX, "utf8")))) shareIndex.set(t, f); } catch {}
 const saveIndex = () => writeFileSync(IDX, JSON.stringify(Object.fromEntries(shareIndex)));
-const saveHooks = () => writeFileSync(HOOKS, JSON.stringify(Object.fromEntries(hookIndex)));
-// Hosted mode calls this after another instance changed the files.
-export function reload() {
-  acc.forget(); fl.forget();
-  for (const [file, map] of [[IDX, shareIndex], [HOOKS, hookIndex]]) { map.clear(); try { for (const [k, f] of Object.entries(JSON.parse(readFileSync(file, "utf8")))) map.set(k, f); } catch {} }
-}
-reload();
-
-// Self-hosted: check hourly for families whose weekly summary is due. On Vercel a cron calls /api/cron/weekly.
-if (!process.env.VERCEL && process.env.LUMINAAC_NO_LISTEN !== "1") setInterval(() => sendWeekly().catch((e) => console.error("weekly:", e.message)), 3600e3).unref();
 
 if (process.env.LUMINAAC_NO_LISTEN !== "1") {
   server.listen(PORT, () => console.log(`LuminAAC backend on http://localhost:${PORT}  (data: ${store.DIR})`));

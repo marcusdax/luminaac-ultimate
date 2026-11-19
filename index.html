@@ -16,17 +16,10 @@
   <link rel="stylesheet" href="app.css" />
   <link rel="stylesheet" href="brand/brand-tokens.css" />
   <link rel="stylesheet" href="myvoice.css" />
-  <link rel="stylesheet" href="slp.css" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="phase3.css" />
   <link rel="stylesheet" href="phase4.css" />
-  <link rel="stylesheet" href="phase7.css" />
-  <link rel="stylesheet" href="potty.css" />
-  <link rel="stylesheet" href="sound.css" />
-  <link rel="stylesheet" href="play.css" />
-  <link rel="stylesheet" href="redesign.css" />
-  <link rel="stylesheet" href="motion.css" />
-  <script src="dialog-guard.js"></script>
+  <link rel="stylesheet" href="support.css" />
 </head>
 <body>
   <a class="skip" href="#main">Skip to board</a>
@@ -42,9 +35,6 @@
         <span class="strip-empty" id="stripEmpty">Tap words to build a message</span>
       </button>
       <div class="strip-actions">
-        <button class="icon-btn" id="btnFind" type="button" aria-label="Find a word">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
-        </button>
         <button class="icon-btn" id="btnBack" type="button" aria-label="Delete last word">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h11v14H9l-6-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 9.5l5 5M17 9.5l-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
@@ -71,6 +61,10 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h3M5 12h3M5 18h3M11 6h8M11 12h8M11 18h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         <span>Plans</span>
       </button>
+      <button class="nav-btn" data-view="support" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 20v-4a6 6 0 0112 0v4M3 11h3M18 11h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span>More</span>
+      </button>
       <a class="nav-btn nav-bridge" href="bridge.html">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17c3-6 6-8 9-8s6 2 9 8M3 17h18M7 17v-4M12 17V9M17 17v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         <span>Bridge</span>
@@ -90,21 +84,30 @@
         <div class="next" role="group" aria-label="Next word ideas">
           <span class="next-label" id="nextLabel">Next</span>
           <div class="next-row" id="nextRow"></div>
-          <!-- Context words share this line, so the board below never moves (motor planning). -->
-          <div class="ctx" role="group" aria-labelledby="ctxLabel" id="ctx" hidden>
-            <span class="next-label" id="ctxLabel">Now</span>
-            <div class="next-row ctx-row" id="ctxRow"></div>
-          </div>
         </div>
         <div class="folders" role="tablist" aria-label="Word folders" id="folders"></div>
         <div class="grid" id="grid" role="grid" aria-label="Word board"></div>
         <p class="legend" id="legend"></p>
+        <div class="quick sx-sensory-inline" role="group" aria-label="Sensory quick bar" id="mvSensoryBar"></div>
+        <div class="model-row" role="group" aria-label="Partner tools">
+          <button class="ghost-btn" id="modelToggle" type="button" aria-pressed="false">Partner modeling</button>
+          <p class="model-banner" id="modelBanner" role="status" hidden>Partner modeling is on. Taps speak and light up the word for you to model. Nothing is added to the message or counted as the child's words.</p>
+        </div>
+        <div class="vsearch" role="search">
+          <label class="sr-only" for="vsearch">Search vocabulary words</label>
+          <input id="vsearch" type="search" aria-label="Search vocabulary words" placeholder="Search words..." autocomplete="off" maxlength="40" />
+          <div class="vsearch-res" id="vsearchRes" role="group" aria-label="Matching words"></div>
+        </div>
+        <div class="morph" id="morphBar" role="group" aria-label="Other forms of the last word" hidden></div>
+        <div class="mv-choices" id="mvChoiceBoards" aria-label="Choice boards"></div>
+        <div class="mv-gestalts" id="mvGestalts" data-gestalts="true" aria-label="Gestalts and scripts"></div>
       </section>
 
       <!-- CALM -->
       <section class="view" id="view-calm" aria-label="Calm" hidden>
         <h1 class="h1">How big are your feelings?</h1>
         <div class="scale" role="group" aria-label="Feelings scale" id="scale"></div>
+        <div class="mv-bodymap" id="mvBodyMap" aria-label="Body and pain check-in"></div>
 
         <div class="calm-room" id="calmRoom" hidden>
           <div class="breathe" id="breathe">
@@ -117,10 +120,6 @@
             <div class="needs" id="needs"></div>
           </div>
         </div>
-
-        <!-- Body map: where it hurts and how it feels (myvoice-body.js) -->
-        <button class="ghost-btn body-open" id="bodyOpen" type="button" aria-expanded="false" aria-controls="bodyMap"><span aria-hidden="true">🤕</span> Something hurts or feels wrong</button>
-        <section class="body-map" id="bodyMap" aria-label="Show where it hurts" hidden></section>
 
         <aside class="partner-card" id="partnerCard" hidden>
           <h2 class="h2">For the person helping</h2>
@@ -138,8 +137,13 @@
       <section class="view" id="view-plans" aria-label="Plans" hidden>
         <div class="plan-picker" id="planPicker" role="tablist" aria-label="Choose a plan"></div>
         <div class="first-then" id="firstThen" aria-live="polite"></div>
-        <div class="choice-board" id="choiceBoard" hidden></div>
         <ol class="steps" id="steps"></ol>
+      </section>
+
+      <!-- MORE: body map, choice boards, my phrases (built by support.js) -->
+      <section class="view" id="view-support" aria-label="More" hidden>
+        <div class="folders" role="tablist" aria-label="More tools" id="sxTabs"></div>
+        <div id="sxPanel" tabindex="-1"></div>
       </section>
 
       <!-- CAREGIVER -->
@@ -148,15 +152,9 @@
           <h1 class="h1">Caregiver</h1>
           <button class="ghost-btn" id="lockBtn" type="button">Lock and return to Talk</button>
         </div>
-        <p class="note">Everything here stays on this device. Nothing is uploaded. Need help? <a href="guide.html">Open the caretaker guide</a>.</p>
+        <p class="note">Everything here stays on this device. Nothing is uploaded.</p>
 
         <div class="care-grid">
-          <article class="panel" id="modelPanel">
-            <h2 class="h2">Show how to say it (modeling)</h2>
-            <p class="soft">Press the child's own buttons as you talk, so they see where words live. While modeling is on, your presses light up a numbered trail and are kept apart: they don't count as the child's words, in history, word counts or next-word ideas.</p>
-            <button class="solid-btn" type="button" id="modelToggle" aria-pressed="false">Start modeling</button>
-          </article>
-
           <article class="panel">
             <h2 class="h2">This week</h2>
             <dl class="stats" id="stats"></dl>
@@ -189,7 +187,7 @@
                 <input name="w" required maxlength="40" placeholder="swimming" />
               </label>
               <label>Picture
-                <input name="e" maxlength="16" placeholder="🏊" />
+                <input name="e" maxlength="32" placeholder="🏊" />
               </label>
               <label>Kind of word
                 <select name="c">
@@ -210,21 +208,7 @@
             <ul class="custom-list" id="customList"></ul>
           </article>
 
-          <article class="panel" id="obfPanel">
-            <h2 class="h2">Share boards with other AAC apps</h2>
-            <p class="soft">Open Board Format (.obf and .obz) works with CoughDrop, Cboard, AsTeRICS Grid and others. Nothing is uploaded.</p>
-            <button class="solid-btn" type="button" id="btnObfExport">Save my boards (.obz)</button>
-            <form class="word-form" id="obfForm">
-              <label>Board file
-                <input name="file" type="file" accept=".obf,.obz,application/json,application/zip" required />
-              </label>
-              <label>Put the words in
-                <select name="f" id="obfFolder"></select>
-              </label>
-              <button class="solid-btn" type="submit">Add words from the board</button>
-            </form>
-            <p class="soft" id="obfStatus" role="status" aria-live="polite"></p>
-          </article>
+          <article class="panel sx-care" id="supportCare" aria-label="Phrases, choices, schedules and boards"></article>
 
           <article class="panel">
             <h2 class="h2">Settings</h2>
@@ -235,6 +219,7 @@
                 <label class="radio"><input type="radio" name="theme" value="day" /> Day</label>
                 <label class="radio"><input type="radio" name="theme" value="night" /> Night</label>
                 <label class="radio"><input type="radio" name="theme" value="contrast" /> High contrast</label>
+                <label class="radio"><input type="radio" name="theme" value="low-arousal" /> Low arousal (calm muted)</label>
               </fieldset>
               <fieldset>
                 <legend>Board</legend>
@@ -249,10 +234,6 @@
                 <label>Speed <input type="range" name="rate" min="0.6" max="1.4" step="0.1" /></label>
                 <label class="check"><input type="checkbox" name="speakOnTap" /> Say each word when tapped</label>
                 <button class="ghost-btn" type="button" id="testVoice">Test voice</button>
-              </fieldset>
-              <fieldset>
-                <legend>Modeling</legend>
-                <label class="check"><input type="checkbox" name="modelSpeak" /> Speak aloud while modeling</label>
               </fieldset>
               <fieldset>
                 <legend>Motion</legend>
@@ -270,23 +251,10 @@
     </main>
   </div>
 
+  <div class="sx-bar" id="sxBar" role="toolbar" aria-label="Stop, no, help, bathroom, break"></div>
+
+  <div id="scanLive" class="sr-only" aria-live="polite" aria-atomic="true"></div>
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
-
-  <!-- Shown while a grown-up is modeling. Fixed, so the board never moves. -->
-  <div class="model-banner" id="modelBanner" role="status" hidden>
-    <span><b>Modeling</b> · these presses aren't counted as the child's</span>
-    <button class="ghost-btn" type="button" id="modelStop">Stop modeling</button>
-  </div>
-
-  <dialog class="find-dialog" id="findDialog" aria-labelledby="findTitle">
-    <form id="findForm" class="find-form" role="search">
-      <label class="find-label" id="findTitle" for="findInput">Find a word</label>
-      <input id="findInput" type="search" autocomplete="off" maxlength="40" placeholder="Type a word" />
-      <button class="ghost-btn" type="button" id="findClose">Close</button>
-    </form>
-    <p class="soft" id="findStatus" role="status" aria-live="polite"></p>
-    <ul class="find-results" id="findResults"></ul>
-  </dialog>
 
   <script type="module" src="app.js"></script>
   <script type="module" src="myvoice.js"></script>
@@ -295,12 +263,7 @@
   <script src="motion-lite.js" defer></script>
   <script type="module" src="myvoice-p3.js"></script>
   <script type="module" src="myvoice-p4.js"></script>
-  <script type="module" src="myvoice-p7.js"></script>
-  <script type="module" src="play.js"></script>
-  <script type="module" src="potty.js"></script>
-  <script type="module" src="myvoice-sound.js"></script>
-  <script type="module" src="myvoice-redesign.js"></script>
-  <script type="module" src="myvoice-body.js"></script>
+  <script type="module" src="support.js"></script>
   <script src="pwa.js" defer></script>
 </body>
 </html>

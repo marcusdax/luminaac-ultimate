@@ -119,7 +119,89 @@ export const FOLDERS = [
       { w: "why", c: "question", e: "🤔" }, { w: "how", c: "question", e: "🔧" },
     ],
   },
+  {
+    id: "school", label: "School", e: "🏫",
+    words: [
+      { w: "teacher", c: "people", e: "🧑‍🏫" }, { w: "friend", c: "people", e: "🧒" },
+      { w: "bus", c: "thing", e: "🚌" }, { w: "book", c: "thing", e: "📖" },
+      { w: "library", c: "thing", e: "📚" }, { w: "drawing", c: "thing", e: "🖍️" },
+      { w: "chair", c: "thing", e: "🪑" }, { w: "schedule", c: "thing", e: "📋" },
+      { w: "recess", c: "thing", e: "🛝" }, { w: "bathroom", c: "thing", e: "🚻" },
+      { w: "a break", c: "thing", e: "⏸️" }, { w: "headphones", c: "thing", e: "🎧" },
+    ],
+  },
+  {
+    id: "bedtime", label: "Bedtime", e: "🛏️",
+    words: [
+      { w: "bed", c: "thing", e: "🛏️" }, { w: "sleep", c: "action", e: "😴" },
+      { w: "tired", c: "describe", e: "🥱" }, { w: "blanket", c: "thing", e: "🧣" },
+      { w: "brush teeth", c: "action", e: "🪥" }, { w: "toilet", c: "thing", e: "🚽" },
+      { w: "water", c: "thing", e: "💧" }, { w: "story", c: "thing", e: "📖" },
+      { w: "music", c: "thing", e: "🎵" }, { w: "quiet", c: "describe", e: "🤫" },
+      { w: "calm", c: "describe", e: "😌" }, { w: "a hug", c: "thing", e: "🤗" },
+    ],
+  },
 ];
+
+const RULE_ALIASES = {
+  school: ["school", "people", "things"],
+  bedtime: ["bedtime", "needs", "feelings"],
+  mealtime: ["food", "needs"],
+  recess: ["school", "places"],
+  calm: ["feelings", "needs"],
+  morning: ["needs", "food"],
+};
+
+export function contextMatchForRules(rules = [], folders = FOLDERS, custom = [], signals = []) {
+  const activeFolderIds = [];
+  const chips = [];
+  const seenWords = new Set();
+
+  const pushChip = (item) => {
+    if (!item || !item.w) return;
+    const key = String(item.w).toLowerCase();
+    if (seenWords.has(key)) return;
+    seenWords.add(key);
+    chips.push({ w: item.w, c: item.c || "thing", e: item.e || "💬" });
+  };
+
+  for (const r of rules || []) {
+    const page = String(r?.page || "").trim().toLowerCase();
+    if (!page) continue;
+
+    // 1. Direct id or label match
+    const direct = folders.filter((f) => f.id.toLowerCase() === page || f.label.toLowerCase() === page || f.label.toLowerCase().includes(page));
+    // 2. Alias match
+    const aliasIds = RULE_ALIASES[page] || [];
+    const aliased = folders.filter((f) => aliasIds.includes(f.id));
+    const matched = [...new Set([...direct, ...aliased])];
+
+    for (const f of matched) {
+      if (!activeFolderIds.includes(f.id)) activeFolderIds.push(f.id);
+    }
+
+    // 3. Matching learned signals whose contexts include the rule page (highest relevance)
+    for (const sig of signals || []) {
+      if (Array.isArray(sig?.contexts) && sig.contexts.some((ctx) => String(ctx).toLowerCase() === page)) {
+        if (sig.phrase) pushChip({ w: sig.phrase, c: "social", e: "💬" });
+      }
+    }
+
+    // 4. Matching custom words
+    for (const cw of custom || []) {
+      if (matched.some((f) => f.id === cw.f) || String(cw.f || "").toLowerCase() === page) {
+        pushChip(cw);
+      }
+    }
+
+    // 5. Top words from direct/aliased folders
+    for (const f of matched) {
+      for (const w of (f.words || []).slice(0, 4)) pushChip(w);
+    }
+  }
+
+  return { activeFolderIds, chips: chips.slice(0, 8) };
+}
 
 // Quick phrases sit outside the grid: one tap, spoken immediately.
 export const QUICK = [
@@ -128,9 +210,6 @@ export const QUICK = [
   { w: "Yes", c: "social", e: "✅" },
   { w: "No", c: "negate", e: "❌" },
   { w: "Wait, I'm still talking", c: "social", e: "✋" },
-  // Added at the end so the phrases above keep their places.
-  { w: "Stop", c: "negate", e: "🛑" },
-  { w: "I need the bathroom", c: "thing", e: "🚻" },
 ];
 
 // 5-point scale, adapted from common self-regulation scales.
@@ -186,21 +265,3 @@ export const PLANS = [
     ],
   },
 ];
-
-// Words for context pages that are not board folders (the Bridge's "When pages show up
-// first" rules). A rule can also name any folder ("Food & drink", "places"); see
-// contextWords() in app.js. These sit in their own strip: the core board never moves.
-export const CONTEXT_PAGES = {
-  school: [
-    { w: "teacher", c: "people", e: "🧑‍🏫" }, { w: "friend", c: "people", e: "🧒" },
-    { w: "help", c: "action", e: "🙋" }, { w: "bathroom", c: "thing", e: "🚻" },
-    { w: "break", c: "thing", e: "⏸️" }, { w: "lunch", c: "thing", e: "🥪" },
-    { w: "play", c: "action", e: "🧸" }, { w: "all done", c: "social", e: "✅" },
-  ],
-  bedtime: [
-    { w: "bath", c: "thing", e: "🛁" }, { w: "pajamas", c: "thing", e: "👕" },
-    { w: "teeth", c: "thing", e: "🪥" }, { w: "book", c: "thing", e: "📖" },
-    { w: "hug", c: "action", e: "🤗" }, { w: "light", c: "thing", e: "💡" },
-    { w: "tired", c: "describe", e: "🥱" }, { w: "goodnight", c: "social", e: "🌙" },
-  ],
-};

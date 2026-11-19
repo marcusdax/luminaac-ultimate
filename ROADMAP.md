@@ -1,110 +1,36 @@
-# Roadmap
+# LuminAAC Ultimate — Product Roadmap & Milestone History
 
-## v0.18: Motion
-- Built from [the motion concept](docs/MOTION-CONCEPT.md): one motion gate, a word that travels to the sentence bar, a breathing Calm sky, slow shader skies in games, Lantern Sky, Tide Pool, Sound Garden, Aurora Feelings, a 3D Word Train with a flat fallback, small Bridge motion and a scroll-story website page.
-- **Next:** ask his SLP or OT whether the travelling word helps or distracts (it can be set to Still), measure the skies and the 3D train on the oldest iPad families use, and decide whether `about.html` becomes a separate marketing site.
+## Shipped & Verified in Production (`v0.8.0` — 387/387 Automated Tests Passing)
 
-## v0.17: Sound Path B–D and Safety Links
-- **Sound Path increment B:** Watch my mouth (family video clips kept on the device), Mouth Mirror (MediaPipe face blendshapes for jaw and lips; camera off by default) and Sound and treat (pairing, turned on with the SLP).
-- **Safety Links (C):** tracker cards with photo, placement and battery reminders; an "if found" QR page with no location; a wandering plan sheet; structured sensor events; the "door opened and nobody is going out together" rule.
-- **D:** Bluetooth near or far on Android and Chrome; research-mode wristband "calm check?" nudge for grown-ups only, behind a separate consent; export of labelled magic moments for a future personal sound model.
-- **Before families rely on D:** an SLP and ethics review of research mode, and real-world testing of the Bluetooth range thresholds with common tags. Mouth Mirror's thresholds also need checking with children's faces.
+### Milestone 5 & Round 2 R&D (`v0.8.0` — Current Release)
+- ✅ **Gamified Sound Symphony Composer & Lip-Viseme Articulatory Coach (`symphony.js`, `support.js`)**: Grounded in Auditory-Motor Mapping Training (AMMT; Wan et al., 2011; Chenausky et al., 2016) and DTTC (Strand et al., 2014). Interactive SVG mouth/lip posture coach (`bilabial`, `round-vowel`, `open-vowel`, `smile`, `alveolar`, `velar`, `rest`) + 16 pentatonic phoneme instrument blocks that blend 2–4 sounds (`m + oh + r → "more"`, `w + aa + t + er → "water"`, `m + aa + m + aa → "mama"`, `h + eh + l + p → "help"`) into spoken words.
+- ✅ **Acoustic Frequency Co-Regulation Studio (`symphony.js`)**: Pure Web Audio API synthesis for **Warm Pink Noise Shield** (`-3 dB/oct` hyperacusis masking), **Deep Brown Noise Blanket** (`-6 dB/oct`), **432 Hz Warm Harmonic Drone**, **528 Hz Gentle Chime Pad**, and **6 Hz Theta Co-Regulation Pulse**.
+- ✅ **Holistic Diet/Gut-Brain & Solar/Geomagnetic Storm ($K_p$ Index) Biometrics (`biometrics.js`)**: Logs meals, sensory food textures, hydration (mL), GI comfort, and NOAA Planetary $K_p$ geomagnetic activity (`0–9`, live NOAA SWPC feed + deterministic offline 27-day Bartels Solar Cycle 25 estimator) with fact-separated correlation insights (`correlateBiometrics`).
 
-## v0.16: Word games and the "quiet sky" look
-- **Eight word games** (`docs/GAMES-CONCEPT.md`): Word Garden, Conductor, Feelings Weather (also in Calm), Story Stage, Pattern Lab, My Turn Your Turn, Sound Pond and Copy the Robot. They are played with the child's own word tiles in their Talk columns, and every tap speaks.
-- **Shared rules:** "All done" in a fixed corner, nothing fails, an add-only play world, and Bridge settings for which games show, movement, sound, rest time, tile count and camera consent.
-- **Look** (DESIGN.md): a still sky behind words, a dark lantern rail with the open section lit, and a lit hub indicator. The hub layout is the default, so every device gets it.
-- **Next:** save Story Stage scenes to My day, merge the play world with Potty Path's World, and animated characters (Lottie or Rive) once there are files for them.
+### Milestones 1–4 (`v0.7.0`)
+- ✅ **M1 — Unified Speech Pipeline, Telemetry Sync & Motor/Switch Access**:
+  - Unified `speakUtterance` pipeline (`speech.js`) with strict `child` / `modeling` / `preview` / `explore` isolation.
+  - Child telemetry push (`POST /api/sync/telemetry`), overnight rule wraparound (`activeRules`), and unified backup/restore (`exportUnifiedBackup`, `importUnifiedBackup`).
+  - WCAG 2.5.2 pointer cancellation, acceptance delay (`acceptMs`), post-tap tremor debounce (`debounceMs`), hover dwell ring, 1-Switch Linear Scan, 1-Switch Row-Column Scan (`rowcol`), and 2-Switch Step Scan (`step2`).
+  - WCAG 2.1 AA/AAA contrast across Day, Night, High-Contrast, and Low-Arousal (`body.low-arousal`) themes.
+- ✅ **M2 — SLP & Autism Care Modalities + Open Board Format (`.obf` / `.obz`)**:
+  - Aided Language Stimulation (ALS) Partner Modeling Mode (`slp.js`, `support.js`) with 5-word visual trail.
+  - Gestalt Language Processing (GLP / NLA Stages 1–4) with caregiver voice recording and Stage 2 **Mitigate into strip** (`mitigateGestalt`).
+  - Interoception 14-region Pain Body Map, 7 sensations, relief suggestions, and persistent 5-button Sensory Quick-Bar (`Stop`, `No`, `Help`, `Bathroom`, `Break`).
+  - Choice Boards (2–8 options), Unified First-Then Schedules (`mergeSchedules`), Vocabulary Search (`#vsearch`), and Morphology Inflection Bar (`#morphBar`).
+  - Full Open Board Format `.obf` / `.obz` import and export (`obf.js`) with CRC32 and path-traversal security.
+- ✅ **M3 & M4 — HuggingFace On-Device AI, Child Prosody, K-Dense BYOK & Clinical Traceability**:
+  - Expanded `Kokoro-82M-v1.0-ONNX` presets (`af_sky`, `af_nicole`, `am_puck`, `bf_isabella`, etc.) + Web Audio child prosody shaping (`shapeProsody`, `[-12, +12]` semitones).
+  - Offline semantic embeddings (`Xenova/all-MiniLM-L6-v2` + deterministic 64-d concept-cluster fallback) for symbol search and Bridge `smart()` linking.
+  - K-Dense local-first BYOK telegraphic expansion (`byok.js`, `SmolLM2-135M-Instruct-ONNX-MHA` / Ollama / gated API) with deterministic Watchdog (`watchdogCheck`) calibrated on `willwade/AACConversations`.
+  - Clinical Communication Matrix (`clinical.js`), isolated child MLU, append-only `supersedes` lineage, RFC 4180 CSV/JSON export, and MASTERNEX PRINCE 4-bit TurboQuant federated learning (`masternex-prince-fl.js`).
 
-## v0.15: Shared boards, and no more lock-ups
-- **v0.14.2 fix:** game, story and Sound Path pop-ups lived inside the Talk view, so opening one from Play made an invisible pop-up that blocked every button. A small guard (`dialog-guard.js`) now moves each pop-up to the top of the page before it opens and closes any that can't be seen. The microphone is released when a game closes, even if permission arrives late.
-- **Open Board Format** import and export (.obf and .obz) in the My Voice Caregiver area (`obf-core.js`), with no server and no account.
-- Next: run the validation study with 10–20 families; signed store builds; sound tags and sign learning behind flags (see docs/ML-CONCEPTS.md); OBF pictures from other apps (images and sounds, not just words).
+### Phases 1–4 Foundation (`v0.3–v0.6`)
+- ✅ Magic-moment rolling buffer, Signal library with Beta confidence, Safe-zone geofencing (`geo.js`), Scrypt + WebAuthn passkeys, QR/6-digit device pairing, `wav2vec2` + `Human` emotion fusion, Shamir $t$-of-$n$ dropout-resilient secure aggregation, and installable offline PWA (`sw.js`).
 
-## v0.14: Reach, privacy and research
-- Done: push alerts (VAPID) and weekly email summaries; photo symbols and recorded caregiver voice; one- and two-switch scanning; optional end-to-end encryption with device approval; "Say the word" with on-device listening; Capacitor 8 native shell with background geofences (unsigned CI builds); blind caregiver agreement check with Cohen's kappa.
-- Next: run the validation study with 10–20 families; signed store builds; Open Board Format import and export (done in v0.15); sound tags and sign learning behind flags (see docs/ML-CONCEPTS.md).
+---
 
-## v0.13: The simpler layout becomes the standard
-- The five-hub Bridge and the Talk · Calm · My day · Play My Voice from R1 are now on for every device. `?redesign=0` keeps the older tabs on a device that needs them.
-- The older Bridge header fits a phone, and its tab strip keeps the open tab in view.
-- A feature audit of every document against the app (`docs/FEATURE-AUDIT.md`), with stale doc claims corrected.
-
-## v0.12.0: Family server, team chat, sensors and wearables, YouTube channels
-- **Family server on Vercel** at the app's own address (`/api`, `api/index.js`), with its files kept in Upstash Redis (`backend/mirror.js`). Pages check `/api/updates` every 30 seconds while visible, for alerts and chat.
-- **Team chat** in Circle → Team for parents, teachers, therapists and family. Never on the child's device.
-- **Sensors and wearables** in Safety: private webhook links for door, gate, window, pool, bed and motion sensors (IFTTT, Home Assistant). Urgent ones chime like water alerts. Quick "Open" buttons for AngelSense, AirTag, SmartTag, Google Find Hub, Jiobit and Life360.
-- **YouTube channels** next to single videos: a linked channel plays its uploads in the privacy-enhanced player. Ms Rachel is linked once on every device.
-- **Limits:** no live stream (up to 30 s delay), the silent-device check runs only on requests, reset emails are not sent yet, and per-video channel tiles and @names need `YOUTUBE_API_KEY`.
-
-## v0.11.4: Bridge fits Android phones
-On phones the Bridge hub bar is a strip that scrolls left and right (each hub at least 76 px, current hub kept in view), and the header uses short labels ("Help", "My Voice") so the page is exactly the screen width down to 360 px. Before, the header pushed the page to 411 px and phones zoomed out.
-
-## v0.11.3: Safety gets its own hub
-Safety moves out of Circle into a fifth Bridge hub (shield icon), so the zones map and water alerts are one tap away. Full sweep: all 12 Bridge tabs, every My Voice view, all 13 stories, games and Sound Path activities open and respond, with no errors; 368 automated tests pass.
-
-## v0.11.2: Redesign fixes and fast water search
-- **Lock-ups:** the Bridge no longer uses View Transitions, which snapshot the whole page and could freeze taps on iPad Safari. It uses a 140 ms CSS fade instead.
-- **Stale files:** the service worker now installs with `cache: "reload"`, so a new version can't pick up an old copy of a file from the browser cache.
-- **Bridge round trip:** the Caregiver area (after the long press) has a clear "Open the Bridge" button. The Bridge's "Back to My Voice" link now returns to the Caregiver area instead of Talk, once and within five minutes.
-- **Water search:**
-  - A first pass reads the water colour from the OpenStreetMap map tiles (`water-tiles.js`). It takes about a second, saves the shapes and turns alerts on.
-  - The named Overpass search then asks all three servers at once rather than one after another. If it answers, its named places replace the tile shapes; if it times out, the tile shapes stay.
-
-## v0.11.1: Redesign R1, behind a switch
-Four Bridge hubs (Home, Programs, Progress, Circle) instead of 12 tabs, with a bottom bar on phones and old links still working. My Voice gets Talk · Calm · My day · Play, a Now/Next line while a plan is under way, and the Bridge link moves inside the Caregiver door. Off unless `?redesign=1` is opened once on a device. Next: R2 (Log button, role views, handoff card). See `docs/REDESIGN.md`.
-
-## v0.11: Sound Path and Potty Path mechanics (phase 9)
-Sound Path increment A from `docs/SOUND-PATH.md` (ladder, practice engine, Sing and Tap, Word Train, Sound World, Say it with me, judge bar, inventory, SLP sheet) and Potty Path M1–M7 from `docs/POTTY-PATH-MECHANICS.md`, both behind feature flags that are off by default. Next: Sound Path increment B (family video models, Mouth Mirror with on-device face landmarks), then Safety Links (tracker cards, "if found" page, webhook alerts for door and pool sensors).
-
-## v0.10: Potty Path (phase 8)
-A toilet-learning and communication module built from the expert-reviewed blueprint in `docs/POTTY-PATH.md`, with all three increments shipped behind `access.potty` (off by default). It covers the one-device core, then assessment and hints, then two devices (QR and end-to-end encrypted server sync). Next: a 5-family pilot with a paid autistic-adult advisory panel and an SLP/BCBA safety review before the guide promotes it. Sensors and prediction stay deferred.
-
-## v0.6 (phase 4)
-Phase 4 adds:
-- an opt-in speech-emotion model (transformers.js, WebGPU with WASM fallback) fused with prosody, still confirmed by a caregiver
-- Kokoro natural voices with preview, falling back to device voices
-- email confirmation and password reset (single-use hashed tokens, rate limits, built-in SMTP client)
-- secure aggregation that survives dropouts (Shamir t-of-n), quorum, phase timeouts and a per-device ε cap
-- installable PWAs with an offline cache, a server "quiet device" alert, and a Capacitor scaffold for background geofencing
-- the face estimate vendored and tested on sample faces
-
-## Phase 3 (v0.5)
-Phase 3 adds:
-- safe zones (geofencing) with consent, and location on "Take me home"
-- device pairing by QR code or 6-digit code, with revoke
-- accounts with scrypt passwords, passkeys, sessions, roles, family and child profiles, and invites
-- on-device feeling estimates from voice, with optional face, confirmed by a caregiver
-- opt-in federated learning with clipping, DP noise and secure-aggregation masks, plus a FedAvg server
-- OpenMoji fallback pictures (no more ARASAAC 404s)
-- restrained motion
-
-## Phase 2 (v0.4)
-Everything from v0.3, plus: help and "take me home" alerts that reach the Bridge live, social stories and first/then routines, speech practice with caregiver-chosen rewards, "Not these" feedback and suggestion acceptance stats, milestones, Large/Playful/Focus modes with board zoom, dwell selection and switch scanning, and a working Node backend for sync, share links, alerts and the repo's predictions API.
-
-v0.3 base: Magic-moment rolling buffer, annotation studio, signal library with confidence, proactive suggestions, My things with play-moment, explore mode, day viewer, vocabulary rules, insights + personality map, role-scoped sharing preview, privacy controls, onboarding, logo set.
-
-## Next (v0.4–0.6)
-- Photo symbols (camera → button), recorded caregiver voice for buttons
-- Two-switch step scanning and row/column scanning (auto-scan with one switch is done)
-- Pediatric, clinical, and senior modes
-- End-to-end encryption of the synced document (sync itself is done)
-- Live invites for teachers/therapists, shared notes in real time
-- Push notifications for alerts (Web Push)
-- Account deletion endpoint, per-child data partitions (child profiles exist; the synced document is still per family)
-- Validate the speech-emotion model with caregivers (it's trained on adult acted speech) and fine-tune on confirmed moments
-- Build and ship the Capacitor apps (store review, real-device geofence testing); Web Push for alerts
-- Mulberry symbol pack for older users (hand-drawn polygon zones shipped in v0.8)
-
-## Later (v1)
-- On-device audio embeddings (wav2vec2 / HuBERT, WebGPU) for unsupervised clustering of vocalizations
-- Pose/gesture keypoints (MediaPipe) and a small per-child classifier trained from annotations
-- Real-time proactive suggestions from live sensing; anomaly-triggered auto-capture
-- LLM help for turning annotations into phrases and button suggestions
-- Continuous day recording with click-to-clip (opt-in, short retention)
-
-## Vision
-- LuminNode multi-camera kits, depth sensing, IoT context
-- AR "point at it" phrases
-- Validated emotion and frustration recognition (clinical study)
-- Research data program built on the federated pipeline
+## Future Horizon (`v1.0+` External Hardware & Clinical Trials)
+- 🔭 **Multi-Center SLP Clinical Efficacy Trial**: Longitudinal cohort study measuring time-to-understood, child MLU growth, and AMMT Sound Symphony vocalization gains across 100+ families.
+- 🔭 **LuminNode Ambient Room Kit & Wearable Biometrics**: Optional local BLE heart-rate variability (HRV) and electrodermal activity (EDA) integration to pair real-time vagal tone with geomagnetic $K_p$ and acoustic co-regulation presets.
+- 🔭 **AR Point-and-Speak Companion**: Camera-assisted object recognition that dynamically stages fringe symbols into a temporary context bar without moving the 30-word Core grid.

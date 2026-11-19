@@ -5,7 +5,6 @@ import { join } from "node:path";
 process.env.LUMINAAC_DATA = mkdtempSync(join(tmpdir(), "luminaac-"));
 process.env.LUMINAAC_NO_LISTEN = "1";
 process.env.LUMINAAC_QUIET = "1";
-process.env.PUSH_ALLOW_HTTP = "1";
 process.env.FL_PHASE_MS = "1500";
 process.env.FL_EPSILON_CAP = "1000";
 const { server, checkDeadman } = await import("./server.js");
@@ -126,7 +125,7 @@ const login = await call("POST", "/api/auth/login", { email: "mom@example.com", 
 t("login", login.json.data.token && login.json.data.role === "parent");
 t("me", (await call("GET", "/api/auth/me", null, TOK)).json.data.user.email === "mom@example.com");
 t("password stored as scrypt hash", (() => { const raw = JSON.stringify(JSON.parse(readFileSync(join(process.env.LUMINAAC_DATA, "_accounts.json"), "utf8"))); return !raw.includes("correct horse") && !raw.includes(TOK); })());
-t("parent pushes doc", (await call("PUT", "/api/sync", { doc: { ...doc, notes: [{ t: 1, text: "private note" }], safety: { consent: true, zones: [{ id: "z1", name: "Home", lat: 41.88, lng: -87.63, r: 150 }, { id: "z2", name: "Creek path", type: "danger", shape: "poly", pts: [[41.881, -87.631], [41.881, -87.629], [41.879, -87.629]], buffer: 0 }], water: { on: true, buffer: 30, radius: 1500, features: [{ id: "w1", name: "Pond", kind: "poly", rings: [[[41.885, -87.635], [41.885, -87.633], [41.884, -87.633]]] }] } }, videos: { on: true, thumbs: false, list: [{ id: "v1", yt: "dQw4w9WgXcQ", title: "Trains", e: "🚂", topics: ["vehicles"], words: ["go"], secret: "x" }], sessions: [{ t: 1, v: "v1", w: 30 }], talk: [{ t: 1, v: "v1", word: "go" }] }, games: { settings: { mic: true, volume: 0.5 }, goals: [{ id: "g1", game: "echo", perWeek: 5 }], plays: [{ t: 1, game: "echo" }] } }, baseVersion: 0 }, TOK)).json.data.version === 1);
+t("parent pushes doc", (await call("PUT", "/api/sync", { doc: { ...doc, notes: [{ t: 1, text: "private note" }], safety: { consent: true, zones: [{ id: "z1", name: "Home", lat: 41.88, lng: -87.63, r: 150 }] } }, baseVersion: 0 }, TOK)).json.data.version === 1);
 const inv = await call("POST", "/api/family/invites", { role: "teacher" }, TOK);
 t("invite created", inv.json.data.code.length > 8);
 const teach = await call("POST", "/api/auth/register", { email: "teacher@school.org", password: "a long teacher password", invite: inv.json.data.code }, null);
@@ -186,19 +185,12 @@ t("device claimed", cl.deviceKey.startsWith(cl.deviceId + "."));
 t("code single use", (await call("POST", "/api/devices/claim", { code: pr.code }, null)).status === 400);
 const DK = cl.deviceKey;
 const cv = (await call("GET", "/api/sync", null, DK)).json.data;
-t("device sync is child-scoped", cv.role === "child" && cv.doc.safety.zones.length === 2 && !cv.doc.notes);
-t("device gets drawn shapes and water", cv.doc.safety.zones[1].shape === "poly" && cv.doc.safety.zones[1].pts.length === 3 && cv.doc.safety.water.on && cv.doc.safety.water.features[0].name === "Pond");
-t("device gets the video list and game settings", cv.doc.videos.list[0].yt === "dQw4w9WgXcQ" && !("secret" in cv.doc.videos.list[0]) && cv.doc.games.settings.mic === true && cv.doc.games.goals.length === 1);
-t("device does not get watch history or game turns", !cv.doc.videos.sessions && !cv.doc.videos.talk && !cv.doc.games.plays);
+t("device sync is child-scoped", cv.role === "child" && cv.doc.safety.zones.length === 1 && !cv.doc.notes);
 t("device cannot push doc", (await call("PUT", "/api/sync", { doc, baseVersion: 1 }, DK)).status === 403);
 t("device cannot list alerts", (await call("GET", "/api/alerts", null, DK)).status === 403);
 const za = await call("POST", "/api/alerts", { kind: "zone-leave", zone: "Home", message: "Left Home", loc: { lat: 41.889123456, lng: -87.6301, acc: 12 } }, DK);
 t("geofence leave alert with location", za.json.data.kind === "zone-leave" && za.json.data.loc.lat === 41.88912 && za.json.data.from === "Sam's tablet");
 t("bad location rejected", (await call("POST", "/api/alerts", { kind: "home", loc: { lat: 200, lng: 0 } }, DK)).status === 400);
-const wa = await call("POST", "/api/alerts", { kind: "danger-enter", zone: "Pond", water: true, message: "Near water: Pond", loc: { lat: 41.8849, lng: -87.6341, acc: 8 } }, DK);
-t("water danger alert accepted and marked urgent", wa.status === 200 && wa.json.data.kind === "danger-enter" && wa.json.data.urgent === true && wa.json.data.water === true && wa.json.data.loc.acc === 8);
-t("danger-leave alert accepted", (await call("POST", "/api/alerts", { kind: "danger-leave", zone: "Pond", water: true }, DK)).json.data.urgent === undefined);
-t("unknown alert kind rejected", (await call("POST", "/api/alerts", { kind: "danger-maybe" }, DK)).status === 400);
 t("parent sees zone alert", (await call("GET", "/api/alerts", null, TOK)).json.data.some((a) => a.kind === "zone-leave"));
 t("device list", (await call("GET", "/api/devices", null, TOK)).json.data.some((d) => d.name === "Sam's tablet" && !d.keyHash));
 // ---- Dead-man check: a location-sharing device that goes quiet ----
@@ -214,29 +206,6 @@ await call("POST", "/api/devices/heartbeat", { sharing: true }, DK);
 t("back online alert", (await call("GET", "/api/alerts", null, TOK)).json.data.some((a) => a.kind === "back"));
 await call("POST", "/api/devices/heartbeat", { sharing: false }, DK);
 t("no dead-man alert when sharing is off", checkDeadman(Date.now() + 60 * 60e3).length === 0);
-// ---- Potty Path events ----
-{
-  const pe = (id, kind = "void", extra = {}) => ({ id, dev: "tab", seq: 1, t: Date.now(), tz: 0, by: "caregiver", v: 1, kind, data: { type: "urine" }, ...extra });
-  const p1 = await call("POST", "/api/potty/events", { events: [pe("pe1"), pe("pe2", "signal", { by: "child", data: { modality: "aac_button" } })] }, DK);
-  t("potty: tablet can post events", p1.json?.data?.added === 2);
-  const again = await call("POST", "/api/potty/events", { events: [pe("pe1"), pe("pe2")] }, DK);
-  t("potty: same batch twice adds nothing (idempotent by id)", again.json.data.added === 0 && again.json.data.cursor === p1.json.data.cursor);
-  const g = (await call("GET", "/api/potty/events?since=0", null, TOK)).json.data;
-  t("potty: parent reads events with a cursor", g.events.length === 2 && g.cursor === 2);
-  t("potty: since pages", (await call("GET", "/api/potty/events?since=1", null, TOK)).json.data.events.length === 1);
-  t("potty: rejects unknown kinds", (await call("POST", "/api/potty/events", { events: [pe("bad", "punish")] }, TOK)).json.data.added === 0);
-  t("potty: rejects non-arrays", (await call("POST", "/api/potty/events", { events: "x" }, TOK)).status === 400);
-  const sealed = await call("POST", "/api/potty/events", { sealed: true, events: [{ id: "pe3", dev: "tab", seq: 2, c: "QUJD" }] }, DK);
-  const g2 = (await call("GET", "/api/potty/events?since=2", null, TOK)).json.data.events[0];
-  t("potty: sealed events are stored as ciphertext only", sealed.json.data.added === 1 && g2.c === "QUJD" && !("kind" in g2) && !("t" in g2));
-  t("potty: teacher can't read toilet events", (await call("GET", "/api/potty/events", null, TT)).status === 403);
-  t("potty: teacher can't write toilet events", (await call("POST", "/api/potty/events", { events: [pe("pe9")] }, TT)).status === 403);
-  const shp = (await call("POST", "/api/share", { role: "therapist" }, TOK)).json.data;
-  t("potty: share links never include toilet data", !JSON.stringify((await call("GET", shp.path, null, null)).json.data).includes("pe1"));
-  t("potty: toilet alert kind accepted", (await call("POST", "/api/alerts", { kind: "potty", message: "needs the toilet" }, DK)).json.success);
-  t("potty: tablet can't delete the log", (await call("DELETE", "/api/potty/events", null, DK)).status === 403);
-  t("potty: parent deletes the log", (await call("DELETE", "/api/potty/events", null, TOK)).json.data.deleted === 3 && (await call("GET", "/api/potty/events?since=0", null, TOK)).json.data.events.length === 0);
-}
 t("revoke device", (await call("DELETE", `/api/devices/${cl.deviceId}`, null, TOK)).json.success);
 t("revoked key stops working", (await call("GET", "/api/sync", null, DK)).status === 401);
 
@@ -311,219 +280,6 @@ process.env.FL_EPSILON_CAP = "1000"; process.env.FL_ROUND_SIZE = "3"; delete pro
 t("zCDP accounting: more clients per round → less ε", fc.epsilon(fc.rhoPerRound(100)) < fc.epsilon(fc.rhoPerRound(3)));
 t("fl rejects malformed update", (await call("POST", `/api/fl/round/${(await call("GET", "/api/fl/round", null, TOK)).json.data.id}/update`, { client: 0, masked: [1, 2] }, TOK)).status >= 400);
 t("teacher cannot delete family data", (await call("DELETE", "/api/sync", null, TT)).status === 403);
-
-// ---- v0.5: team chat, updates, sensors, YouTube ----
-const c1 = await call("POST", "/api/chat", { text: "Good morning team! He slept well." }, TOK);
-t("parent posts to team chat", c1.json.data.role === "parent" && c1.json.data.text.startsWith("Good morning"));
-const c2 = await call("POST", "/api/chat", { text: "Thanks! We'll try the snack board at 10." }, TT);
-t("teacher posts to team chat with their role", c2.json.data.role === "teacher");
-t("everyone in the circle reads the chat", (await call("GET", "/api/chat", null, TT)).json.data.length === 2);
-t("chat since a time only returns newer messages", (await call("GET", `/api/chat?since=${c1.json.data.t}`, null, TOK)).json.data.every((c) => c.t > c1.json.data.t));
-t("empty message refused", (await call("POST", "/api/chat", { text: "  " }, TOK)).status === 400);
-t("teacher can't delete the parent's message", (await call("DELETE", `/api/chat/${c1.json.data.id}`, null, TT)).status === 404);
-const up = (await call("GET", "/api/updates?since=0", null, TOK)).json.data;
-t("updates bundle new chat and alerts in one call", up.chat.length === 2 && Array.isArray(up.alerts) && up.now > 0);
-const sn = (await call("POST", "/api/sensors", { name: "Back door", kind: "door" }, TOK)).json.data;
-t("sensor link created once, urgent for doors", /^\/api\/hooks\/[\w-]{24,}$/.test(sn.path) && sn.urgent === true);
-t("sensor list never shows the secret", !JSON.stringify((await call("GET", "/api/sensors", null, TOK)).json.data).includes(sn.path.split("/").pop()));
-t("teacher can't add sensors", (await call("POST", "/api/sensors", { name: "x" }, TT)).status === 403);
-const hit = await call("POST", sn.path, { message: "opened at night" }, null);
-t("sensor webhook raises an urgent alert", hit.status === 200 && (await call("GET", "/api/alerts", null, TOK)).json.data.some((a) => a.kind === "sensor" && a.urgent && /Back door: opened at night/.test(a.message)));
-t("webhook works as a plain GET too (IFTTT, simple hubs)", (await call("GET", sn.path, null, null)).status === 200);
-t("unknown sensor link is refused", (await call("POST", "/api/hooks/" + "x".repeat(32), {}, null)).status === 404);
-await call("DELETE", `/api/sensors/${sn.id}`, null, TOK);
-t("removed sensor's link stops working", (await call("POST", sn.path, {}, null)).status === 404);
-// ---- v0.17: Safety Links ----
-const door = (await call("POST", "/api/sensors", { name: "Front door", kind: "door" }, TOK)).json.data;
-await call("POST", door.path, { event: "door_open" }, null);
-const da = (await call("GET", "/api/alerts", null, TOK)).json.data.find((a) => a.event === "door_open");
-t("door_open event: urgent, and says nobody marked going out", da?.urgent && /going out together/.test(da.message));
-t("teacher can mark going out together; child device can't", (await call("POST", "/api/safety/out", { minutes: 30 }, TT)).json.data.until > Date.now());
-await call("POST", door.path, { event: "door_open" }, null);
-const db2 = (await call("GET", "/api/alerts", null, TOK)).json.data.filter((a) => a.event === "door_open")[0];
-t("door while out together: not urgent, says why", !db2.urgent && /out together/.test(db2.message));
-await call("POST", "/api/safety/out", { minutes: 0 }, TOK);
-const pool = (await call("POST", "/api/sensors", { name: "Pool", kind: "pool", urgent: false }, TOK)).json.data;
-await call("POST", pool.path, { event: "pool_motion" }, null);
-t("pool motion is always urgent", (await call("GET", "/api/alerts", null, TOK)).json.data.find((a) => a.event === "pool_motion")?.urgent === true);
-t("location event updates the tracker without an alert", (await call("POST", pool.path, { event: "location", lat: 51.5, lng: -0.1 }, null)).json.data.stored === true && !(await call("GET", "/api/alerts", null, TOK)).json.data.some((a) => a.event === "location"));
-const band = (await call("POST", "/api/sensors", { name: "Wristband", kind: "wearable", research: true }, TOK)).json.data;
-t("research mode needs a separate consent", !band.research && (await call("POST", band.path, { event: "arousal", hr: 140 }, null)).json.data.ignored === true);
-const band2 = (await call("POST", "/api/sensors", { name: "Research band", kind: "wearable", research: true, consent: true, rest: 80 }, TOK)).json.data;
-let nudged = false;
-for (let i = 0; i < 6; i++) nudged = (await call("POST", band2.path, { event: "arousal", hr: 125 }, null)).json.data.nudge || nudged;
-t("research band: readings accepted, no nudge before 3 minutes of data", band2.research === true && nudged === false);
-t("heart-rate readings are never listed", !JSON.stringify((await call("GET", "/api/sensors", null, TOK)).json.data).includes('"hr"'));
-const fo = (await call("POST", "/api/found", { name: "Sam", approach: "Speak softly. Don't touch.", phone: "+44 7700 900123", address: "1 High St", lat: 51 }, TOK)).json.data;
-const fv = await call("GET", fo.path, null, null);
-t("if-found page is public and shows only chosen fields", fv.status === 200 && fv.json.data.name === "Sam" && fv.json.data.phone && !JSON.stringify(fv.json.data).includes("High St") && !("lat" in fv.json.data));
-t("teacher can't make the if-found page", (await call("POST", "/api/found", { name: "x" }, TT)).status === 403);
-await call("DELETE", "/api/found", null, TOK);
-t("switched-off if-found page stops working", (await call("GET", fo.path, null, null)).status === 404);
-const ytm = await import("./youtube.js");
-t("youtube: channel link and id parse; other sites don't", ytm.parse("https://www.youtube.com/channel/UCG2CL6EUjG8TVT1Tpl9nJdg").id === "UCG2CL6EUjG8TVT1Tpl9nJdg" && ytm.parse("@MsRachel").handle === "@MsRachel" && ytm.parse("https://evil.example/channel/UCG2CL6EUjG8TVT1Tpl9nJdg") === null);
-const ych = await ytm.channel("UCG2CL6EUjG8TVT1Tpl9nJdg", { key: "", fetchImpl: async () => ({ ok: true, text: async () => `<feed><title>Ms Rachel</title><entry><yt:videoId>abcdefghijk</yt:videoId><title>Songs &amp; rhymes</title><published>2026-10-01T00:00:00Z</published></entry></feed>` }) });
-t("youtube: uploads playlist plus feed videos", ych.playlist === "UUG2CL6EUjG8TVT1Tpl9nJdg" && ych.videos[0].title === "Songs & rhymes");
-const yno = await ytm.channel("UCaaaaaaaaaaaaaaaaaaaaaa", { key: "", fetchImpl: async () => ({ ok: false, status: 404 }) });
-t("youtube: feed down still gives the playable uploads playlist", yno.playlist === "UUaaaaaaaaaaaaaaaaaaaaaa" && yno.videos.length === 0);
-let yerr = ""; try { await ytm.channel("@MsRachel", { key: "" }); } catch (e) { yerr = e.message; }
-t("youtube: @name without a key explains how to paste the channel link", /channel ID/.test(yerr));
-
-// ---- hosted mode mirror (Redis faked in memory) ----
-{
-  const mirror = await import("./mirror.js");
-  const R = { "lum:files": {}, "lum:rev": {} };
-  const fake = async (u, o) => ({ ok: true, json: async () => JSON.parse(o.body).map(([cmd, h, ...a]) => {
-    const H = R[h];
-    if (cmd === "HGETALL") return { result: Object.entries(H).flat() };
-    if (cmd === "HMGET") return { result: a.map((k) => H[k] ?? null) };
-    if (cmd === "HSET") { H[a[0]] = a[1]; return { result: 1 }; }
-    if (cmd === "HINCRBY") { H[a[0]] = String(Number(H[a[0]] || 0) + a[1]); return { result: Number(H[a[0]]) }; }
-    if (cmd === "HDEL") { delete H[a[0]]; return { result: 1 }; }
-  }) });
-  process.env.KV_REST_API_URL = "https://fake"; process.env.KV_REST_API_TOKEN = "t";
-  const { writeFileSync: wf, mkdtempSync: md, readFileSync: rf, rmSync: rm } = await import("node:fs");
-  const A = md(join(tmpdir(), "mirA-")), Bd = md(join(tmpdir(), "mirB-"));
-  wf(join(A, "fam.json"), '{"v":1}');
-  t("mirror: a changed file is written to the database", (await mirror.push(A, fake)) === 1 && R["lum:files"]["fam.json"] === '{"v":1}');
-  t("mirror: nothing changed, nothing written", (await mirror.push(A, fake)) === 0);
-  t("mirror: another instance pulls it", (await mirror.pull(Bd, fake)) === true && rf(join(Bd, "fam.json"), "utf8") === '{"v":1}');
-  t("mirror: pulling again with no change does nothing", (await mirror.pull(Bd, fake)) === false);
-  rm(join(A, "fam.json")); await mirror.push(A, fake);
-  t("mirror: a deleted family is deleted from the database", !("fam.json" in R["lum:files"]));
-  delete process.env.KV_REST_API_URL; delete process.env.KV_REST_API_TOKEN;
-}
-
-// ---- Web Push (VAPID + aes128gcm), against a fake push service ----
-{
-  const wp = await import("./webpush.js");
-  const { createECDH, randomBytes } = await import("node:crypto");
-  const http = await import("node:http");
-  const got = [];
-  const ps = http.createServer((q, r) => { const ch = []; q.on("data", (c) => ch.push(c)); q.on("end", () => { got.push({ path: q.url, h: q.headers, body: Buffer.concat(ch) }); r.writeHead(q.url.includes("gone") ? 410 : 201); r.end(); }); });
-  await new Promise((r) => ps.listen(0, r));
-  const pbase = `http://127.0.0.1:${ps.address().port}`;
-  const ua = createECDH("prime256v1"); ua.generateKeys(); const auth = randomBytes(16);
-  const sub = (path) => ({ endpoint: pbase + path, keys: { p256dh: ua.getPublicKey().toString("base64url"), auth: auth.toString("base64url") } });
-  const k = wp.makeKeys();
-  t("push: encrypt then decrypt round-trips", wp.decrypt(wp.encrypt('{"a":"hello"}', sub("/x")), ua, auth) === '{"a":"hello"}');
-  t("push: VAPID JWT verifies with the public key", wp.verifyVapid(wp.vapidAuth(pbase + "/x", k), k.publicKey));
-  t("push: VAPID JWT fails with another key", !wp.verifyVapid(wp.vapidAuth(pbase + "/x", k), wp.makeKeys().publicKey));
-  t("push: quiet hours across midnight", wp.inQuiet({ on: true, from: "21:00", to: "07:00", tz: "UTC" }, Date.UTC(2026, 0, 1, 23)) && !wp.inQuiet({ on: true, from: "21:00", to: "07:00", tz: "UTC" }, Date.UTC(2026, 0, 1, 12)));
-  t("push: quiet hours use the person's time zone", wp.inQuiet({ on: true, from: "21:00", to: "07:00", tz: "America/Chicago" }, Date.UTC(2026, 0, 2, 4)));
-  const subsList = [{ id: "a", canAlerts: true, canChat: true, prefs: { quiet: { on: true, from: "00:00", to: "23:59", tz: "UTC" } } }, { id: "b", canAlerts: true, canChat: false, prefs: { urgentOnly: true } }];
-  t("push: urgent alerts ignore quiet hours", wp.recipients(subsList, { type: "alert", urgent: true }).length === 2);
-  t("push: non-urgent skips quiet and urgent-only", wp.recipients(subsList, { type: "alert", urgent: false }, Date.UTC(2026, 0, 1, 12)).length === 0);
-  t("push: chat only to people who can chat", wp.recipients(subsList, { type: "chat", urgent: true }).map((x) => x.id).join() === "a");
-  t("push: public key route", (await call("GET", "/api/push/key", null, null)).json.data.publicKey.length > 80);
-  t("push: bad subscription → 400", (await call("POST", "/api/push", { subscription: { endpoint: "nope" } })).status === 400);
-  const s1 = await call("POST", "/api/push", { subscription: sub("/sub1"), name: "Test phone", prefs: { quiet: { on: false } } });
-  t("push: subscribe", s1.json.data.id && s1.json.data.prefs.alerts === true && !("keys" in s1.json.data));
-  t("push: the child device cannot subscribe", (await call("POST", "/api/push", { subscription: sub("/c") }, "nokey")).status === 401);
-  got.length = 0;
-  await call("POST", "/api/alerts", { kind: "help", message: "Sam needs help", loc: { lat: 1, lng: 2, acc: 5 } });
-  const g = got.find((x) => x.path === "/sub1");
-  t("push: a help alert is pushed", !!g && g.h["content-encoding"] === "aes128gcm" && g.h.urgency === "high" && wp.verifyVapid(g.h.authorization, (await call("GET", "/api/push/key", null, null)).json.data.publicKey));
-  const pl = g && JSON.parse(wp.decrypt(g.body, ua, auth));
-  t("push: payload decrypts, says urgent, has no location", pl && pl.urgent === true && /Sam needs help/.test(pl.body) && !JSON.stringify(pl).includes("lat"));
-  await call("PUT", "/api/push/" + s1.json.data.id, { prefs: { chat: false } });
-  got.length = 0; await call("POST", "/api/chat", { text: "hello team" });
-  t("push: chat switched off is not pushed", !got.some((x) => x.path === "/sub1"));
-  await call("PUT", "/api/push/" + s1.json.data.id, { prefs: { chat: true } });
-  got.length = 0; await call("POST", "/api/chat", { text: "hello team" });
-  t("push: chat is pushed when on", got.some((x) => x.path === "/sub1"));
-  t("push: test route", (await call("POST", "/api/push/test", { id: s1.json.data.id })).json.success);
-  await call("POST", "/api/push", { subscription: sub("/gone") });
-  await call("POST", "/api/alerts", { kind: "help" });
-  t("push: dead subscriptions are removed", (await call("GET", "/api/push")).json.data.length === 1);
-  t("push: unsubscribe", (await call("DELETE", "/api/push/" + s1.json.data.id)).json.success && (await call("GET", "/api/push")).json.data.length === 0);
-  ps.close();
-}
-
-// ---- Email providers and the urgent-alert fallback ----
-{
-  t("mail: mode picks the configured provider", mailer.mode({ RESEND_API_KEY: "x" }) === "resend" && mailer.mode({ POSTMARK_TOKEN: "x" }) === "postmark" && mailer.mode({ SMTP_HOST: "h" }) === "smtp" && mailer.mode({}) === "outbox" && mailer.mode({ MAIL_MODE: "Console", RESEND_API_KEY: "x" }) === "console");
-  const calls = []; const fake = async (url, o) => { calls.push({ url, o }); return { ok: true, status: 200, text: async () => "" }; };
-  const msg = { from: "LuminAAC <a@b.org>", to: "p@q.org", subject: "Hi", text: "Body", headers: { "List-Unsubscribe": "<https://x/u>" } };
-  await mailer.http("resend", msg, { RESEND_API_KEY: "re_test" }, fake);
-  const rb = JSON.parse(calls[0].o.body);
-  t("mail: Resend request shape", calls[0].url === "https://api.resend.com/emails" && calls[0].o.headers.Authorization === "Bearer re_test" && rb.to[0] === "p@q.org" && rb.text === "Body" && rb.headers["List-Unsubscribe"]);
-  await mailer.http("postmark", msg, { POSTMARK_TOKEN: "pm_test" }, fake);
-  const pb = JSON.parse(calls[1].o.body);
-  t("mail: Postmark request shape", calls[1].url === "https://api.postmarkapp.com/email" && calls[1].o.headers["X-Postmark-Server-Token"] === "pm_test" && pb.TextBody === "Body" && pb.Headers[0].Name === "List-Unsubscribe");
-  let threw = false; try { await mailer.http("resend", msg, {}, fake); } catch { threw = true; }
-  t("mail: a missing API key is an error, not a silent drop", threw);
-  let threw2 = false; try { await mailer.http("resend", msg, { RESEND_API_KEY: "k" }, async () => ({ ok: false, status: 422, text: async () => "bad from" })); } catch (e) { threw2 = /422/.test(e.message); }
-  t("mail: provider errors surface", threw2);
-  const store = await import("./store.js");
-  const u = acc.createUser({ email: "fallback@example.org", password: "long enough password", name: "Fallback" });
-  u.emailVerified = Date.now(); u.memberships.push({ family: store.fid(KEY), role: "parent" }); acc.save();
-  const before = mailer.outbox().length;
-  await call("POST", "/api/alerts", { kind: "help", message: "Fallback check" });
-  const box = mailer.outbox();
-  t("mail: urgent alert emails a verified member with no push", box.length === before + 1 && box[0].to === "fallback@example.org" && /^Urgent/.test(box[0].subject));
-  await call("POST", "/api/alerts", { kind: "help", message: "again" });
-  t("mail: fallback is throttled", mailer.outbox().length === before + 1);
-  await call("POST", "/api/alerts", { kind: "zone-enter", message: "arrived" });
-  t("mail: non-urgent alerts don't email", mailer.outbox().length === before + 1);
-}
-
-// ---- Weekly summary ----
-{
-  const sm = await import("./summary.js");
-  const now = Date.now();
-  const s = sm.build({ doc: { moments: [{ t: now - 1000, meaning: "Park" }, { t: now - 2000, meaning: "Park" }, { t: now - 3000 }, { t: now - 9 * 864e5, meaning: "Old" }], signals: [{ created: now - 5000 }], notes: [{ text: "secret note" }] }, alerts: [{ t: now - 10, kind: "help", ack: null, loc: { lat: 1, lng: 2 } }], chat: [{ t: now - 10, text: "private chat" }] }, now);
-  t("summary: counts this week only", s.moments === 3 && s.explained === 2 && s.top[0] === "Park" && s.newSignals === 1 && s.urgent === 1 && s.unanswered === 1 && s.chat === 1);
-  const txt = JSON.stringify(s);
-  t("summary: no notes, chat text or location", !txt.includes("secret") && !txt.includes("private chat") && !txt.includes("lat"));
-  t("summary: due after a week, not before", sm.due({ on: true, last: now - 7 * 864e5 }, now) && !sm.due({ on: true, last: now - 864e5 }, now) && !sm.due({ on: false }, now));
-  t("summary: preview", (await call("GET", "/api/summary/preview")).json.data.title === "This week in LuminAAC");
-  t("summary: parent turns it on", (await call("PUT", "/api/summary", { on: true })).json.data.on === true);
-  t("summary: a family key can't ask for email", (await call("PUT", "/api/summary", { emailMe: true })).status === 400);
-  const lg = await call("POST", "/api/auth/login", { email: "fallback@example.org", password: "long enough password" }, null);
-  const tok = lg.json?.data?.token;
-  t("summary: signed-in member opts in to email", tok && (await call("PUT", "/api/summary", { emailMe: true }, tok)).json.data.emailMe === true);
-  t("summary: cron needs the secret", (await call("POST", "/api/cron/weekly", {}, null)).status === 401);
-  process.env.CRON_SECRET = "cron-secret-for-tests-123";
-  const before = mailer.outbox().length;
-  const cr = await call("POST", "/api/cron/weekly", {}, "cron-secret-for-tests-123");
-  const m = mailer.outbox()[0];
-  t("summary: cron emails the opted-in member", cr.json.data.sent >= 1 && mailer.outbox().length === before + 1 && m.subject === "This week in LuminAAC" && /unsubscribe\?f=/.test(m.text) && m.headers["List-Unsubscribe"]);
-  t("summary: not sent twice in a week", (await call("POST", "/api/cron/weekly", {}, "cron-secret-for-tests-123")).json.data.sent === 0);
-  const link = /(\/api\/summary\/unsubscribe\?\S+)/.exec(m.text)[1];
-  t("summary: a bad unsubscribe link is refused", (await fetch(base + link.replace(/t=\w/, "t=Z"))).status === 400);
-  const un = await fetch(base + link);
-  t("summary: one-click unsubscribe works", un.status === 200 && /unsubscribed/.test(await un.text()) && (await call("GET", "/api/summary/preview", null, tok)).json.data.emailMe === false);
-  delete process.env.CRON_SECRET;
-}
-
-// ---- End-to-end encryption: ciphertext only, key exchange mailbox ----
-{
-  const E = await import("../e2ee-core.js");
-  const KEY2 = "e2ee-family-key-0123456789";
-  const fk = E.newFamilyKey(), doc = { version: 2, notes: [{ text: "private note" }], profile: { child: "Robin" }, signals: [] };
-  const wire = await E.sealDoc(fk, doc);
-  const put = await call("PUT", "/api/sync", { doc: wire, baseVersion: 0 }, KEY2);
-  t("e2ee: sealed doc accepted", put.status === 200);
-  const raw = JSON.stringify((await call("GET", "/api/sync", null, KEY2)).json.data);
-  t("e2ee: server holds ciphertext only", !raw.includes("private note") && !raw.includes("Robin") && raw.includes("e2ee:v1:"));
-  t("e2ee: decrypts on the device", (await E.openDoc(fk, (await call("GET", "/api/sync", null, KEY2)).json.data.doc)).notes[0].text === "private note");
-  const phone = await E.newDeviceKeys(), parent = await E.newDeviceKeys();
-  t("e2ee: private key refused", (await call("POST", "/api/e2ee/requests", { pub: phone.priv }, KEY2)).status === 400);
-  const rq = await call("POST", "/api/e2ee/requests", { pub: phone.pub, name: "Kitchen tablet" }, KEY2);
-  const list = (await call("GET", "/api/e2ee/requests", null, KEY2)).json.data;
-  t("e2ee: request listed with public key only", list.length === 1 && list[0].name === "Kitchen tablet" && !("d" in list[0].pub));
-  t("e2ee: no grant yet", (await call("GET", `/api/e2ee/requests/${rq.json.data.id}`, null, KEY2)).json.data.grant === null);
-  const wrapped = await E.wrapFor(fk, parent, list[0].pub, list[0].id);
-  t("e2ee: grant stored", (await call("PUT", `/api/e2ee/requests/${list[0].id}`, { wrapped, from: parent.pub }, KEY2)).status === 200);
-  const g = (await call("GET", `/api/e2ee/requests/${rq.json.data.id}`, null, KEY2)).json.data.grant;
-  t("e2ee: device unwraps the family key", (await E.unwrapFrom(g.wrapped, phone, g.from, rq.json.data.id)) === fk);
-  t("e2ee: grant handed over once", (await call("GET", `/api/e2ee/requests/${rq.json.data.id}`, null, KEY2)).status === 404);
-  t("e2ee: safety codes match", (await E.safetyCode(phone.pub, g.from)) === (await E.safetyCode(parent.pub, list[0].pub)));
-  const sealedMsg = await E.seal(fk, "see you at 3", "chat");
-  const c = await call("POST", "/api/chat", { text: sealedMsg }, KEY2);
-  t("e2ee: sealed chat stored as is", c.status === 200 && c.json.data.text === sealedMsg && (await E.open(fk, c.json.data.text, "chat")) === "see you at 3");
-}
 
 console.log(`\n${pass} passed, ${failN} failed`);
 

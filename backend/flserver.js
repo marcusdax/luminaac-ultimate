@@ -16,6 +16,8 @@ import { join as pjoin } from "node:path";
 import { randomUUID } from "node:crypto";
 import { DIR } from "./store.js";
 import { DIM, FEATURES, zeros, decodeSum, addMod, CLIP, NOISE, combine, unmask, seedHex, rhoPerRound, epsilon, DELTA } from "../fl-core.js";
+import { compressClientUpdate, decompressClientUpdate, aggregatePrinceUpdates } from "../masternex-prince-fl.js";
+export { compressClientUpdate, decompressClientUpdate, aggregatePrinceUpdates };
 
 const F = pjoin(DIR, "_fl.json");
 const SIZE = () => Math.max(2, Number(process.env.FL_ROUND_SIZE || 3));
@@ -30,7 +32,6 @@ function load() {
   S.budget ||= {};
   return S;
 }
-export function forget() { S = undefined; } // hosted mode: re-read after another instance changed the file
 const save = () => { const t = F + ".tmp"; writeFileSync(t, JSON.stringify(S)); renameSync(t, F); };
 const ids = (o) => Object.keys(o).map(Number);
 function abandon(r, reason) {

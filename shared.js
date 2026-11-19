@@ -1,7 +1,10 @@
 import { currentPosition } from "./geo.js";
+import { speakUtterance, configureSpeech } from "./speech.js";
+import { starterGestalts } from "./slp.js";
 // Shared data layer for "My Voice" (index.html) and "The Bridge" (bridge.html).
 // Metadata in localStorage (luminaac:bridge), media blobs in IndexedDB.
 const KEY = "luminaac:bridge";
+const BOARD_KEYS = ["settings", "log", "counts", "pairs", "moments", "custom", "plans"];
 
 export const ROLES = { parent: "Parent", teacher: "Teacher", therapist: "Therapist", family: "Family" };
 
@@ -47,7 +50,19 @@ export function seed() {
     // Phase 2 (folded in from LuminAAC-Repository, luminaac, LuminAAC-Advanced and the spec doc)
     alerts: [],
     feedback: [],
-    access: { mode: "standard", size: 100, dwell: 0, acceptMs: 0, tapDebounce: 0, scan: false, scanMs: 1500, safety: true, potty: false, sound: false },
+    access: {
+      mode: "standard",
+      size: 100,
+      dwell: 0,
+      acceptMs: 0,
+      debounceMs: 0,
+      scan: false,
+      scanMs: 1500,
+      scanMode: "linear",
+      scanAudio: false,
+      scanLoops: 0,
+      safety: true,
+    },
     stories: [
       { id: "st1", title: "Going to the dentist", kind: "story", steps: [
         { e: "🚗", text: "We drive to the dentist." },
@@ -55,28 +70,27 @@ export function seed() {
         { e: "🦷", text: "The dentist counts my teeth. I can hold my fish toy." },
         { e: "⭐", text: "All done. Then we go to the park." } ] },
       { id: "st2", title: "Morning routine", kind: "routine", steps: [
-        { e: "🚽", text: "Bathroom", link: "potty" }, { e: "🪥", text: "Brush teeth" }, { e: "👕", text: "Get dressed" }, { e: "🥣", text: "Breakfast" } ] },
+        { e: "🚽", text: "Bathroom" }, { e: "🪥", text: "Brush teeth" }, { e: "👕", text: "Get dressed" }, { e: "🥣", text: "Breakfast" } ] },
     ],
-    // M2: choice boards (Plans on My Voice) and gestalt scripts (Scripts tab).
-    choices: [{ id: "ch1", title: "What snack?", e: "🍎", lead: "I want", options: [{ e: "🍎", w: "apple" }, { e: "🧀", w: "cheese" }, { e: "🥨", w: "pretzels" }] }],
-    scripts: [],
     practice: { reward: "stars", targets: [
       { id: "pr1", sound: "m", word: "more", e: "➕", tries: [] },
       { id: "pr2", sound: "b", word: "bubble", e: "🫧", tries: [] },
       { id: "pr3", sound: "s", word: "sun", e: "☀️", tries: [] } ] },
     sync: { url: "", key: "", version: 0, last: 0 },
+    // Milestone 2: SLP tools. Starter gestalts are generic; caregivers replace them with the child's own.
+    gestalts: starterGestalts(),
+    choiceBoards: [],
+    schedules: [],
+    importedBoards: [],
+    painLog: [],
+    dietLog: [],
+    solarLog: [],
     // Phase 3. Everything here is off until a parent turns it on.
     safety: { consent: false, consentBy: "", consentAt: 0, zones: [], sendLocation: true, watch: true, events: [] },
     account: null, // { email, name, role, family } when signed in; local-only mode needs none
     device: null, // { id, name, kind } when this device was paired with a code
     emoBase: { n: 0 }, // this child's prosody baseline, from confirmed moments only
     fl: { optIn: false, version: 0, global: null, local: null, sent: [] },
-    // Phase 7. Videos a caregiver picked, and gentle sound games. History stays on the device.
-    videos: { on: true, thumbs: false, list: [], sessions: [], talk: [] },
-    games: { settings: { mic: false, volume: 0.7, quiet: false, calm: false, choices: 3, reward: "stickers" }, goals: [], plays: [] },
-    // Potty Path plan only (the toilet log itself lives in luminaac:potty, see potty-store.js).
-    potty: null,
-    sound: null,
     audit: [{ t: now, what: "Sample data loaded" }],
   };
 }
@@ -108,8 +122,6 @@ export function recordFeedback(db, accepted, s) {
 }
 
 // ---------- Optional server (backend/) ----------
-// The family server lives with the app at /api on the hosted site; locally it is backend/server.js on port 3001.
-export const defaultServer = () => (typeof location !== "undefined" && location.protocol === "https:" ? location.origin : "http://localhost:3001");
 export async function api(db, method, path, body) {
   if (!db.sync?.url || !db.sync?.key) throw new Error("Server not set up");
   const r = await fetch(db.sync.url.replace(/\/+$/, "") + path, {
@@ -138,22 +150,11 @@ export function raiseAlert(kind, message, extra = {}) {
   return a;
 }
 export function persist(db) {
-  let json;
-  try {
-    json = JSON.stringify(db);
-    if (localStorage.getItem(KEY) === json) return; // nothing changed: no save, no event
-    localStorage.setItem(KEY, json);
-  } catch { return; }
-  // The browser's "storage" event only reaches other tabs. Tell this page too, after
-  // the current handler finishes, so every module redraws from the same data.
-  if (typeof window !== "undefined") queueMicrotask(() => window.dispatchEvent(new CustomEvent("luminaac:bridge-updated")));
-}
-
-// Run fn whenever the Bridge document changes, in this tab or another one.
-export function onBridgeChange(fn) {
-  if (typeof window === "undefined") return;
-  window.addEventListener("storage", (e) => { if (e.key === KEY) fn(); });
-  window.addEventListener("luminaac:bridge-updated", () => fn());
+  const ts = Date.now();
+  try { localStorage.setItem(KEY, JSON.stringify(db)); } catch {}
+  if (typeof window !== "undefined" && typeof window.dispatchEvent === "function" && typeof CustomEvent === "function") {
+    try { window.dispatchEvent(new CustomEvent("luminaac:bridge-updated", { detail: { ts } })); } catch {}
+  }
 }
 export const uid = (p = "x") => p + Math.random().toString(36).slice(2, 9);
 
@@ -184,7 +185,17 @@ export function suggest(db, d = new Date()) {
 }
 
 export function activeRules(db, d = new Date()) {
-  return db.rules.filter((r) => r.days.includes(d.getDay()) && d.getHours() >= r.from && d.getHours() < r.to);
+  const rules = Array.isArray(db?.rules) ? db.rules : [];
+  const day = d.getDay();
+  const h = d.getHours();
+  return rules.filter((r) => {
+    if (!r || !Array.isArray(r.days)) return false;
+    const from = Number(r.from);
+    const to = Number(r.to);
+    if (!Number.isFinite(from) || !Number.isFinite(to)) return false;
+    if (from <= to) return r.days.includes(day) && h >= from && h < to;
+    return (h >= from && r.days.includes(day)) || (h < to && r.days.includes((day + 6) % 7));
+  });
 }
 
 // ---------- IndexedDB media ----------
@@ -210,16 +221,147 @@ export async function clearMedia() {
   return new Promise((res) => { const tx = db.transaction("clips", "readwrite"); tx.objectStore("clips").clear(); tx.oncomplete = res; });
 }
 
-export function speak(text, rate = 0.9) {
-  // In My Voice, route through the talker's configured voice (natural voice, device
-  // voice, recorded clips). 0.9 is the old default, so a lower rate stays slower.
-  const v = typeof window !== "undefined" && window.luminaacVoice;
-  if (v) { v.say(text, { rate: rate / 0.9 }); return; }
-  if (!("speechSynthesis" in window)) return;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate = rate;
-  speechSynthesis.speak(u);
+export function speak(text, rateOrOpts = 0.9) {
+  const opts = typeof rateOrOpts === "number"
+    ? { mode: "child", rate: rateOrOpts, skipLog: true }
+    : { mode: "child", skipLog: true, ...rateOrOpts };
+  return speakUtterance(text, opts);
+}
+
+configureSpeech({ load, persist, getMedia });
+
+export function exportUnifiedBackup() {
+  const db = load();
+  const board = {};
+  for (const k of BOARD_KEYS) {
+    try {
+      const raw = localStorage.getItem("luminaac:" + k);
+      if (raw !== null) board[k] = JSON.parse(raw);
+    } catch {}
+  }
+  return { exported: new Date().toISOString(), ...db, board };
+}
+
+const isPlainObject = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+const BOARD_ARRAY_KEYS = new Set(["log", "moments", "custom"]);
+const BOARD_OBJECT_KEYS = new Set(["settings", "counts", "pairs", "plans"]);
+const BRIDGE_ARRAY_FIELDS = [
+  "signals", "moments", "rules", "exploration", "feedback",
+  "personality", "stories", "questions", "team", "notes", "alerts", "audit", "milestones",
+  "gestalts", "choiceBoards", "schedules", "importedBoards", "painLog", "dietLog", "solarLog",
+];
+const BRIDGE_OBJECT_FIELDS = [
+  "profile", "access", "practice", "privacy", "capture", "sync", "safety", "fl", "emoBase", "emoPrefs",
+];
+const BRIDGE_NULLABLE_OBJECT_FIELDS = ["account", "device"];
+
+export function importUnifiedBackup(payload) {
+  if (!isPlainObject(payload)) {
+    throw new Error("Invalid backup");
+  }
+  const hasBoardProp = payload.board !== undefined;
+  if (hasBoardProp && !isPlainObject(payload.board)) {
+    throw new Error("Invalid backup");
+  }
+  const boardSrc = hasBoardProp
+    ? payload.board
+    : (payload.version !== 2 ? payload : null);
+  const hasValidBoardEntry = boardSrc
+    ? BOARD_KEYS.some((k) => boardSrc[k] !== undefined)
+    : false;
+
+  if (payload.version !== 2 && !hasValidBoardEntry) {
+    throw new Error("Invalid backup");
+  }
+  if (boardSrc) {
+    for (const k of BOARD_KEYS) {
+      if (boardSrc[k] === undefined) continue;
+      if (BOARD_ARRAY_KEYS.has(k) && !Array.isArray(boardSrc[k])) {
+        throw new Error("Invalid backup");
+      }
+      if (BOARD_OBJECT_KEYS.has(k) && !isPlainObject(boardSrc[k])) {
+        throw new Error("Invalid backup");
+      }
+    }
+  }
+  if (payload.version === 2) {
+    for (const k of BRIDGE_ARRAY_FIELDS) {
+      if (payload[k] !== undefined && !Array.isArray(payload[k])) {
+        throw new Error("Invalid backup");
+      }
+    }
+    for (const k of BRIDGE_OBJECT_FIELDS) {
+      if (payload[k] !== undefined && !isPlainObject(payload[k])) {
+        throw new Error("Invalid backup");
+      }
+    }
+    for (const k of BRIDGE_NULLABLE_OBJECT_FIELDS) {
+      if (payload[k] !== undefined && payload[k] !== null && !isPlainObject(payload[k])) {
+        throw new Error("Invalid backup");
+      }
+    }
+    if (payload.spoken !== undefined && (typeof payload.spoken !== "number" || !Number.isFinite(payload.spoken))) {
+      throw new Error("Invalid backup");
+    }
+    if (payload.practice?.targets !== undefined && !Array.isArray(payload.practice.targets)) {
+      throw new Error("Invalid backup");
+    }
+    if (payload.safety?.zones !== undefined && !Array.isArray(payload.safety.zones)) {
+      throw new Error("Invalid backup");
+    }
+    if (payload.fl?.sent !== undefined && !Array.isArray(payload.fl.sent)) {
+      throw new Error("Invalid backup");
+    }
+  }
+
+  let boardUpdated = false;
+  if (boardSrc) {
+    for (const k of BOARD_KEYS) {
+      if (boardSrc[k] !== undefined) {
+        try {
+          localStorage.setItem("luminaac:" + k, JSON.stringify(boardSrc[k]));
+          boardUpdated = true;
+        } catch {}
+      }
+    }
+  }
+  let bridgeUpdated = false;
+  if (payload.version === 2) {
+    const { board: _board, exported: _exported, ...bridgeRest } = payload;
+    const d = seed();
+    const migrated = { ...d, ...bridgeRest };
+    for (const k of ["profile", "access", "practice", "privacy", "capture", "sync", "safety", "fl", "emoBase"]) {
+      migrated[k] = { ...d[k], ...(bridgeRest[k] || {}) };
+    }
+    persist(migrated);
+    bridgeUpdated = true;
+  }
+  return { bridgeUpdated, boardUpdated };
+}
+
+export async function wipeUnifiedData({ mode = "history" } = {}) {
+  const emptyBoard = { log: [], counts: {}, pairs: {}, moments: [] };
+  for (const [k, v] of Object.entries(emptyBoard)) {
+    try { localStorage.setItem("luminaac:" + k, JSON.stringify(v)); } catch {}
+  }
+  const db = load();
+  db.exploration = [];
+  db.feedback = [];
+  db.alerts = [];
+  db.painLog = []; // body-map history is history, like messages; boards and phrases are setup and stay
+  db.dietLog = [];
+  db.solarLog = [];
+  db.spoken = 0;
+  db.milestones = [];
+  if (mode === "all") {
+    db.moments = [];
+    db.signals = [];
+    db.questions = [];
+    db.notes = [];
+    await clearMedia().catch(() => {});
+  }
+  persist(db);
+  return db;
 }
 
 // ---------- Phase 3: feelings and the on-device model ----------

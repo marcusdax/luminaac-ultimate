@@ -1,5 +1,6 @@
 // My Voice, Phase 4: natural-voice preview and download progress, install button.
 import * as ai from "./ai.js";
+import { speakUtterance } from "./speech.js";
 const $ = (s, el = document) => el.querySelector(s);
 const sel = $("#voiceSelect");
 if (sel) {
@@ -19,20 +20,15 @@ if (sel) {
     const p = e.detail; if (p.done || p.pct >= 100) { prog.hidden = true; describe(); return; }
     prog.hidden = false; prog.value = p.pct; note.textContent = `Getting the natural voice ready… ${p.pct}% (${p.mb} of about ${ai.MODELS.tts.mb} MB)`;
   });
-  $("#btnVoicePreview").addEventListener("click", async (e) => {
-    const b = e.currentTarget, text = "Hi! This is how I sound.";
-    if (!sel.value.startsWith("kokoro:")) {
-      if (!("speechSynthesis" in window)) { note.textContent = "This device can't speak aloud."; return; }
-      speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text);
-      const v = speechSynthesis.getVoices().find((x) => x.name === sel.value); if (v) u.voice = v; speechSynthesis.speak(u); return;
-    }
+  $("#btnVoicePreview").addEventListener("click", (e) => {
+    const b = e.currentTarget;
     b.disabled = true;
-    try {
-      await ai.speakKokoro(text, sel.value.slice(7), { onProgress: (p) => window.dispatchEvent(new CustomEvent("voice:progress", { detail: p })), onStart: () => window.dispatchEvent(new CustomEvent("voice:progress", { detail: { done: true } })) });
-    } catch (err) {
-      note.textContent = `The natural voice couldn't load (${err.message}). The device voice is used instead.`; prog.hidden = true;
-      if ("speechSynthesis" in window) speechSynthesis.speak(new SpeechSynthesisUtterance(text));
-    } finally { b.disabled = false; }
+    speakUtterance("Hi! This is how I sound.", {
+      mode: "child",
+      voiceOverride: sel.value,
+      skipLog: true,
+      onEnd: () => { b.disabled = false; },
+    });
   });
 }
 // Install button in the settings panel (shown only when the browser offers it).
