@@ -18,7 +18,14 @@
   <link rel="stylesheet" href="bridge.css" />
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
   <link rel="stylesheet" href="phase3.css" />
+  <link rel="stylesheet" href="phase6.css" />
   <link rel="stylesheet" href="phase4.css" />
+  <link rel="stylesheet" href="phase7.css" />
+  <link rel="stylesheet" href="potty.css" />
+  <link rel="stylesheet" href="sound.css" />
+  <link rel="stylesheet" href="redesign.css" />
+  <link rel="stylesheet" href="motion.css" />
+  <script src="dialog-guard.js"></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -29,7 +36,8 @@
     </a>
     <p class="who" id="who"></p>
     <button class="pill-link" type="button" data-install hidden>Install app</button>
-    <a class="pill-link" href="index.html">Open My Voice</a>
+    <a class="pill-link" href="guide.html" id="helpLink"><span class="rd-long">Help and guide</span><span class="rd-short">Help</span></a>
+    <a class="pill-link" href="index.html"><span class="rd-long">Open My Voice</span><span class="rd-short">My Voice</span></a>
   </header>
 
   <div class="layout">
@@ -38,11 +46,15 @@
       <button type="button" class="tab" data-tab="signals">Signals</button>
       <button type="button" class="tab" data-tab="vocab">Vocabulary</button>
       <button type="button" class="tab" data-tab="routines">Stories</button>
+      <button type="button" class="tab" data-tab="play">Videos and games</button>
+      <button type="button" class="tab" data-tab="potty">Potty Path</button>
+      <button type="button" class="tab" data-tab="sound">Sound Path</button>
       <button type="button" class="tab" data-tab="insights">Insights</button>
       <button type="button" class="tab" data-tab="team">Team</button>
       <button type="button" class="tab" data-tab="safety">Safety</button>
       <button type="button" class="tab" data-tab="account">Account and devices</button>
       <button type="button" class="tab" data-tab="privacy">Privacy</button>
+      <a class="tab tab-link" href="guide.html">Caretaker guide</a>
     </nav>
 
     <main id="main" tabindex="-1">
@@ -113,7 +125,7 @@
             <h2 id="h-addbtn">Add a button to My things</h2>
             <form id="formPersonal" class="form">
               <label>What it says <input name="label" required maxlength="60" placeholder="Uncle John's silly dance" /></label>
-              <label>Picture (an emoji works) <input name="e" maxlength="32" placeholder="🕺" /></label>
+              <label>Picture (an emoji works) <input name="e" maxlength="16" placeholder="🕺" /></label>
               <label>Plays a moment (optional)
                 <select name="momentId" id="momentPick"><option value="">Just speak the words</option></select>
               </label>
@@ -148,25 +160,28 @@
             <label>Button size <span class="soft" id="sizeOut"></span><input type="range" name="size" min="80" max="160" step="10" /></label>
             <label>Select by resting the pointer (dwell)
               <select name="dwell"><option value="0">Off</option><option value="800">0.8 seconds</option><option value="1200">1.2 seconds</option><option value="2000">2 seconds</option></select></label>
-            <label>Hold to accept tap <span class="soft" id="acceptOut"></span><input type="range" name="acceptMs" min="0" max="1000" step="100" /></label>
-            <label>Ignore repeat taps (debounce) <span class="soft" id="debounceOut"></span><input type="range" name="debounceMs" min="0" max="1000" step="100" /></label>
-            <label class="check"><input type="checkbox" name="scan" /> Switch scanning (highlight moves on its own; Space or Enter picks)</label>
-            <label>Scanning style
-              <select name="scanMode">
-                <option value="linear">1-switch: Item by item</option>
-                <option value="rowcol">1-switch: Row then word</option>
-                <option value="step2">2-switch: Step at your own pace (Tab/Space moves, Enter selects)</option>
-              </select></label>
-            <label>Scanning speed
-              <select name="scanMs"><option value="1000">Fast (1 second)</option><option value="1500">Medium (1.5 seconds)</option><option value="2500">Slow (2.5 seconds)</option></select></label>
-            <label class="check"><input type="checkbox" name="scanAudio" /> Speak scan highlight quietly (auditory preview)</label>
-            <label>Pause scanning after
-              <select name="scanLoops">
-                <option value="0">Keep scanning</option>
-                <option value="2">Pause after 2 passes</option>
-                <option value="3">Pause after 3 passes</option>
-                <option value="5">Pause after 5 passes</option>
-              </select></label>
+            <label>Hold a button this long to choose it
+              <select name="acceptMs"><option value="0">Off: a tap chooses</option><option value="300">0.3 seconds</option><option value="500">0.5 seconds</option><option value="1000">1 second</option></select></label>
+            <label>After a choice, ignore taps for
+              <select name="tapDebounce"><option value="0">Off</option><option value="500">0.5 seconds</option><option value="1000">1 second</option><option value="2000">2 seconds</option></select></label>
+            <p class="soft small">For shaky or unsteady hands: a held press stops accidental brushes, and the pause stops double picks. "I need help" is never paused.</p>
+            <label class="check"><input type="checkbox" name="scan" /> Switch scanning</label>
+            <fieldset class="scan-opts"><legend>Scanning</legend>
+              <label>Switches
+                <select name="switches"><option value="1">One switch: the highlight moves on its own, the switch picks</option><option value="2">Two switches: one moves the highlight, one picks</option></select></label>
+              <label>Pattern
+                <select name="method"><option value="rowcol">Rows, then buttons in the row</option><option value="linear">One button at a time</option></select></label>
+              <label>Scanning speed
+                <select name="scanMs"><option value="1000">Fast (1 second)</option><option value="1500">Medium (1.5 seconds)</option><option value="2500">Slow (2.5 seconds)</option><option value="4000">Very slow (4 seconds)</option></select></label>
+              <label>Extra time on the first item
+                <select name="firstHold"><option value="0">None</option><option value="500">Half a second</option><option value="1000">1 second</option><option value="2000">2 seconds</option></select></label>
+              <label>Stop after this many rounds with no pick
+                <select name="loops"><option value="2">2</option><option value="3">3</option><option value="5">5</option></select></label>
+              <label>Ignore repeat presses within
+                <select name="debounce"><option value="0">Off</option><option value="250">0.25 seconds</option><option value="500">0.5 seconds</option><option value="1000">1 second</option></select></label>
+              <label class="check"><input type="checkbox" name="auditory" /> Say each item quietly as it lights up (auditory scanning)</label>
+              <p class="soft small">Switch 1 is Space or Enter. Switch 2 is Tab or the right arrow. Most switch interfaces can send these keys.</p>
+            </fieldset>
             <label class="check"><input type="checkbox" name="safety" /> Show "I need help" and "Take me home" buttons</label>
           </form>
         </section>
@@ -186,7 +201,7 @@
             <h2 id="h-story">Write a story or routine</h2>
             <form id="formStory" class="form">
               <label>Title <input name="title" required maxlength="60" placeholder="Haircut day" /></label>
-              <fieldset class="seg"><legend class="sr-only">Kind</legend>
+              <fieldset class="kind-pick"><legend class="sr-only">Kind</legend>
                 <label><input type="radio" name="kind" value="story" checked /> Story</label>
                 <label><input type="radio" name="kind" value="routine" /> Routine (first, then)</label>
               </fieldset>
@@ -202,7 +217,7 @@
               <div class="row">
                 <label>Sound <input name="sound" required maxlength="4" placeholder="p" /></label>
                 <label>Word <input name="word" required maxlength="20" placeholder="pop" /></label>
-                <label>Picture <input name="e" maxlength="32" placeholder="🎈" /></label>
+                <label>Picture <input name="e" maxlength="16" placeholder="🎈" /></label>
               </div>
               <button class="btn" type="submit">Add sound</button>
             </form>
@@ -211,15 +226,36 @@
             <ul class="mini-list practice-list" id="practiceList"></ul>
             <p class="soft">LuminAAC doesn't grade speech. It counts the tries your child marks, so you and your therapist can see what they're working on.</p>
           </section>
-          <section class="card" aria-labelledby="h-choices">
-            <h2 id="h-choices">Choice boards</h2>
-            <form id="formChoiceBoard" class="form">
-              <label>Choice board title <input name="title" required maxlength="60" placeholder="Snack choices" /></label>
-              <label>Options (2 to 8, one per line)
-                <textarea name="options" rows="4" required placeholder="🍎 Apple&#10;🍌 Banana&#10;🍘 Crackers"></textarea></label>
-              <button class="btn" type="submit">Save choice board</button>
+        </div>
+        <div class="split">
+          <section class="card" aria-labelledby="h-choice">
+            <h2 id="h-choice">Choice boards</h2>
+            <p class="soft">2 to 8 big pictures to choose from. They show in Plans on My Voice.</p>
+            <form id="formChoice" class="form">
+              <label>Question <input name="title" required maxlength="60" placeholder="What snack?" /></label>
+              <label>Picture for the board <input name="e" maxlength="16" placeholder="🍎" /></label>
+              <label>Options, one per line. Start a line with an emoji for its picture.
+                <textarea name="options" rows="4" required placeholder="🍎 apple&#10;🧀 cheese&#10;🥨 pretzels"></textarea></label>
+              <label>Say before the choice (optional) <input name="lead" maxlength="30" placeholder="I want" /></label>
+              <button class="btn" type="submit">Save to My Voice</button>
+              <p class="soft" id="choiceErr" role="alert"></p>
             </form>
-            <ul class="mini-list" id="choiceBoardList"></ul>
+            <ul class="mini-list" id="choiceList"></ul>
+          </section>
+          <section class="card" aria-labelledby="h-scripts">
+            <h2 id="h-scripts">Scripts (gestalts)</h2>
+            <p class="soft">Some children learn language in whole phrases first, often from shows, songs or people they love (gestalt language processing). Add the phrases <span class="child-name">your child</span> uses. They get a Scripts tab on My Voice. Recording your own voice for a phrase in Voices keeps its tune.</p>
+            <form id="formScript" class="form">
+              <label>Phrase. Mark parts that can be mixed with " / ". <input name="text" required maxlength="120" placeholder="let's go / to the park" /></label>
+              <div class="row">
+                <label>Picture <input name="e" maxlength="16" placeholder="🌳" /></label>
+                <label>Stage <select name="stage" id="scriptStage"></select></label>
+              </div>
+              <label>Where it comes from (optional) <input name="source" maxlength="60" placeholder="Bluey, or Dad at the park" /></label>
+              <button class="btn" type="submit">Save to My Voice</button>
+            </form>
+            <p class="soft">At stage 1 a script is said whole. From stage 2, if it has parts, each part goes to the message strip so it can be mixed with others. Ask your SLP which stage fits.</p>
+            <ul class="mini-list" id="scriptList"></ul>
           </section>
         </div>
       </section>
@@ -240,6 +276,126 @@
           <section class="card" aria-labelledby="h-intent"><h2 id="h-intent">What the moments were about</h2><div id="intentStats"></div></section>
           <section class="card" aria-labelledby="h-feel"><h2 id="h-feel">Feelings, as estimated and checked by you</h2><div id="feelStats"></div></section>
           <section class="card" aria-labelledby="h-ms"><h2 id="h-ms">Milestones</h2><ul class="mini-list" id="milestoneList"></ul></section>
+        </div>
+        <h2 class="section-h" id="h-hist">Interests and history</h2>
+        <p class="soft">Worked out on this device from what <span class="child-name">your child</span> chose, said and played. It shows patterns, never a diagnosis. <a href="guide.html#videos-games-insights">How to read this</a></p>
+        <div class="split">
+          <section class="card" aria-labelledby="h-int"><h2 id="h-int">Interest map</h2><div id="interestMap"></div></section>
+          <section class="card" aria-labelledby="h-words"><h2 id="h-words">Most used words</h2><div id="topWordsChart"></div></section>
+        </div>
+        <div class="split">
+          <section class="card" aria-labelledby="h-growth"><h2 id="h-growth">Growth, last 8 weeks</h2><div id="growthChart"></div></section>
+          <section class="card" aria-labelledby="h-try"><h2 id="h-try">Words to try next</h2><div id="tryWords"></div></section>
+        </div>
+        <div class="split">
+          <section class="card" aria-labelledby="h-vids"><h2 id="h-vids">Favourite videos</h2><div id="videoStats"></div></section>
+          <section class="card" aria-labelledby="h-moodint"><h2 id="h-moodint">Feelings and interests</h2><div id="moodLinks"></div></section>
+        </div>
+        <div class="split">
+          <section class="card" aria-labelledby="h-gprog"><h2 id="h-gprog">Sound games</h2><div id="gameProgress"></div></section>
+          <section class="card" aria-labelledby="h-digest"><div class="card-head"><h2 id="h-digest">This week</h2><button class="btn" type="button" id="btnReport">Print a summary for a therapist</button></div><ul class="digest" id="digestList"></ul></section>
+        </div>
+      </section>
+
+      <!-- VIDEOS AND GAMES (phase 7) -->
+      <section class="panel" id="tab-play" aria-labelledby="h-play" hidden>
+        <h1 id="h-play">Videos and games</h1>
+        <p class="lede">Pick videos <span class="child-name">your child</span> loves and the words that go with them. Watching becomes a reason to talk, and what they choose helps you see their interests. <a href="guide.html#videos-games-insights">Read the guide for videos and games</a></p>
+        <div class="split">
+          <section class="card" aria-labelledby="h-vadd">
+            <h2 id="h-vadd">Add a video</h2>
+            <form id="formVideo" class="form" novalidate>
+              <label>YouTube link <input name="url" inputmode="url" autocomplete="off" required placeholder="https://www.youtube.com/watch?v=..." aria-describedby="vUrlHint vUrlErr" /></label>
+              <p class="soft small" id="vUrlHint">Paste a link from the YouTube app or website. Only videos you add here can be played.</p>
+              <p class="form-error" id="vUrlErr" role="alert" hidden></p>
+              <label>Name for the button <input name="title" required maxlength="40" placeholder="Choo choo train song" /></label>
+              <label>Picture for the button <input name="e" maxlength="16" placeholder="🚂" /></label>
+              <fieldset class="topic-pick"><legend>What is it about?</legend><div id="topicPick"></div></fieldset>
+              <label>Words to talk about it <input name="words" placeholder="train, fast, go, stop" aria-describedby="vWordsHint" /></label>
+              <p class="soft small" id="vWordsHint">Separate words with commas. We add words from the topics too.</p>
+              <button class="btn" type="submit">Add video</button>
+            </form>
+          </section>
+          <section class="card" aria-labelledby="h-vlist">
+            <div class="card-head"><h2 id="h-vlist">Video board</h2><span class="pill" id="vCount"></span></div>
+            <label class="check"><input type="checkbox" id="vOn" /> Show "My videos" in My Voice</label>
+            <label class="check"><input type="checkbox" id="vThumbs" aria-describedby="vThumbHint" /> Show video pictures</label>
+            <p class="soft small" id="vThumbHint">Pictures load from YouTube. Leave this off to use your emoji instead.</p>
+            <ul class="mini-list" id="videoList"></ul>
+            <p class="soft small">Videos play in YouTube's privacy-enhanced mode with no autoplay, no comments and no suggested videos at the end. Your child never needs a Google account.</p>
+          </section>
+        </div>
+        <div class="split">
+          <section class="card" aria-labelledby="h-gset">
+            <h2 id="h-gset">Sound game settings</h2>
+            <form class="form" id="formGameSet">
+              <label class="check"><input type="checkbox" name="mic" aria-describedby="micHint" /> Let games listen with the microphone</label>
+              <p class="soft small" id="micHint">Sound is checked on the device and never recorded or sent. Without the microphone, your child or you tap "I did it".</p>
+              <label>Game volume <input type="range" name="volume" min="0" max="1" step="0.1" /></label>
+              <label class="check"><input type="checkbox" name="quiet" /> Quiet mode: no chimes, only a calm voice</label>
+              <label class="check"><input type="checkbox" name="calm" /> Calm visuals: no bouncing or confetti</label>
+              <label>Pictures to choose from <select name="choices"><option value="2">2 (easier)</option><option value="3">3</option><option value="4">4</option></select></label>
+              <label>Reward <select name="reward"><option value="stickers">Stickers</option><option value="stars">Stars</option><option value="quiet">A quiet tick</option></select></label>
+            </form>
+          </section>
+          <section class="card" aria-labelledby="h-goals">
+            <h2 id="h-goals">Weekly goals</h2>
+            <form id="formGoal" class="form inline-form">
+              <label>Game <select name="game"><option value="any">Any sound game</option><option value="echo">Copy my sound</option><option value="match">Sound and picture</option><option value="first">First sounds</option><option value="turns">My turn, your turn</option></select></label>
+              <label>Turns a week <input name="perWeek" type="number" min="1" max="100" value="10" required /></label>
+              <button class="btn" type="submit">Add goal</button>
+            </form>
+            <ul class="mini-list" id="goalList"></ul>
+            <p class="soft small">Goals are for you, not your child. Games never show a fail or take anything away.</p>
+          </section>
+        </div>
+      </section>
+
+      <!-- POTTY PATH: toilet learning and communication (docs/POTTY-PATH.md) -->
+      <section class="panel" id="tab-potty" aria-labelledby="h-potty" hidden>
+        <h1 id="h-potty">Potty Path</h1>
+        <p class="lede">A calm toilet routine that teaches <span class="child-name">your child</span> a way to say "I need to go". Asking always counts most. It's a support tool, not medical advice: check with your child's doctor first. <a href="guide.html#potty-path">Read the guide for Potty Path</a></p>
+        <div id="potFlags"></div>
+        <div id="potStage"></div>
+        <div class="pot-grid">
+          <section class="card" aria-labelledby="h-pot-on"><h2 id="h-pot-on">Turn on</h2><div id="potOn"></div></section>
+          <section class="card" aria-labelledby="h-pot-live"><div class="card-head"><h2 id="h-pot-live">Right now</h2><span class="pill" id="potPhase"></span></div><div id="potLive"></div></section>
+          <section class="card" aria-labelledby="h-pot-coach"><h2 id="h-pot-coach">What to say</h2><div id="potCoach"></div></section>
+        </div>
+        <div class="pot-grid">
+          <section class="card" aria-labelledby="h-pot-today"><div class="card-head"><h2 id="h-pot-today">Today</h2><span class="pill" id="potCounts"></span></div><ul class="pot-tl" id="potTimeline"></ul></section>
+          <section class="card" aria-labelledby="h-pot-hints"><h2 id="h-pot-hints">What the log shows</h2><div id="potHints"></div></section>
+          <section class="card" aria-labelledby="h-pot-week"><h2 id="h-pot-week">This week</h2><div id="potWeek"></div></section>
+        </div>
+        <div class="pot-grid">
+          <section class="card" aria-labelledby="h-pot-plan"><h2 id="h-pot-plan">The plan</h2><form class="form" id="potPlan"></form></section>
+          <section class="card" aria-labelledby="h-pot-setup"><h2 id="h-pot-setup">Getting ready</h2><div id="potSetup"></div></section>
+        </div>
+        <div class="pot-grid">
+          <section class="card" aria-labelledby="h-pot-print"><h2 id="h-pot-print">Print and reminders</h2><div id="potPrint"></div></section>
+          <section class="card" aria-labelledby="h-pot-devices"><h2 id="h-pot-devices">Two devices</h2><div id="potDevices"></div></section>
+          <section class="card" aria-labelledby="h-pot-data"><h2 id="h-pot-data">Toilet data</h2><div id="potData"></div></section>
+        </div>
+        <section class="card" aria-labelledby="h-pot-help"><h2 id="h-pot-help">When it's hard</h2><div id="potHelp"></div></section>
+      </section>
+
+      <section class="panel" id="tab-sound" aria-labelledby="h-sound" hidden>
+        <h1 id="h-sound">Sound Path</h1>
+        <p class="lede">Short, playful voice practice that builds new sounds, then syllables, then words, while the talker stays <span class="child-name">your child</span>'s reliable voice. Built from current research; it's practice support, not therapy. Share the SLP sheet with your speech therapist. <a href="guide.html#sound-path">Read the guide for Sound Path</a></p>
+        <div class="pot-grid">
+          <section class="card" aria-labelledby="h-sp-on"><h2 id="h-sp-on">Turn on</h2><div id="spOn"></div></section>
+          <section class="card" aria-labelledby="h-sp-ladder"><h2 id="h-sp-ladder">The ladder</h2><div id="spLadder"></div></section>
+          <section class="card" aria-labelledby="h-sp-week"><h2 id="h-sp-week">This week</h2><div id="spWeek"></div></section>
+        </div>
+        <div class="pot-grid">
+          <section class="card" aria-labelledby="h-sp-targets"><h2 id="h-sp-targets">Targets</h2><div id="spTargets"></div></section>
+          <section class="card" aria-labelledby="h-sp-inv"><h2 id="h-sp-inv">Sounds you've heard</h2><div id="spInv"></div></section>
+        </div>
+        <div class="pot-grid">
+          <section class="card" aria-labelledby="h-sp-set"><h2 id="h-sp-set">Practice settings</h2><div id="spSettings"></div></section>
+          <section class="card" aria-labelledby="h-sp-models"><h2 id="h-sp-models">Watch my mouth, Mouth Mirror, Sound and treat</h2><div id="spModels"></div></section>
+          <section class="card" aria-labelledby="h-sp-coach"><h2 id="h-sp-coach">How to help</h2><div id="spCoach"></div></section>
+          <section class="card" aria-labelledby="h-sp-data"><h2 id="h-sp-data">Sheet and data</h2><div id="spData"></div></section>
         </div>
       </section>
 
@@ -286,8 +442,30 @@
               <button class="btn" type="button" id="btnGeoConsent">Set up safe zones</button>
             </div>
             <div id="geoOn" hidden>
-              <div id="zoneMap" class="zone-map" role="region" aria-label="Map of safe zones. You can also add zones with the form below."></div>
+              <div class="draw-bar" role="toolbar" aria-label="Draw a zone" id="drawBar">
+                <button class="btn quiet small" type="button" id="btnDrawFree" aria-pressed="false">Draw by hand</button>
+                <button class="btn quiet small" type="button" id="btnDrawPoints" aria-pressed="false">Add points</button>
+                <button class="btn quiet small" type="button" id="btnDrawHere" hidden>Add point at the centre</button>
+                <button class="btn quiet small" type="button" id="btnDrawUndo" hidden>Undo</button>
+                <button class="btn small" type="button" id="btnDrawDone" hidden>Finish shape</button>
+                <button class="btn quiet small" type="button" id="btnDrawCancel" hidden>Cancel</button>
+              </div>
+              <div class="zone-map-wrap">
+                <div id="zoneMap" class="zone-map" role="region" tabindex="0" aria-label="Map of safe zones. Use the arrow keys to move the map. You can also add zones with the form below."></div>
+                <div class="crosshair" id="drawCross" aria-hidden="true" hidden></div>
+              </div>
               <p class="soft small" id="mapNote"></p>
+              <p class="soft small" id="drawStatus" role="status" aria-live="polite"></p>
+              <form id="formShape" class="form shape-form" hidden>
+                <h3>Save this shape</h3>
+                <label>Name <input name="name" required maxlength="40" placeholder="Back garden" /></label>
+                <fieldset class="kind-pick">
+                  <legend>What kind of place is it?</legend>
+                  <label class="check"><input type="radio" name="type" value="safe" checked /> Safe place: a note when they arrive or leave</label>
+                  <label class="check"><input type="radio" name="type" value="danger" /> Danger area: an urgent alert when they go in</label>
+                </fieldset>
+                <div class="row gap"><button class="btn quiet" type="button" id="btnShapeDiscard">Discard</button><button class="btn" type="submit">Save shape</button></div>
+              </form>
               <form id="formZone" class="form">
                 <h3>Add a zone</h3>
                 <label>Name <input name="name" required maxlength="40" placeholder="School" /></label>
@@ -305,6 +483,26 @@
               </form>
               <ul class="mini-list" id="zoneList"></ul>
             </div>
+          </section>
+          <section class="card" aria-labelledby="h-water" id="waterCard">
+            <div class="card-head"><h2 id="h-water">Water danger zones</h2><span class="pill" id="waterState">Off</span></div>
+            <p class="soft">Many children who wander are drawn to water. LuminAAC can find mapped ponds, pools, rivers and lakes near your safe zones and send an urgent alert if your child gets close.</p>
+            <p class="soft small" id="waterNeedsConsent">Turn on safe zones first.</p>
+            <form id="formWater" class="form" hidden>
+              <label class="check"><input type="checkbox" name="on" /> Send an urgent alert near water</label>
+              <div class="range-head"><label for="waterBuf">Alert when closer than</label> <output id="waterBufOut" for="waterBuf">30 m</output></div>
+              <input id="waterBuf" name="buffer" type="range" min="10" max="200" step="5" value="30" aria-describedby="waterBufHelp" />
+              <p class="soft small" id="waterBufHelp">Phone locations can be 10 to 30 m out. A bigger distance gives earlier warnings and more false alarms.</p>
+              <div class="range-head"><label for="waterRad">Look for water within</label> <output id="waterRadOut" for="waterRad">1.5 km</output></div>
+              <input id="waterRad" name="radius" type="range" min="500" max="3000" step="250" value="1500" />
+              <div class="row gap wrap">
+                <button class="btn" type="button" id="btnWaterZones">Find water near my zones</button>
+                <button class="btn quiet" type="button" id="btnWaterHere">Find water near me</button>
+              </div>
+              <p class="soft small" id="waterStatus" role="status" aria-live="polite"></p>
+              <ul class="mini-list" id="waterList"></ul>
+              <p class="soft small">Water comes from OpenStreetMap (© OpenStreetMap contributors) and is saved on your devices, so checks work offline. Maps can miss garden pools and new ponds: draw those yourself as a danger area. This adds to supervision; it never replaces it.</p>
+            </form>
           </section>
           <section class="card" aria-labelledby="h-geopriv">
             <h2 id="h-geopriv">Location privacy</h2>
@@ -461,7 +659,7 @@
             <div class="row gap">
               <button class="btn quiet" type="button" id="btnExport">Download everything</button>
               <label class="btn quiet file">Restore from file <input type="file" id="importFile" accept="application/json" /></label>
-              <button class="btn danger" type="button" id="btnWipe">Delete all moments and signals</button>
+              <button class="btn danger" type="button" id="btnWipe">Delete all moments, signals and history</button>
               <button class="btn quiet" type="button" id="btnRedo">Run setup again</button>
             </div>
             <h3>Recent activity</h3>
@@ -548,8 +746,27 @@
   <script src="vendor/leaflet/leaflet.js" defer></script>
   <script type="module" src="bridge.js"></script>
   <script type="module" src="bridge-plus.js"></script>
+  <script type="module" src="bridge-slp.js"></script>
   <script type="module" src="bridge-p3.js"></script>
   <script type="module" src="bridge-p4.js"></script>
+  <script src="vendor/simplify.js" defer></script>
+  <script type="module" src="bridge-p6.js"></script>
+  <script type="module" src="bridge-p7.js"></script>
+  <script src="vendor/jsQR.js" defer></script>
+  <script type="module" src="bridge-potty.js"></script>
+  <script type="module" src="bridge-sound.js"></script>
+  <script type="module" src="bridge-motion.js"></script>
+  <script type="module" src="bridge-chat.js"></script>
+  <script type="module" src="bridge-iot.js"></script>
+  <script type="module" src="bridge-links.js"></script>
+  <script type="module" src="bridge-yt.js"></script>
+  <script type="module" src="bridge-notify.js"></script>
+  <script type="module" src="bridge-play.js"></script>
+  <script type="module" src="bridge-hubs.js"></script>
+  <script type="module" src="bridge-r2.js"></script>
+  <script type="module" src="bridge-symbols.js"></script>
+  <script type="module" src="bridge-e2ee.js"></script>
+  <script type="module" src="bridge-labels.js"></script>
   <dialog id="dlgReset" aria-labelledby="dlgResetT">
     <form id="formReset" class="form" method="dialog">
       <h2 id="dlgResetT">Choose a new password</h2>
@@ -560,5 +777,9 @@
     </form>
   </dialog>
   <script src="pwa.js" defer></script>
+  <dialog class="report-dlg" id="reportDlg" aria-labelledby="reportTitle">
+    <div class="report-bar"><h2 id="reportTitle">Summary for a therapist</h2><button class="btn" type="button" id="btnPrint">Print or save as PDF</button><button class="btn quiet" type="button" id="btnReportClose">Close</button></div>
+    <div id="reportBody"></div>
+  </dialog>
 </body>
 </html>

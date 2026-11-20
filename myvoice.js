@@ -1,9 +1,8 @@
 // "My Voice" additions to the Talk view: proactive suggestions from learned
 // signals, context pages, the Personality page, Play-moment buttons, and
 // Exploration mode (browse without speaking; taps are logged for caregivers).
-import { load, persist, suggest, activeRules, getMedia, partOfDay, recordFeedback, raiseAlert, MILESTONES } from "./shared.js";
-import { speakUtterance } from "./speech.js";
-import { FOLDERS, contextMatchForRules } from "./vocab.js";
+import { load, persist, suggest, activeRules, getMedia, speak, partOfDay, recordFeedback, raiseAlert, MILESTONES, onBridgeChange } from "./shared.js";
+import { hasVoice, playVoice, applyPhoto } from "./symbols.js";
 
 const talk = document.getElementById("view-talk");
 let db = load();
@@ -16,11 +15,10 @@ wrap.innerHTML = `
     <button type="button" class="mv-sos is-home" data-kind="home"><span aria-hidden="true">🏠</span> Take me home</button>
   </div>
   <div class="mv-bar">
-    <div class="mv-suggest" role="group" aria-label="Suggestions from learned signals" aria-live="polite" id="mvSuggest"></div>
+    <div class="mv-suggest" role="group" aria-label="Suggestions from learned signals" id="mvSuggest"></div>
     <label class="mv-explore"><input type="checkbox" id="mvExplore"> <span>Explore quietly</span></label>
   </div>
-  <p class="mv-context" id="mvContext" aria-live="polite"></p>
-  <div class="mv-context-bar" id="mvContextBar" role="group" aria-label="Context words for right now" hidden></div>
+  <p class="mv-context" id="mvContext"></p>
   <details class="mv-personality">
     <summary><span aria-hidden="true">🌟</span> My things</summary>
     <div class="mv-ptiles" id="mvPersonality" role="group" aria-label="My favorite people, things, and memories"></div>
@@ -42,64 +40,8 @@ wrap.innerHTML = `
   </dialog>`;
 talk.prepend(wrap);
 
-let lastSig = "";
-function renderSig(d) {
-  return JSON.stringify({
-    signals: d.signals,
-    stories: d.stories,
-    practice: d.practice,
-    rules: d.rules,
-    personality: d.personality,
-    place: d.profile?.place,
-    safety: d.access?.safety,
-  });
-}
-
-function renderContextBar(d, rules) {
-  const bar = document.getElementById("mvContextBar");
-  if (!bar) return;
-  bar.textContent = "";
-  if (!rules.length) { bar.hidden = true; return; }
-  let custom = [];
-  try { custom = JSON.parse(localStorage.getItem("luminaac:custom") || "[]"); } catch {}
-  const { activeFolderIds, chips } = contextMatchForRules(rules, FOLDERS, custom, d.signals);
-  if (!activeFolderIds.length && !chips.length) { bar.hidden = true; return; }
-  bar.hidden = false;
-
-  if (activeFolderIds.length) {
-    const firstFolder = FOLDERS.find((f) => f.id === activeFolderIds[0]);
-    if (firstFolder) {
-      const jump = document.createElement("button");
-      jump.type = "button";
-      jump.className = "mv-ctx-folder";
-      jump.textContent = `${firstFolder.e} Open ${firstFolder.label}`;
-      jump.addEventListener("click", () => {
-        window.dispatchEvent(new CustomEvent("luminaac:open-folder", { detail: { id: firstFolder.id } }));
-      });
-      bar.append(jump);
-    }
-  }
-  chips.forEach((item) => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "mv-ctx-chip";
-    b.dataset.c = item.c || "thing";
-    b.dataset.w = item.w;
-    const pic = document.createElement("span");
-    pic.className = "pic";
-    pic.setAttribute("aria-hidden", "true");
-    pic.textContent = item.e || "💬";
-    b.append(pic, item.w);
-    b.addEventListener("click", () => {
-      window.dispatchEvent(new CustomEvent("luminaac:add-word", { detail: item }));
-    });
-    bar.append(b);
-  });
-}
-
 function render() {
   db = load();
-  lastSig = renderSig(db);
   const sugg = suggest(db).slice(0, 3);
   const box = document.getElementById("mvSuggest");
   box.textContent = "";
@@ -109,7 +51,7 @@ function render() {
     b.className = "mv-chip" + (i === 0 ? " is-top" : "");
     b.textContent = s.phrase;
     b.setAttribute("aria-label", `Suggestion: ${s.phrase}`);
-    b.addEventListener("click", () => say(s.phrase, { signal: s.id, kind: "suggest", functionTag: "request" }));
+    b.addEventListener("click", () => say(s.phrase, { signal: s.id }));
     box.append(b);
   });
   if (sugg.length) {
@@ -121,11 +63,9 @@ function render() {
   if (!sugg.length) box.innerHTML = `<span class="mv-empty">Suggestions appear as the Bridge learns signals.</span>`;
   document.getElementById("mvSafety").hidden = db.access.safety === false;
   renderStories();
-  const active = activeRules(db);
-  const rules = active.map((r) => r.page);
+  const rules = activeRules(db).map((r) => r.page);
   document.getElementById("mvContext").textContent =
-    `It's ${partOfDay()} at ${db.profile.place}` + (rules.length ? ` · showing ${rules.join(", ")} words first` : "");
-  renderContextBar(db, active);
+    `It's ${partOfDay()} at ${db.profile.place}` + (rules.length ? ` · ${rules.join(", ")} words are in the Now row` : "");
   const pt = document.getElementById("mvPersonality");
   pt.textContent = "";
   db.personality.forEach((p) => {
@@ -133,44 +73,25 @@ function render() {
     b.type = "button";
     b.className = "tile mv-ptile";
     b.dataset.c = "thing";
-    const pic = document.createElement("span");
-    pic.className = "pic";
-    pic.setAttribute("aria-hidden", "true");
-    pic.textContent = p.e || "";
-    const label = document.createElement("span");
-    label.className = "label";
-    label.textContent = p.label;
-    b.append(pic, label);
-    if (p.momentId) {
-      const play = document.createElement("span");
-      play.className = "mv-play";
-      play.setAttribute("aria-hidden", "true");
-      play.textContent = "▶";
-      b.append(play);
-    }
+    b.innerHTML = `<span class="pic" aria-hidden="true">${p.e}</span><span class="label"></span>${p.momentId ? '<span class="mv-play" aria-hidden="true">▶</span>' : ""}`;
+    b.querySelector(".label").textContent = p.label;
     b.setAttribute("aria-label", p.label + (p.momentId ? ", plays a moment" : ""));
+    applyPhoto(b.querySelector(".pic"), p.label);
     b.addEventListener("click", () => playOrSay(p));
     pt.append(b);
   });
 }
 
-function exploring() { return !!document.getElementById("mvExplore")?.checked; }
-function syncExploringFlag() {
-  document.documentElement.dataset.exploring = exploring() ? "1" : "0";
-}
-document.getElementById("mvExplore").addEventListener("change", syncExploringFlag);
-syncExploringFlag();
+function exploring() { return document.getElementById("mvExplore").checked; }
+
+// Things the child chooses to say are logged like board messages; narration
+// (story steps, practice models) is spoken but not logged.
+const logMsg = (text, kind) => window.luminaacVoice?.record(text, kind);
 
 function say(text, meta = {}) {
-  if (exploring()) {
-    speakUtterance(text, { mode: "explore" });
-    return;
-  }
-  speakUtterance(text, {
-    mode: "child",
-    kind: meta.kind || "suggest",
-    functionTag: meta.functionTag || "request",
-  });
+  if (exploring()) { logExplore(text); return; }
+  speak(text);
+  logMsg(text, meta.signal ? "suggestion" : "message");
   if (meta.signal) {
     db = load();
     const s = db.signals.find((x) => x.id === meta.signal);
@@ -196,12 +117,8 @@ let undoTimer;
 document.getElementById("mvSafety").addEventListener("click", (e) => {
   const b = e.target.closest(".mv-sos"); if (!b) return;
   const msg = b.dataset.kind === "home" ? "I want to go home" : "I need help";
-  speakUtterance(msg, {
-    mode: "child",
-    kind: "sos",
-    functionTag: b.dataset.kind === "home" ? "request" : "help",
-    allowWhileExploring: true,
-  });
+  speak(msg);
+  logMsg(msg, "sos");
   const a = raiseAlert(b.dataset.kind, msg);
   const t = document.getElementById("toast");
   t.innerHTML = ""; t.append(`Told your grown-ups: "${msg}". `);
@@ -219,14 +136,8 @@ function renderStories() {
   items.forEach((it) => {
     const b = document.createElement("button");
     b.type = "button"; b.className = "tile mv-ptile"; b.dataset.c = "action";
-    const pic = document.createElement("span");
-    pic.className = "pic";
-    pic.setAttribute("aria-hidden", "true");
-    pic.textContent = it.e || "";
-    const label = document.createElement("span");
-    label.className = "label";
-    label.textContent = it.label;
-    b.append(pic, label);
+    b.innerHTML = `<span class="pic" aria-hidden="true">${it.e}</span><span class="label"></span>`;
+    b.querySelector(".label").textContent = it.label;
     b.addEventListener("click", it.go);
     box.append(b);
   });
@@ -239,22 +150,15 @@ function playStory(id) {
   P("mvPlayerTitle").textContent = st.title; P("mvReward").textContent = "";
   const draw = () => {
     const step = st.steps[i];
-    const stepsEl = P("mvSteps");
-    stepsEl.textContent = "";
-    st.steps.forEach((s, k) => {
-      const sp = document.createElement("span");
-      if (k < i) sp.className = "done";
-      else if (k === i) sp.className = "now";
-      sp.textContent = s.e || "";
-      stepsEl.append(sp);
-    });
+    P("mvSteps").innerHTML = st.steps.map((s, k) => `<span class="${k < i ? "done" : k === i ? "now" : ""}">${s.e}</span>`).join("");
     P("mvStepPic").textContent = step.e; P("mvStepText").textContent = step.text;
     if (st.kind === "routine" && st.steps[i + 1]) P("mvStepText").textContent = `First ${step.text.toLowerCase()}, then ${st.steps[i + 1].text.toLowerCase()}.`;
-    speakUtterance(P("mvStepText").textContent, { mode: exploring() ? "explore" : "child", kind: "story", functionTag: "social" });
+    speak(P("mvStepText").textContent);
     const row = P("mvPlayerRow"); row.textContent = "";
     if (i > 0) row.append(btn("Back", () => { i--; draw(); }, "quiet"));
-    row.append(btn("Say it again", () => speakUtterance(P("mvStepText").textContent, { mode: exploring() ? "explore" : "child", kind: "story", functionTag: "social" }), "quiet"));
-    row.append(i < st.steps.length - 1 ? btn("Next", () => { i++; draw(); }) : btn("All done", () => { P("mvReward").textContent = "All done. Well done."; speakUtterance("All done. Well done.", { mode: exploring() ? "explore" : "child", kind: "story", functionTag: "social" }); P("mvPlayer").close(); }));
+    row.append(btn("Say it again", () => speak(P("mvStepText").textContent), "quiet"));
+    if (step.link === "potty" && window.__pottyStart?.()) row.append(btn("Toilet steps", () => { P("mvPlayer").close(); window.__pottyStart(true); }));
+    row.append(i < st.steps.length - 1 ? btn("Next", () => { i++; draw(); }) : btn("All done", () => { P("mvReward").textContent = "All done. Well done."; speak("All done. Well done."); P("mvPlayer").close(); }));
   };
   draw(); P("mvPlayer").showModal();
 }
@@ -265,7 +169,7 @@ function playPractice(id) {
   P("mvSteps").textContent = ""; P("mvStepPic").textContent = pr.e;
   P("mvStepText").textContent = `${pr.sound}… ${pr.sound}… ${pr.word}`;
   P("mvReward").textContent = "";
-  const model = () => speakUtterance(`${pr.sound}. ${pr.sound}. ${pr.word}.`, { mode: exploring() ? "explore" : "child", kind: "practice", rate: 0.7, functionTag: "practice" });
+  const model = () => speak(`${pr.sound}. ${pr.sound}. ${pr.word}.`, 0.7);
   const tried = (ok) => {
     const db2 = load(), t = db2.practice.targets.find((x) => x.id === id);
     t.tries.push({ t: Date.now(), ok }); t.tries = t.tries.slice(-300); persist(db2);
@@ -279,31 +183,41 @@ function playPractice(id) {
 }
 
 async function playOrSay(p) {
-  if (exploring()) {
-    speakUtterance(p.label, { mode: "explore" });
-    return;
+  if (exploring()) return logExplore(p.label);
+  logMsg(p.label, "mything");
+  if (!p.momentId && hasVoice(p.label) && (await playVoice(p.label))) return;
+  if (p.momentId) {
+    const blob = await getMedia(p.momentId).catch(() => null);
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      const el = document.createElement(blob.type.startsWith("video") ? "video" : "audio");
+      el.src = url; el.play().catch(() => speak(p.label));
+      el.onended = () => URL.revokeObjectURL(url);
+      return;
+    }
   }
-  speakUtterance(p.label, {
-    mode: "child",
-    kind: "personal",
-    audioClipId: p.momentId || undefined,
-    functionTag: "social",
-  });
+  speak(p.label);
 }
 
-// Exploration mode catches taps across the board and plan chips (document.body capture, after access.js on window).
-document.body.addEventListener("click", (e) => {
-  const t = e.target.closest(".grid .tile, .next-row .next-chip, .quick .phrase, .step-says .say-chip, .mv-ctx-chip, .mv-ctx-folder");
-  if (t && exploring()) {
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-    speakUtterance(t.dataset.w || t.textContent.trim(), { mode: "explore" });
-  }
+function logExplore(word) {
+  db = load();
+  db.exploration.push({ t: Date.now(), word });
+  db.exploration = db.exploration.slice(-500);
+  persist(db);
+}
+
+// Exploration mode also catches taps on board tiles, next-word chips, quick phrases
+// and plan "say" chips (capture phase: no speech, nothing added to the strip).
+// "I need help" / "Take me home" are never caught, so safety always speaks.
+export const EXPLORE_SELECTOR = ".grid .tile, .next-row .tile, .next-row .next-chip, .quick .phrase, .step-says .say-chip";
+// (.ctx-row .ctx-chip is a .next-row .next-chip, so the Now row is covered too.)
+document.addEventListener("click", (e) => {
+  if (!exploring()) return;
+  const t = e.target.closest(EXPLORE_SELECTOR);
+  if (!t) return;
+  e.stopPropagation(); e.preventDefault();
+  logExplore(t.dataset.w || t.textContent.trim());
 }, true);
 
-window.addEventListener("storage", (e) => { if (e.key === "luminaac:bridge") render(); });
-window.addEventListener("luminaac:bridge-updated", () => {
-  if (renderSig(load()) !== lastSig) render();
-});
+onBridgeChange(render);
 render();

@@ -2,6 +2,7 @@
 // access settings for My Voice, extra insights, and the optional server
 // (sync, live alerts, share links). Edits the same in-memory document as bridge.js.
 import { uid, confidence, api, INTENTS, partOfDay } from "./shared.js";
+import * as X from "./e2ee-store.js";
 
 const B = window.__bridge;
 const $ = (s, el = document) => el.querySelector(s);
@@ -9,24 +10,15 @@ const esc = B.esc;
 const db = () => B.db;
 
 // ---------- Alerts ----------
-const KIND = { help: { e: "🙋", t: "needs help" }, home: { e: "🏠", t: "wants to go home" }, custom: { e: "🔔", t: "sent an alert" }, "zone-enter": { e: "📍", t: "arrived at" }, "zone-leave": { e: "🚶", t: "left" }, silent: { e: "📵", t: "'s device stopped checking in" }, back: { e: "📶", t: "'s device is checking in again" } };
-const where = (a) => {
-  if (!a?.loc || typeof a.loc !== "object") return "";
-  const lat = Number(a.loc.lat);
-  const lng = Number(a.loc.lng);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "";
-  const latSafe = esc(String(lat));
-  const lngSafe = esc(String(lng));
-  const accRaw = a.loc.acc;
-  const accSafe = Number.isFinite(Number(accRaw)) && accRaw !== "" && accRaw !== null ? esc(String(Number(accRaw))) : esc(accRaw || "?");
-  return ` <a class="soft" href="https://www.openstreetmap.org/?mlat=${latSafe}&amp;mlon=${lngSafe}#map=17/${latSafe}/${lngSafe}" target="_blank" rel="noopener">See where (within ${accSafe} m)</a>`;
-};
+const KIND = { help: { e: "🙋", t: "needs help" }, home: { e: "🏠", t: "wants to go home" }, custom: { e: "🔔", t: "sent an alert" }, "zone-enter": { e: "📍", t: "arrived at" }, "zone-leave": { e: "🚶", t: "left" }, "danger-enter": { e: "⚠️", t: "is in a danger area:" }, "danger-leave": { e: "✅", t: "has left the danger area" }, silent: { e: "📵", t: "'s device stopped checking in" }, back: { e: "📶", t: "'s device is checking in again" }, potty: { e: "🚽", t: "needs the toilet" }, sensor: { e: "📡", t: "" } };
+const where = (a) => (a.loc ? ` <a class="soft" href="https://www.openstreetmap.org/?mlat=${a.loc.lat}&amp;mlon=${a.loc.lng}#map=17/${a.loc.lat}/${a.loc.lng}" target="_blank" rel="noopener">See where (within ${a.loc.acc || "?"} m)</a>` : "");
 function renderAlerts() {
   const open = db().alerts.filter((a) => !a.ack);
   const bar = $("#alertBar");
   bar.hidden = !open.length;
-  bar.innerHTML = open.slice(0, 3).map((a) => `<div class="alert-item"><span class="alert-e" aria-hidden="true">${KIND[a.kind]?.e || "🔔"}</span>
-    <p><b>${esc(db().profile.child || a.from || "Your child")}${(KIND[a.kind]?.t || "").startsWith("'") ? "" : " "}${KIND[a.kind]?.t || "sent an alert"}${a.zone ? " " + esc(a.zone) : ""}</b> <span class="soft">at ${B.fmtTime(a.t)}${a.message && !a.zone ? ` · "${esc(a.message)}"` : ""}</span>${where(a)}</p>
+  open.sort((x, y) => (y.kind === "danger-enter") - (x.kind === "danger-enter"));
+  bar.innerHTML = open.slice(0, 3).map((a) => `<div class="alert-item${a.kind === "danger-enter" || a.urgent ? " is-urgent" : ""}"><span class="alert-e" aria-hidden="true">${KIND[a.kind]?.e || "🔔"}</span>
+    <p>${a.kind === "sensor" ? `<b>${esc(a.message)}</b> <span class="soft">at ${B.fmtTime(a.t)}</span>` : `<b>${esc(db().profile.child || a.from || "Your child")}${(KIND[a.kind]?.t || "").startsWith("'") ? "" : " "}${a.water && a.kind === "danger-enter" ? "is near water:" : a.water && a.kind === "danger-leave" ? "has moved away from" : KIND[a.kind]?.t || "sent an alert"}${a.zone ? " " + esc(a.zone) : ""}</b> <span class="soft">at ${B.fmtTime(a.t)}${a.message && !a.zone ? ` · "${esc(a.message)}"` : ""}</span>`}${where(a)}</p>
     <button class="btn" type="button" data-ack="${esc(a.id)}">I'm on my way</button></div>`).join("");
 }
 $("#alertBar").addEventListener("click", (e) => {
@@ -40,12 +32,12 @@ function chime() {
   try { const c = new AudioContext(), o = c.createOscillator(), g = c.createGain(); o.frequency.value = 660; g.gain.setValueAtTime(0.0001, c.currentTime); g.gain.exponentialRampToValueAtTime(0.2, c.currentTime + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + 0.9); o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + 1); } catch {}
 }
 let lastAlertCount = db().alerts.filter((a) => !a.ack).length;
-function onAlertsChanged() { const n = db().alerts.filter((a) => !a.ack).length; const more = n > lastAlertCount; if (more) chime(); lastAlertCount = n; renderAlerts(); if (more) window.LuminMotion?.arrive($("#alertBar .alert-item")); }
+function onAlertsChanged() { const n = db().alerts.filter((a) => !a.ack).length; const more = n > lastAlertCount; if (more) { chime(); const top = db().alerts.find((a) => !a.ack); if (top?.kind === "danger-enter" || top?.urgent) { setTimeout(chime, 1100); setTimeout(chime, 2200); navigator.vibrate?.([300, 150, 300, 150, 300]); } } lastAlertCount = n; renderAlerts(); if (more) window.LuminMotion?.arrive($("#alertBar .alert-item")); }
 
 // ---------- Stories, routines, sound practice ----------
 function parseSteps(text) {
   return text.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => {
-    const m = /^(\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})*(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\p{Emoji_Modifier})*)*)\s*(.*)$/u.exec(l);
+    const m = /^(\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic})*)\s*(.*)$/u.exec(l);
     return m ? { e: m[1], text: m[2] || m[1] } : { e: "•", text: l };
   });
 }
@@ -58,18 +50,6 @@ function renderRoutines() {
     pl.append(item(`${p.e} "${p.sound}" as in ${p.word} · ${week.filter((t) => t.ok).length} tries said this week`, () => { db().practice.targets = db().practice.targets.filter((x) => x !== p); B.save(`Removed practice "${p.sound}"`); renderRoutines(); }));
   });
   $("#rewardPick").value = db().practice.reward;
-  const cbl = $("#choiceBoardList");
-  if (cbl) {
-    cbl.textContent = "";
-    (db().choiceBoards || []).forEach((cb) => {
-      const opts = (cb.options || []).map((o) => `${o.e || ""} ${o.label || o.w}`.trim()).join(", ");
-      cbl.append(item(`${cb.title}: ${opts}`, () => {
-        db().choiceBoards = (db().choiceBoards || []).filter((x) => x.id !== cb.id);
-        B.save(`Removed choice board "${cb.title}"`);
-        renderRoutines();
-      }));
-    });
-  }
 }
 function item(text, onRemove) {
   const li = document.createElement("li");
@@ -90,49 +70,23 @@ $("#formPractice").addEventListener("submit", (e) => {
   e.target.reset(); B.save("Added a practice sound"); renderRoutines();
 });
 $("#rewardPick").addEventListener("change", (e) => { db().practice.reward = e.target.value; B.save("Changed practice reward"); });
-$("#formChoiceBoard")?.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const f = new FormData(e.target);
-  const opts = parseSteps(f.get("options")).map((s) => ({ label: s.text, w: s.text, e: s.e === "•" ? "" : s.e, c: "thing" })).slice(0, 8);
-  if (opts.length < 2) { B.toast("Please enter at least 2 options."); return; }
-  db().choiceBoards = [...(db().choiceBoards || []), { id: uid("cb"), title: f.get("title").trim(), options: opts }];
-  e.target.reset();
-  B.save("Added a choice board");
-  renderRoutines();
-  B.toast("Choice board saved to My Voice.");
-});
 
 // ---------- Access settings (applied live in My Voice by access.js) ----------
-const clampMs = (v) => Math.min(1000, Math.max(0, Number(v) || 0));
 function renderAccess() {
   const f = $("#formAccess"), a = db().access;
-  f.mode.value = a.mode; f.size.value = a.size; f.dwell.value = String(a.dwell);
-  if (f.acceptMs) f.acceptMs.value = String(clampMs(a.acceptMs));
-  if (f.debounceMs) f.debounceMs.value = String(clampMs(a.debounceMs));
-  f.scan.checked = !!a.scan; f.scanMs.value = String(a.scanMs);
-  if (f.scanMode) f.scanMode.value = a.scanMode || "linear";
-  if (f.scanAudio) f.scanAudio.checked = !!a.scanAudio;
-  if (f.scanLoops) f.scanLoops.value = String(a.scanLoops || 0);
-  f.safety.checked = a.safety !== false;
+  f.mode.value = a.mode; f.size.value = a.size; f.dwell.value = String(a.dwell); f.acceptMs.value = String(a.acceptMs || 0); f.tapDebounce.value = String(a.tapDebounce || 0); f.scan.checked = !!a.scan; f.scanMs.value = String(a.scanMs); f.safety.checked = a.safety !== false;
+  const c = { method: "rowcol", switches: 1, firstHold: 500, loops: 3, debounce: 250, auditory: false, ...(a.scanCfg || {}) };
+  f.method.value = c.method; f.switches.value = String(c.switches); f.firstHold.value = String(c.firstHold); f.loops.value = String(c.loops); f.debounce.value = String(c.debounce); f.auditory.checked = !!c.auditory;
+  f.querySelector(".scan-opts").hidden = !a.scan;
   $("#sizeOut").textContent = `${a.size}%`;
-  if ($("#acceptOut")) $("#acceptOut").textContent = `${clampMs(a.acceptMs)} ms`;
-  if ($("#debounceOut")) $("#debounceOut").textContent = `${clampMs(a.debounceMs)} ms`;
 }
 $("#formAccess").addEventListener("change", (e) => {
   const f = e.currentTarget, a = db().access;
-  a.mode = f.mode.value; a.size = +f.size.value; a.dwell = +f.dwell.value;
-  if (f.acceptMs) a.acceptMs = clampMs(f.acceptMs.value);
-  if (f.debounceMs) a.debounceMs = clampMs(f.debounceMs.value);
-  a.scan = f.scan.checked; a.scanMs = +f.scanMs.value;
-  if (f.scanMode) a.scanMode = f.scanMode.value;
-  if (f.scanAudio) a.scanAudio = f.scanAudio.checked;
-  if (f.scanLoops) a.scanLoops = +f.scanLoops.value || 0;
-  a.safety = f.safety.checked;
+  a.mode = f.mode.value; a.size = +f.size.value; a.dwell = +f.dwell.value; a.acceptMs = +f.acceptMs.value; a.tapDebounce = +f.tapDebounce.value; a.scan = f.scan.checked; a.scanMs = +f.scanMs.value; a.safety = f.safety.checked;
+  a.scanCfg = { method: f.method.value, switches: +f.switches.value, firstHold: +f.firstHold.value, loops: +f.loops.value, debounce: +f.debounce.value, auditory: f.auditory.checked };
   B.save("Changed how My Voice responds"); renderAccess(); B.toast("Saved. My Voice updates right away.");
 });
 $("#formAccess").size.addEventListener("input", (e) => ($("#sizeOut").textContent = `${e.target.value}%`));
-$("#formAccess").acceptMs?.addEventListener("input", (e) => ($("#acceptOut").textContent = `${clampMs(e.target.value)} ms`));
-$("#formAccess").debounceMs?.addEventListener("input", (e) => ($("#debounceOut").textContent = `${clampMs(e.target.value)} ms`));
 
 // ---------- Insights extras ----------
 function renderInsightsPlus() {
@@ -156,8 +110,8 @@ function renderInsightsPlus() {
     ? `<ul class="hbars">${Object.entries(ic).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<li><span>${esc(INTENTS[k] || k)}</span><i style="--w:${(n / total) * 100}%"></i><b>${n}</b></li>`).join("")}</ul>`
     : `<p class="soft">When you explain a moment, pick what kind of message it was. Patterns show up here.</p>`;
   const ms = d.milestones || [];
-  $("#milestoneList").innerHTML = ms.length ? ms.slice().reverse().map((m) => `<li><span>${esc(m.n)} messages said</span><span class="soft">${B.fmtDay(m.t)}</span></li>`).join("")
-    : `<li><span class="soft">The first milestone is 5 messages in My Voice. ${esc(d.spoken || 0)} so far.</span></li>`;
+  $("#milestoneList").innerHTML = ms.length ? ms.slice().reverse().map((m) => `<li><span>${m.n} messages said</span><span class="soft">${B.fmtDay(m.t)}</span></li>`).join("")
+    : `<li><span class="soft">The first milestone is 5 messages in My Voice. ${d.spoken || 0} so far.</span></li>`;
 }
 
 // ---------- Optional server ----------
@@ -178,37 +132,12 @@ function renderSync() {
     li.append(b); ul.append(li);
   });
 }
-function mergeTelemetry(d, telemetry) {
-  if (!telemetry || typeof telemetry !== "object") return;
-  const dedupe = (a = [], b = [], keyFn, limit) => {
-    const m = new Map();
-    for (const x of a) m.set(keyFn(x), x);
-    for (const x of b) m.set(keyFn(x), x);
-    return [...m.values()].sort((x, y) => (x.t || 0) - (y.t || 0)).slice(-limit);
-  };
-  if (Array.isArray(telemetry.exploration) && telemetry.exploration.length) {
-    d.exploration = dedupe(d.exploration, telemetry.exploration, (x) => `${x.t}|${x.word}`, 500);
-  }
-  if (Array.isArray(telemetry.feedback) && telemetry.feedback.length) {
-    d.feedback = dedupe(d.feedback, telemetry.feedback, (x) => `${x.t}|${x.signalId || ""}|${x.accepted}`, 2000);
-  }
-  if (Array.isArray(telemetry.log) && telemetry.log.length) {
-    try {
-      const cur = JSON.parse(localStorage.getItem("luminaac:log") || "[]");
-      const mergedLog = dedupe(Array.isArray(cur) ? cur : [], telemetry.log, (x) => `${x.t}|${x.text}|${x.kind || ""}`, 5000);
-      localStorage.setItem("luminaac:log", JSON.stringify(mergedLog));
-    } catch {}
-  }
-}
 async function syncNow() {
   const d = db();
   status("Syncing…");
-  try {
-    const srv = await api(d, "GET", "/api/sync").catch(() => null);
-    if (srv?.telemetry) mergeTelemetry(d, srv.telemetry);
-  } catch {}
   const { media, account, device, ...rest } = d; void media; void account; void device;
-  const body = { doc: { ...rest, sync: { ...d.sync, key: "" } }, baseVersion: d.sync.version };
+  const plain = { ...rest, sync: { ...d.sync, key: "" } };
+  const body = { doc: X.on() ? await X.sealDoc(plain) : plain, baseVersion: d.sync.version };
   try {
     const r = await api(d, "PUT", "/api/sync", body);
     d.sync.version = r.version; d.sync.last = Date.now();
@@ -216,13 +145,14 @@ async function syncNow() {
     if (e.status !== 409) { status(`Couldn't reach the server (${e.message}). Your data is safe here.`); return; }
     // Conflict: another device synced first. Take theirs, keep our local-only items, and push again.
     const server = e.body.details;
-    const mine = { alerts: d.alerts, feedback: d.feedback, exploration: d.exploration, sync: d.sync, account: d.account, device: d.device };
+    if (server.doc?.e2ee) { server.doc = await X.openDoc(server.doc); if (!server.doc) { status("The server copy is encrypted and this device doesn't have the family key yet. See End-to-end encryption below."); return; } }
+    const mine = { alerts: d.alerts, feedback: d.feedback, sync: d.sync, account: d.account, device: d.device };
     const merged = { ...server.doc, ...mine };
     merged.moments = mergeById(server.doc.moments, d.moments);
     merged.signals = mergeById(server.doc.signals, d.signals, (a, b) => ({ ...b, confirmations: Math.max(a.confirmations, b.confirmations), rejections: Math.max(a.rejections, b.rejections) }));
     merged.sync.version = server.serverVersion;
     B.db = merged;
-    try { const r = await api(merged, "PUT", "/api/sync", { doc: { ...merged, sync: { ...merged.sync, key: "" } }, baseVersion: server.serverVersion }); merged.sync.version = r.version; merged.sync.last = Date.now(); }
+    try { const mp = { ...merged, sync: { ...merged.sync, key: "" } }; const r = await api(merged, "PUT", "/api/sync", { doc: X.on() ? await X.sealDoc(mp) : mp, baseVersion: server.serverVersion }); merged.sync.version = r.version; merged.sync.last = Date.now(); }
     catch (e2) { status(`Merged, but couldn't save to the server (${e2.message}).`); }
   }
   B.save("Synced with server"); renderSync(); connectStream();
@@ -247,12 +177,29 @@ $("#btnShareLink").addEventListener("click", async () => {
 });
 
 // Live alerts from other devices over Server-Sent Events (fetch-based so the key stays in a header).
-let stream = null;
+// The hosted server (Vercel) can't hold a stream open, so there the page asks
+// /api/updates every 30 seconds while it is visible, for alerts and team chat.
+let stream = null, pollT = null, since = Date.now() - 864e5;
+function mergeAlerts(list) {
+  if (!list.length) return;
+  for (const a of list) { const all = db().alerts, have = all.find((x) => x.id === a.id); if (have) Object.assign(have, a); else all.unshift(a); }
+  B.save(); onAlertsChanged();
+}
+async function poll() {
+  clearTimeout(pollT); const d = db(); if (!d.sync.url || !d.sync.key) return;
+  if (!document.hidden) {
+    try { const u = await api(d, "GET", `/api/updates?since=${since}`); since = u.now - 5000; mergeAlerts(u.alerts.filter((a) => a.t > Date.now() - 864e5)); if (u.chat.length) window.dispatchEvent(new CustomEvent("chat:new", { detail: u.chat })); } catch {}
+  }
+  pollT = setTimeout(poll, 30000);
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden && pollT) poll(); });
+B.pollNow = poll;
 async function connectStream() {
   stream?.close(); const d = db(); if (!d.sync.url || !d.sync.key) return;
   const ctrl = new AbortController(); stream = { close: () => ctrl.abort() };
   try {
     const r = await fetch(d.sync.url.replace(/\/+$/, "") + "/api/alerts/stream", { headers: { Authorization: `Bearer ${d.sync.key}` }, signal: ctrl.signal });
+    if (!r.ok) return poll(); // hosted server: poll instead
     const rd = r.body.getReader(), dec = new TextDecoder(); let buf = "";
     for (;;) {
       const { value, done } = await rd.read(); if (done) break;
@@ -261,6 +208,8 @@ async function connectStream() {
         const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
         const ev = /event: (\w+)/.exec(chunk)?.[1], data = /data: (.*)/.exec(chunk)?.[1];
         if (!ev || !data) continue;
+        if (ev === "potty") { window.dispatchEvent(new CustomEvent("potty:remote")); continue; } // new toilet events: bridge-potty.js pulls them
+        if (ev === "chat") { window.dispatchEvent(new CustomEvent("chat:new", { detail: [JSON.parse(data)] })); continue; }
         const a = JSON.parse(data), list = db().alerts, have = list.find((x) => x.id === a.id);
         if (have) Object.assign(have, a); else list.unshift(a);
         B.save(); onAlertsChanged();

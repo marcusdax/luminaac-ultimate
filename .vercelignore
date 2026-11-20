@@ -1,0 +1,12 @@
+# Vercel serves the static web app plus the family server (api/index.js,
+# which bundles backend/). Tests, data and planning docs stay out.
+# screenshots/ is served because guide.html shows them.
+backend/test.mjs
+backend/data/
+native/
+tests/
+/docs/
+*.md
+!PRIVACY.md
+!THIRD-PARTY.md
+/tools/

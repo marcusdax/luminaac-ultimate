@@ -1,7 +1,7 @@
 // Copies the web app into www/ and adds the native bridge script to My Voice.
 // Run from native/: node copy-web.mjs
 import { cpSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
-const SKIP = new Set(["native", "backend", "screenshots", "tests", ".git", "node_modules"]);
+const SKIP = new Set(["native", "backend", "api", "docs", "tools", "screenshots", "tests", ".git", ".github", ".vercel", "node_modules", "package.json", "vercel.json", ".env.example"]);
 rmSync("www", { recursive: true, force: true }); mkdirSync("www");
 cpSync("..", "www", { recursive: true, filter: (src) => { const top = src.replace(/^\.\.\/?/, "").split("/")[0]; return !SKIP.has(top) && !src.endsWith(".zip") && !src.endsWith(".md"); } });
 cpSync("src/native-geofence.js", "www/native-geofence.js");

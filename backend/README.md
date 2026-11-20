@@ -4,7 +4,7 @@ This is a small Node 18+ API with no dependencies. It handles family sync, role-
 
 ```bash
 node server.js     # http://localhost:3001
-node test.mjs      # 113 tests, in-process, temporary data dir
+node test.mjs      # 155 tests, in-process, temporary data dir
 ```
 
 | Env | Default | Meaning |
@@ -25,6 +25,18 @@ node test.mjs      # 113 tests, in-process, temporary data dir
 | `APP_URL` | request Origin | Base URL used in email links |
 | `DEADMAN_MINUTES` | 30 | Default quiet-device window (devices may choose 5–1440) |
 | `DEADMAN_CHECK_MS` | 60000 | How often the quiet-device check runs |
+| `KV_REST_API_URL`, `KV_REST_API_TOKEN` | – | Upstash Redis REST settings (also read as `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`). When set, `api/index.js` mirrors the data files to Redis (hosted mode) |
+| `YOUTUBE_API_KEY` | – | Optional YouTube Data API v3 key: resolves @handles and lists a channel's newest videos with titles |
+
+## v0.5: hosted mode, chat, sensors, YouTube
+
+- **Hosted on Vercel.** `../api/index.js` imports this server, runs requests one at a time per instance, and wraps each one in `mirror.pull()` / `mirror.push()` so the JSON files in `/tmp` match Redis (`lum:files` and `lum:rev` hashes). On Vercel, `/api/alerts/stream` answers 410, and clients poll `/api/updates` instead.
+- `GET /api/updates?since=t` returns `{ now, version, alerts, chat }`, filtered by role, in one call.
+- `GET /api/chat?since=t` and `POST /api/chat {text}` are for parent, teacher, therapist and family roles, never child devices; the last 500 messages are kept. `DELETE /api/chat/:id` works for parents, or for the author.
+- `GET|POST /api/sensors` and `DELETE /api/sensors/:id` are for parents. POST returns a one-time `path` of `/api/hooks/<secret>`; only the secret's SHA-256 is stored.
+- `GET|POST /api/hooks/<secret>` is public: the secret is the credential. It raises a `sensor` alert (urgent for doors, gates, pools and wearables unless set otherwise), takes an optional `message`, `value1` (IFTTT) or `?message=`, and allows 30 calls per 10 minutes per sensor.
+- `GET /api/youtube?channel=<link|UC id|@handle>` is public and read-only, and reaches only youtube.com and googleapis.com. It returns `{ id, title, playlist, videos }`, where `playlist` is the uploads list (`UU…`) and always playable. Without `YOUTUBE_API_KEY`, titles come from the public feed when YouTube serves it, and @handles are refused with instructions. Results are cached for 30 minutes.
+- `childView` now includes linked `videos.channels`.
 
 **How it relates to the repo.** The repo's Express server needs Mongo, Redis, TensorFlow, and socket.io, and most of its routes were never written. This server keeps the parts that were real: the `/api` prefix, the `{success, data, message}` and `{error, details}` envelopes, and every predictions route with the same request and response fields. It also adds `/api/sync`, `/api/share`, and `/api/alerts` (with an SSE stream). You can swap the file store for Mongo later by changing `store.js` only.
 
@@ -61,3 +73,21 @@ The full contract is in `../TECH-DESIGN.md`.
 **Quiet-device (dead-man) alert.** While a My Voice device shares location, it posts a heartbeat. If the device then goes silent for longer than its window, the server raises one "silent" alert with the last location (if under 24 hours old). When the device checks in again, it raises a "back" alert. This works with the app closed, because it's the server that notices.
 
 **Federated rounds.** Phases run joining → sharing → masking → unmasking, each with a timeout. A round that falls below quorum is abandoned and nothing is applied. Only one reveal can finish a round. The unmasked sum is range-checked before FedAvg. Joining is refused (403) once a principal's ε would exceed the cap.
+
+## Potty Path (v0.10)
+Toilet events are kept apart from the synced document, in `d.potty = { seq, events }` (`potty.js`). They are de-duplicated by id and capped at 20,000. They never appear in share views or the child view; only the plan (`doc.potty.protocol`, `paused`) is in `childView`.
+
+| Route | Auth | What it does |
+|---|---|---|
+| `POST /api/potty/events` `{events, sealed?}` | `potty:write` (parent, Bridge and My Voice devices) | Adds up to 500 events; idempotent by id; broadcasts SSE `event: potty` |
+| `GET /api/potty/events?since=n` | `potty:read` | Events after server sequence n, plus the new cursor |
+| `DELETE /api/potty/events` | `sync:write` (parent) | Deletes the family's toilet log |
+
+Sealed (end-to-end encrypted) events are stored as `{id, dev, seq, c}` only. Alerts accept `kind: "potty"`.
+
+## v0.17: Safety Links
+- `/api/hooks/<secret>` also takes `{ "event": ... }`: `door_open`, `gate_open`, `window_open`, `pool_motion`, `wearable_sos`, `wearable_left_zone`, `seizure_alert`, `location` (`lat`, `lng`, `acc`; stored on the sensor, no alert) and `arousal` (`hr`, optional `moving`). Rules live in `../safety-core.js`.
+- Door, gate and window alerts follow the exit rule: urgent unless `outUntil` is in the future, with a note on whether the child's device moved between its last two heartbeats (`prevLoc`, `lastLoc`).
+- `GET|POST /api/safety/out` (`{ minutes }`, 0 = back home) for anyone in the circle who reads alerts, not paired child devices.
+- `GET|POST|DELETE /api/found` (parents) manages the "if found" page; `GET /api/found/:token` is public and returns only `foundView` fields (never a location). Tokens sit in the share index.
+- Research mode: `POST /api/sensors` with `kind: "wearable", research: true, consent: true` (and optional `rest`). Heart-rate readings are kept for 1 hour, never listed, and raise a non-urgent `calm-check` alert marked `caregiverOnly`. Without consent, `arousal` events are ignored.
