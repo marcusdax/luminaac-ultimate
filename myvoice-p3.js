@@ -1,7 +1,8 @@
 // My Voice, Phase 3: safe-zone watching (only after parent consent), device
 // pairing by QR or code, and pulling the child-scoped settings from the server.
-import { load, persist, raiseAlert, api } from "./shared.js";
-import { watch } from "./geo.js";
+import { load, persist, raiseAlert, api, defaultServer } from "./shared.js";
+import * as X from "./e2ee-store.js";
+import { watch, allZones, eventText } from "./geo.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const note = (msg) => { const t = $("#toast"); if (!t) return; t.textContent = msg; t.hidden = false; setTimeout(() => (t.hidden = true), 3500); };
@@ -15,12 +16,12 @@ function geoChip(text, on) {
 }
 function syncWatch() {
   const s = load().safety;
-  const want = s?.consent && s.watch !== false && s.zones?.length && "geolocation" in navigator;
+  const want = s?.consent && s.watch !== false && allZones(s).length && "geolocation" in navigator;
   if (want && !watcher) {
-    watcher = watch(() => load().safety?.zones || [], (ev, pos) => {
-      const d = load();
-      const msg = ev.kind === "zone-enter" ? `Arrived at ${ev.zone.name}` : `Left ${ev.zone.name}`;
-      raiseAlert(ev.kind, msg, { zone: ev.zone.name, ...(d.safety.sendLocation && { loc: pos }) });
+    watcher = watch(() => allZones(load().safety), (ev, pos) => {
+      const d = load(), danger = ev.kind.startsWith("danger");
+      // Danger alerts always carry the location: finding a child near water fast matters more than the setting.
+      raiseAlert(ev.kind, eventText(ev), { zone: ev.zone.name, ...(ev.water && { water: true }), ...((d.safety.sendLocation || danger) && { loc: pos }) });
     }, (pos, err) => (pos && (lastPos = pos), geoChip(err ? "📍 Safe zones are on, but this device can't find its location." : "📍 Safe zones on. Your grown-ups get a note when you arrive or leave.", !err)));
     heartbeat();
     geoChip("📍 Safe zones on. Your grown-ups get a note when you arrive or leave.", true);
@@ -38,7 +39,6 @@ async function heartbeat() {
   catch { clearTimeout(beat); beat = setTimeout(heartbeat, 60000); }
 }
 window.addEventListener("storage", (e) => { if (e.key === "luminaac:bridge") syncWatch(); });
-window.addEventListener("luminaac:bridge-updated", syncWatch);
 syncWatch();
 
 // ---------- Pairing ----------
@@ -78,7 +78,7 @@ $("#btnPairMV").addEventListener("click", async () => {
     try { await api(d, "DELETE", `/api/devices/${d.device.id}`); } catch {}
     d.device = null; d.sync = { url: "", key: "", version: 0, last: 0 }; persist(d); renderPair(); return;
   }
-  form.url.value ||= d.sync.url || "http://localhost:3001"; dlg.showModal();
+  form.url.value ||= d.sync.url || defaultServer(); dlg.showModal();
 });
 let scanStream = null;
 async function stopScan() { scanStream?.getTracks().forEach((t) => t.stop()); scanStream = null; $("#mvScan").hidden = true; }
@@ -121,76 +121,34 @@ async function pull() {
   const d = load(); if (!d.device || !d.sync.key) return;
   try {
     const r = await api(d, "GET", "/api/sync");
+    if (r?.doc?.e2eeChild) { // end-to-end encrypted: open it here, or ask a parent for the key
+      const opened = await X.openDoc(r.doc);
+      if (!opened) { await askForKey(d); return; }
+      r.doc = opened;
+    }
     if (!r?.doc) return;
     const x = load();
-    for (const k of ["signals", "stories", "practice", "safety", "rules", "personality"]) if (r.doc[k]) x[k] = r.doc[k];
+    for (const k of ["signals", "stories", "practice", "safety"]) if (r.doc[k]) x[k] = r.doc[k];
+    // Phase 7: take the caregiver's video list and game settings; keep this device's own history.
+    if (r.doc.videos) x.videos = { ...x.videos, on: r.doc.videos.on, thumbs: r.doc.videos.thumbs, list: r.doc.videos.list || [] };
+    if (r.doc.games) x.games = { ...x.games, settings: { ...x.games?.settings, ...r.doc.games.settings }, goals: r.doc.games.goals || [] };
     if (r.doc.access) x.access = { ...x.access, ...r.doc.access };
     if (r.doc.profile?.child) x.profile.child = r.doc.profile.child;
     x.sync.version = r.version; x.sync.last = Date.now(); persist(x); syncWatch();
-    await pushTelemetry();
   } catch (e) { if (e.status === 401) { const x = load(); x.device = null; x.sync.key = ""; persist(x); renderPair(); note("This device was switched off by your family."); } }
 }
-
-let telemetryTimer = 0;
-let pushingTelemetry = false;
-let sentCursor = 0;
-let sentAtCursor = new Set();
-async function pushTelemetry() {
-  if (pushingTelemetry) return;
-  const d = load();
-  if (!d.device || !d.sync?.key || !d.sync?.url) return;
-  const cursor = Number(d.sync.telemetrySentAt || 0);
-  const include = (t, key) => t > cursor || (cursor > 0 && cursor === sentCursor && t === cursor && !sentAtCursor.has(key));
-  const logKey = (x) => `log|${Number(x?.t) || 0}|${x?.text || ""}|${x?.kind || ""}`;
-  const expKey = (x) => `exp|${Number(x?.t) || 0}|${x?.word || ""}`;
-  const fbKey = (x) => `fb|${Number(x?.t) || 0}|${x?.signalId || ""}|${!!x?.accepted}`;
-
-  let log = [];
+// Encrypted family: this device asks for the key once; a parent approves it in the Bridge
+// after checking the 6-digit code shown here matches the one on their screen.
+async function askForKey(d) {
   try {
-    const raw = JSON.parse(localStorage.getItem("luminaac:log") || "[]");
-    if (Array.isArray(raw)) log = raw.filter((x) => include(Number(x?.t) || 0, logKey(x))).slice(-200);
+    if (!X.get().pending) await X.request(d, d.device?.name || "My Voice");
+    const r = await X.check(d);
+    if (r.done) { note(`Encryption key received. Safety code ${r.code}. It should match the code your family saw.`); return pull(); }
+    const code = await X.deviceCode();
+    note(`Your family uses end-to-end encryption. Ask a parent to open the Bridge, Account, End-to-end encryption, and approve "${d.device?.name || "My Voice"}" when it shows the code ${code}.`);
+    setTimeout(() => pull(), 15000);
   } catch {}
-  const exploration = (d.exploration || []).filter((x) => include(Number(x?.t) || 0, expKey(x))).slice(-200);
-  const feedback = (d.feedback || []).filter((x) => include(Number(x?.t) || 0, fbKey(x))).slice(-200);
-  if (!log.length && !exploration.length && !feedback.length) return;
-
-  const maxT = Math.max(
-    cursor,
-    ...log.map((x) => Number(x.t) || 0),
-    ...exploration.map((x) => Number(x.t) || 0),
-    ...feedback.map((x) => Number(x.t) || 0),
-  );
-  const batchKeysAtMax = [
-    ...log.filter((x) => (Number(x.t) || 0) === maxT).map(logKey),
-    ...exploration.filter((x) => (Number(x.t) || 0) === maxT).map(expKey),
-    ...feedback.filter((x) => (Number(x.t) || 0) === maxT).map(fbKey),
-  ];
-  pushingTelemetry = true;
-  try {
-    await api(d, "POST", "/api/sync/telemetry", {
-      ...(log.length && { log }),
-      ...(exploration.length && { exploration }),
-      ...(feedback.length && { feedback }),
-    });
-    if (maxT > sentCursor) {
-      sentCursor = maxT;
-      sentAtCursor = new Set(batchKeysAtMax);
-    } else if (maxT === sentCursor) {
-      for (const k of batchKeysAtMax) sentAtCursor.add(k);
-    }
-    const next = load();
-    next.sync.telemetrySentAt = maxT;
-    persist(next);
-  } catch {}
-  finally { pushingTelemetry = false; }
 }
-function scheduleTelemetryPush() {
-  clearTimeout(telemetryTimer);
-  telemetryTimer = setTimeout(() => { pushTelemetry(); }, 5000);
-}
-window.addEventListener("luminaac:bridge-updated", scheduleTelemetryPush);
-window.addEventListener("luminaac:logged", scheduleTelemetryPush);
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") pushTelemetry(); });
 // Opened from the pairing QR: index.html#pair=123456&u=https://server
 (function fromHash() {
   const h = new URLSearchParams(location.hash.slice(1));

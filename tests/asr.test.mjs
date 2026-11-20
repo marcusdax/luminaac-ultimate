@@ -1,0 +1,16 @@
+import { norm, lev, grammar, judgeHeard } from "../asr.js";
+let pass = 0, fail = 0; const t = (n, c) => (c ? pass++ : (fail++, console.log("FAIL", n)));
+t("norm", norm("  Wáter!! ") === "water");
+t("lev", lev("water", "wata") === 2 && lev("", "ab") === 2 && lev("ball", "ball") === 0);
+const water = { say: "water", approx: "wawa", show: "water" };
+t("grammar has unk and forms", JSON.stringify(grammar([water])) === JSON.stringify(["water", "wawa", "[unk]"]));
+t("exact got", judgeHeard(["water"], water).match === "got");
+t("family form got", judgeHeard(["wawa"], water).match === "got");
+t("word inside phrase", judgeHeard(["more water please"], water).match === "got");
+t("one edit close", judgeHeard(["wate"], water).match === "close");
+t("unk ignored", judgeHeard(["[unk]"], water).match === null);
+t("other word null", judgeHeard(["ball"], water).match === null);
+t("empty safe", judgeHeard(undefined, water).match === null && judgeHeard([], water).match === null);
+t("short words no close", judgeHeard(["mo"], { say: "ma" }).match === null);
+t("alternatives scanned", judgeHeard(["walter", "water"], water).match === "got");
+console.log(`${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);

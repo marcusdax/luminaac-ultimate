@@ -21,26 +21,31 @@ own LuminAAC server, where exact positions on alerts are deleted after 24 hours.
 
 ## Build it
 
-Needs Node 20+, Android Studio (Android) and/or Xcode 15+ (iOS).
+Capacitor 8: needs Node 22+, JDK 21 and Android Studio 2025.2.1+ (Android, minSdk 24,
+target SDK 36) and/or Xcode 26+ (iOS 15+). Uses `@capacitor-community/background-geolocation`
+1.3.1 or later (Capacitor 8 support; the background crash was fixed in Capacitor 8.5.3).
 
 ```bash
 cd native
 npm install
-npm run copy-web          # copies the web app into native/www
-npx cap add android       # once
-npx cap add ios           # once (macOS)
+npm run add:android       # once: copies the web app, adds the Android project, adds permissions
+npm run add:ios           # once, on a Mac
+npm run sync              # after every web change
 ```
 
-Then:
+`native-config.mjs` adds the permissions and purpose strings for you (idempotent, runs
+after every sync). The reference copies are in `config/`:
 
-1. **Android:** merge `android/AndroidManifest.permissions.xml` into
-   `android/app/src/main/AndroidManifest.xml`. Ask for "Allow all the time" location
-   from a screen that explains why (Google Play requires a prominent disclosure and a
-   background-location declaration in Play Console).
-2. **iOS:** add the keys in `ios/Info.plist.additions.xml` to `ios/App/App/Info.plist`,
-   and turn on Background Modes → Location updates in Xcode. App Review needs the
-   purpose strings to match what the app does.
-3. `npm run sync`, then `npx cap open android` or `npx cap open ios` and run it.
+1. **Android:** location (fine, coarse, background), the location foreground service,
+   notifications and microphone. Ask for "Allow all the time" from a screen that explains
+   why; Google Play needs a prominent disclosure and a background-location declaration.
+2. **iOS:** the location, microphone and camera purpose strings and the `location`
+   background mode. App Review needs the purpose strings to match what the app does.
+3. `npx cap open android` or `npx cap open ios`, then run it on a real phone.
+
+CI (`.github/workflows/native.yml`) builds an unsigned Android debug APK on every push
+that touches the app, and an iOS simulator build when run by hand. Nothing is signed or
+published. The store steps are in `docs/STORE-CHECKLIST.md`.
 
 Point the app at your backend with HTTPS in production (`allowMixedContent` is off).
 

@@ -1,6 +1,5 @@
 // The Bridge: caregiver portal. Capture, annotate, learn, share, protect.
-import { load, persist, uid, confidence, putMedia, getMedia, clearMedia, speak, ROLES, seed, exportUnifiedBackup, importUnifiedBackup, wipeUnifiedData } from "./shared.js";
-import { semanticSearchSync } from "./ai.js";
+import { load, persist, uid, confidence, putMedia, getMedia, clearMedia, speak, ROLES, seed } from "./shared.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -29,14 +28,17 @@ function applyRetention() {
 let current = "today";
 function show(tab) {
   $$(".panel").forEach((p) => (p.hidden = p.id !== `tab-${tab}`));
-  $$(".tab").forEach((b) => (b.dataset.tab === tab ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current")));
+  $$("button.tab").forEach((b) => (b.dataset.tab === tab ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current")));
+  // On a phone the classic tab strip scrolls sideways; keep the open tab in view.
+  const strip = $(".tabs"), cur = $(`button.tab[data-tab="${tab}"]`);
+  if (strip && cur && strip.scrollWidth > strip.clientWidth) strip.scrollTo({ left: cur.offsetLeft - (strip.clientWidth - cur.offsetWidth) / 2, behavior: "instant" });
   ({ today: renderToday, signals: renderSignals, vocab: renderVocab, insights: renderInsights, team: renderTeam, privacy: renderPrivacy })[tab]?.();
   current = tab;
   window.dispatchEvent(new CustomEvent("bridge:show", { detail: tab }));
   history.replaceState(null, "", `#${tab}`);
   $("#main").focus({ preventScroll: true });
 }
-$$(".tab").forEach((b) => b.addEventListener("click", () => show(b.dataset.tab)));
+$$("button.tab").forEach((b) => b.addEventListener("click", () => show(b.dataset.tab)));
 
 function renderHeader() {
   const name = db.profile.child || "your child";
@@ -72,6 +74,7 @@ function startSlot(i) {
 }
 
 async function startListening() {
+  if (window.__pottyBusy?.()) { toast("Recording stays off during a toilet try."); return; }
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { toast("This browser can't record. Try a practice moment instead."); return; }
   cap.mode = $("input[name=cmode]:checked").value;
   try {
@@ -97,7 +100,7 @@ function stopListening() {
   $("#preview").hidden = true;
   $("#btnCapture").disabled = true;
   $("#btnListen").textContent = "Start listening";
-  $("#captureStatus").innerHTML = `Start listening and LuminAAC keeps only the last <b>${esc(db.capture.seconds)}</b> seconds, on this device. When something meaningful happens, tap once to keep it.`;
+  $("#captureStatus").innerHTML = `Start listening and LuminAAC keeps only the last <b>${db.capture.seconds}</b> seconds, on this device. When something meaningful happens, tap once to keep it.`;
   document.body.classList.remove("is-listening");
 }
 
@@ -181,7 +184,7 @@ function renderToday() {
     li.className = "moment" + (m.meaning ? " done" : "");
     const sig = db.signals.find((s) => s.id === m.signalId);
     li.innerHTML = `<div class="m-wave" aria-hidden="true">${wave(m.id)}</div>
-      <div class="m-body"><p class="m-meta">${fmtDay(m.t)}, ${fmtTime(m.t)} · ${m.kind === "video" ? "Sound and video" : "Sound"} · ${esc(m.dur)}s · by ${esc(ROLES[m.by] || m.by)}</p>
+      <div class="m-body"><p class="m-meta">${fmtDay(m.t)}, ${fmtTime(m.t)} · ${m.kind === "video" ? "Sound and video" : "Sound"} · ${m.dur}s · by ${esc(ROLES[m.by] || m.by)}</p>
       <p class="m-text">${m.meaning ? esc(m.meaning) : `<span class="soft">${esc(m.context)}</span>`}</p>
       ${sig ? `<p class="m-sig">Taught: ${esc(sig.name)}</p>` : ""}</div>`;
     const b = document.createElement("button"); b.type = "button"; b.className = "btn " + (m.meaning ? "quiet" : "");
@@ -192,7 +195,7 @@ function renderToday() {
 }
 
 function wave(seed) {
-  let h = 0; for (const c of String(seed ?? "")) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  let h = 0; for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   return `<svg viewBox="0 0 60 24" width="60" height="24">${Array.from({ length: 15 }, (_, i) => { h = (h * 1103515245 + 12345) >>> 0; const v = 3 + (h % 18); return `<rect x="${i * 4}" y="${12 - v / 2}" width="2.4" height="${v}" rx="1.2"/>`; }).join("")}</svg>`;
 }
 
@@ -241,15 +244,8 @@ function smart() {
   const text = $("#annText").value.toLowerCase();
   const box = $("#annSmart"); box.textContent = "";
   if (text.length < 3) return;
-  let hit = null;
-  if (db.signals.length) {
-    const ranked = semanticSearchSync(text, db.signals, { limit: 1 });
-    if (ranked[0] && ranked[0].score > 0.2) hit = db.signals.find((s) => s.id === ranked[0].id);
-  }
-  if (!hit) {
-    const words = text.match(/[a-z']{3,}/g) || [];
-    hit = db.signals.find((s) => words.some((w) => (s.meaning + " " + s.phrase + " " + s.name).toLowerCase().includes(w) && !["the", "and", "she", "his", "her", "wants", "want"].includes(w)));
-  }
+  const words = text.match(/[a-z']{3,}/g) || [];
+  const hit = db.signals.find((s) => words.some((w) => (s.meaning + " " + s.phrase + " " + s.name).toLowerCase().includes(w) && !["the", "and", "she", "his", "her", "wants", "want"].includes(w)));
   if (hit) {
     const b = Object.assign(document.createElement("button"), { type: "button", className: "chip", textContent: `Link to "${hit.name}"` });
     b.addEventListener("click", () => { $("#annPhrase").value = hit.phrase; $("#annCues").value = hit.cues.join(", "); box.dataset.link = hit.id; box.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); });
@@ -294,11 +290,11 @@ function renderSignals() {
   [...db.signals].sort((a, b) => confidence(b) - confidence(a)).forEach((s) => {
     const c = confidence(s);
     const li = document.createElement("li"); li.className = "signal";
-    li.innerHTML = `<div class="sig-head"><h2>${esc(s.name)}</h2><span class="conf" style="--c:${Number(c) || 0}" aria-label="Confidence ${Number(c) || 0} percent">${Number(c) || 0}%</span></div>
+    li.innerHTML = `<div class="sig-head"><h2>${esc(s.name)}</h2><span class="conf" style="--c:${c}" aria-label="Confidence ${c} percent">${c}%</span></div>
       <p class="sig-meaning">${esc(s.meaning)}</p>
       <p class="sig-phrase">My Voice offers: <b>"${esc(s.phrase)}"</b></p>
       <ul class="cues" aria-label="Cues">${s.cues.map((q) => `<li>${esc(q)}</li>`).join("")}</ul>
-      <p class="soft">Confirmed ${esc(s.confirmations)} · not it ${esc(s.rejections)} · ${s.contexts.map(esc).join(", ")}</p>`;
+      <p class="soft">Confirmed ${s.confirmations} · not it ${s.rejections} · ${s.contexts.map(esc).join(", ")}</p>`;
     const row = document.createElement("div"); row.className = "row gap";
     const mk = (t, cls, fn) => { const b = Object.assign(document.createElement("button"), { type: "button", className: `btn ${cls}`, textContent: t }); b.addEventListener("click", fn); row.append(b); };
     mk("Hear it", "quiet", () => speak(s.phrase));
@@ -313,7 +309,7 @@ function renderSignals() {
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 $(".days").insertAdjacentHTML("beforeend", DAYS.map((d, i) => `<label class="day"><input type="checkbox" name="d" value="${i}" ${i > 0 && i < 6 ? "checked" : ""}/> ${d}</label>`).join(""));
 function renderVocab() {
-  $("#momentPick").innerHTML = `<option value="">Just speak the words</option>` + db.moments.filter((m) => m.media).map((m) => `<option value="${esc(m.id)}">${esc(m.meaning || m.context)} (${fmtDay(m.t)})</option>`).join("");
+  $("#momentPick").innerHTML = `<option value="">Just speak the words</option>` + db.moments.filter((m) => m.media).map((m) => `<option value="${m.id}">${esc(m.meaning || m.context)} (${fmtDay(m.t)})</option>`).join("");
   const pl = $("#personalList"); pl.textContent = "";
   db.personality.forEach((p) => pl.append(rowItem(`${p.e} ${p.label}${p.momentId ? " · plays a moment" : ""}`, () => { db.personality = db.personality.filter((x) => x !== p); save("Removed a button"); renderVocab(); })));
   const rl = $("#ruleList"); rl.textContent = "";
@@ -357,7 +353,7 @@ function renderInsights() {
   const nodes = [...db.personality.map((p) => ({ l: p.label, e: p.e, k: "fav" })), ...db.signals.slice(0, 6).map((s) => ({ l: s.meaning, e: "💬", k: "sig" }))].slice(0, 10);
   const R = 105, cx = 160, cy = 140;
   $("#pmap").innerHTML = `<svg viewBox="-30 0 380 290" class="pmap" role="img" aria-label="Personality map: ${nodes.map((n) => esc(n.l)).join(", ")}">
-    ${nodes.map((n, i) => { const a = (i / nodes.length) * Math.PI * 2 - Math.PI / 2; const x = cx + R * Math.cos(a), y = cy + R * Math.sin(a); return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}"/><g class="node ${n.k}"><circle cx="${x}" cy="${y}" r="20"/><text x="${x}" y="${y + 6}" text-anchor="middle" font-size="16">${esc(n.e || "")}</text><text class="lbl" x="${x}" y="${y + (y > cy ? 36 : -26)}" text-anchor="middle">${esc((n.l || "").slice(0, 22))}</text></g>`; }).join("")}
+    ${nodes.map((n, i) => { const a = (i / nodes.length) * Math.PI * 2 - Math.PI / 2; const x = cx + R * Math.cos(a), y = cy + R * Math.sin(a); return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}"/><g class="node ${n.k}"><circle cx="${x}" cy="${y}" r="20"/><text x="${x}" y="${y + 6}" text-anchor="middle" font-size="16">${n.e}</text><text class="lbl" x="${x}" y="${y + (y > cy ? 36 : -26)}" text-anchor="middle">${esc(n.l.slice(0, 22))}</text></g>`; }).join("")}
     <circle class="me" cx="${cx}" cy="${cy}" r="30"/><text class="me-t" x="${cx}" y="${cy + 6}" text-anchor="middle">${esc((db.profile.child || "Me").slice(0, 8))}</text></svg>`;
 }
 
@@ -373,7 +369,7 @@ function renderShare() {
   const member = db.team.find((t) => t.role === role);
   const level = member?.access || access;
   const sigs = [...db.signals].filter((s) => confidence(s) >= 50).sort((a, b) => confidence(b) - confidence(a));
-  let html = `<p class="soft">What ${role === "family" ? "family" : `a ${esc(role)}`} sees${member ? ` (${esc(member.name)})` : ""}:</p>
+  let html = `<p class="soft">What ${role === "family" ? "family" : `a ${role}`} sees${member ? ` (${esc(member.name)})` : ""}:</p>
     <h3>When ${esc(db.profile.child || "they")} does this, it usually means…</h3>
     <ul class="share-sig">${sigs.map((s) => `<li><span>${esc(s.cues.join(" + "))}</span><b>${esc(s.phrase)}</b></li>`).join("")}</ul>`;
   if (level !== "signals") html += `<h3>Shared notes</h3><ul class="notes">${db.notes.map((n) => `<li><span class="soft">${fmtDay(n.t)} · ${esc(ROLES[n.by])}</span> ${esc(n.text)}</li>`).join("")}</ul>`;
@@ -415,23 +411,17 @@ function download(name, obj) {
   const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" })), download: name });
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
-$("#btnExport").addEventListener("click", () => download(`luminaac-backup-${dayKey(Date.now())}.json`, exportUnifiedBackup()));
+$("#btnExport").addEventListener("click", () => download(`luminaac-backup-${dayKey(Date.now())}.json`, db));
 $("#importFile").addEventListener("change", async (e) => {
-  try {
-    const v = JSON.parse(await e.target.files[0].text());
-    importUnifiedBackup(v);
-    db = load();
-    save("Restored from file");
-    show("today");
-    toast("Restored.");
-  } catch { toast("That file doesn't look like a LuminAAC backup."); }
+  try { const v = JSON.parse(await e.target.files[0].text()); if (v.version !== 2) throw 0; db = v; save("Restored from file"); show("today"); toast("Restored."); }
+  catch { toast("That file doesn't look like a LuminAAC backup."); }
 });
 $("#btnWipe").addEventListener("click", async () => {
-  if (!confirm("Delete every moment, recording, and learned signal on this device? This can't be undone.")) return;
-  db = await wipeUnifiedData({ mode: "all" });
-  save("Deleted all moments and signals");
-  renderPrivacy();
-  toast("Deleted.");
+  if (!confirm("Delete every moment, recording, learned signal, and video and game history on this device? This can't be undone.")) return;
+  db.moments = []; db.signals = []; db.questions = []; db.exploration = []; db.notes = [];
+  if (db.videos) { db.videos.sessions = []; db.videos.talk = []; }
+  if (db.games) db.games.plays = [];
+  await clearMedia().catch(() => {}); save("Deleted all moments and signals"); renderPrivacy(); toast("Deleted.");
 });
 $("#btnRedo").addEventListener("click", () => onboard(true));
 

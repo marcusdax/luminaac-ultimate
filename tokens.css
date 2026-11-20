@@ -9,20 +9,22 @@
   --paper: #f7f9f8;        /* tiles and sheets */
   --paper-raised: #ffffff;
   --ink: #1c2630;          /* primary text, 13.9:1 on paper */
-  --ink-soft: #43505c;     /* secondary text, >=7.0:1 on fog & paper */
-  --line: #c9d2d0;         /* hairlines, dividers */
-  --border: #7c8786;       /* interactive control borders, >=3.1:1 on fog & paper */
+  --ink-soft: #4b5864;     /* secondary text, 7.0:1 on paper */
+  --line: #c9d2d0;         /* hairlines, inactive outlines */
 
   /* Brand: the lit sentence strip */
   --dusk: #22313d;         /* strip background */
   --dusk-ink: #c8d3dc;     /* resting words on strip */
-  --lumen: #f2b33d;        /* lit word, dark-surface focus ring, brand glow */
+  --sos-ink: #4a2600;      /* "I need help" label */
+  --home-ink: #12385f;     /* "I want to go home" label */
+  --warm-ink: #4a2600;     /* text on the warm ember tint */
+  --lumen: #f2b33d;        /* lit word, brand glow */
+  --ok-ink: #287741;       /* success as small text: --ok is 4.1:1 on paper, this is 4.7:1 */
+  --focus: #9b7327;        /* focus ring: light gold was 1.6:1 on day backgrounds; this is 3.2:1+ on every day surface */
   --lumen-soft: rgba(242, 179, 61, 0.22);
-  --focus: #8a5a00;        /* high-contrast focus ring on light surfaces (>=5.0:1) */
-  --scan-ring: #a35200;    /* switch-scan highlight ring (>=4.7:1) */
 
   /* Word classes (band = strong edge, tint = tile fill) */
-  --wc-people: #8c6500;      --wc-people-tint: #fbf1cc;
+  --wc-people: #a78000;      --wc-people-tint: #fbf1cc;  /* was #c99a00: 2.3:1 on its tile; the band must reach 3:1 */
   --wc-action: #2f8a4c;      --wc-action-tint: #dcefe1;
   --wc-describe: #2f6fb3;    --wc-describe-tint: #dbe7f5;
   --wc-thing: #c7651c;       --wc-thing-tint: #fae3cf;
@@ -33,9 +35,8 @@
   --wc-folder: #22313d;      --wc-folder-tint: #dfe5ea;
 
   /* Feedback */
-  --ok: #24733e;
+  --ok: #2f8a4c;
   --alert: #b8372f;
-  --board-scale: 1;
 
   /* Type: Atkinson Hyperlegible Next, built for low-vision legibility */
   --font: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, sans-serif;
@@ -71,22 +72,39 @@
   --t-ui: 180ms;
   --t-glow: 420ms;
 
+  /* v0.13 direction (DESIGN.md): quiet sky behind words, dark bands frame, lit = chosen.
+     Defined here first; the redesign shell adopts them one surface at a time. */
+  --sky-top: #e4edf1;      /* background top */
+  --sky-low: #eef1ec;      /* background bottom, faint warm horizon */
+  --grain: 0.035;          /* static paper grain opacity */
+  --band-ink: var(--dusk-ink);   /* resting icon/label on a band */
+  --lit: var(--lumen);     /* the chosen item; never decoration */
+  --lit-ink: #1c2630;      /* text on lit, 8.3:1 */
+  --nav-h: 72px;           /* phone bottom bar */
+  --rail-w: 96px;          /* tablet side rail */
+  --indicator: 4px;        /* hub indicator bar */
+  --t-ambient: 40s;        /* slowest scene drift (Play, games only) */
+  --t-breath-in: 4s;
+  --t-breath-out: 6s;
+  /* Game scenes: mid-value, low-chroma, so tiles and OpenMoji sit on top */
+  --scene-dawn: #f1dcc9;   --scene-day: #d6e6ee;   --scene-dusk: #c9c3d9;
+  --scene-night: #26303f;  --scene-sea: #cfe3e2;   --scene-rails: #dcd6c8;
+
   color-scheme: light;
 }
 
 /* Night: dim, warm-leaning dark for evenings and light sensitivity */
 :root[data-theme="night"] {
+  --focus: var(--lumen); --ok-ink: var(--ok);
+  --ember-deep: #f0a04b; --sky-deep: #7cb8f0; --sos-ink: #ffe2b8; --home-ink: #dcecfb; --ember-tint: #3a2a1a; --warm-ink: var(--ink); /* brand "deep" text colours are for light backgrounds */
   --fog: #151c22;
   --paper: #1e2830;
   --paper-raised: #25313a;
   --ink: #e6ecef;
   --ink-soft: #a9b6bf;
   --line: #34424d;
-  --border: #687a89;
   --dusk: #0e141a;
-  --dusk-ink: #9aa8b3;
-  --focus: #f2b33d;
-  --scan-ring: #ffb03b;
+  --dusk-ink: #8f9ea9;
 
   --wc-people: #e8c13a;      --wc-people-tint: #2f2a17;
   --wc-action: #5cc27e;      --wc-action-tint: #17291e;
@@ -101,15 +119,19 @@
   --ok: #5cc27e;
   --alert: #ec6d64;
   --lift: 0 1px 0 rgba(0, 0, 0, 0.4), 0 8px 20px rgba(0, 0, 0, 0.35);
+  --sky-top: #141c24; --sky-low: #182019; --grain: 0.05;
+  --scene-dawn: #3a2f2a; --scene-day: #22313b; --scene-dusk: #2c2838;
+  --scene-night: #10161e; --scene-sea: #1d2e2e; --scene-rails: #2e2b25;
   color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
+    --focus: var(--lumen); --ok-ink: var(--ok);
+    --ember-deep: #f0a04b; --sky-deep: #7cb8f0; --sos-ink: #ffe2b8; --home-ink: #dcecfb; --ember-tint: #3a2a1a; --warm-ink: var(--ink);
     --fog: #151c22; --paper: #1e2830; --paper-raised: #25313a;
-    --ink: #e6ecef; --ink-soft: #a9b6bf; --line: #34424d; --border: #687a89;
-    --dusk: #0e141a; --dusk-ink: #9aa8b3;
-    --focus: #f2b33d; --scan-ring: #ffb03b;
+    --ink: #e6ecef; --ink-soft: #a9b6bf; --line: #34424d;
+    --dusk: #0e141a; --dusk-ink: #8f9ea9;
     --wc-people: #e8c13a; --wc-people-tint: #2f2a17;
     --wc-action: #5cc27e; --wc-action-tint: #17291e;
     --wc-describe: #6aa6e6; --wc-describe-tint: #172535;
@@ -121,26 +143,27 @@
     --wc-folder: #c8d3dc; --wc-folder-tint: #26323c;
     --ok: #5cc27e; --alert: #ec6d64;
     --lift: 0 1px 0 rgba(0, 0, 0, 0.4), 0 8px 20px rgba(0, 0, 0, 0.35);
+    --sky-top: #141c24; --sky-low: #182019; --grain: 0.05;
+    --scene-dawn: #3a2f2a; --scene-day: #22313b; --scene-dusk: #2c2838;
+    --scene-night: #10161e; --scene-sea: #1d2e2e; --scene-rails: #2e2b25;
     color-scheme: dark;
   }
 }
 
 /* Contrast: pure black and white, color kept only on the band */
 :root[data-theme="contrast"] {
+  --focus: var(--lumen); --ok-ink: var(--ok);
+  --alert: #ff5a50; --ok: #4cff7a;
+  --ember-deep: #ffb35c; --sky-deep: #8cc8ff; --sos-ink: #ffffff; --home-ink: #ffffff; --ember-tint: #000000; --warm-ink: #ffffff;  /* the day reds and greens were too dark on black (red 3.6:1) */
   --fog: #000000;
   --paper: #000000;
   --paper-raised: #000000;
   --ink: #ffffff;
   --ink-soft: #ffffff;
   --line: #ffffff;
-  --border: #ffffff;
   --dusk: #000000;
   --dusk-ink: #ffffff;
   --lumen: #ffd60a;
-  --focus: #ffd60a;
-  --scan-ring: #ffd60a;
-  --ok: #4cff7a;
-  --alert: #ff7a72;
   --wc-people-tint: #000; --wc-action-tint: #000; --wc-describe-tint: #000;
   --wc-thing-tint: #000; --wc-social-tint: #000; --wc-question-tint: #000;
   --wc-negate-tint: #000; --wc-little-tint: #000; --wc-folder-tint: #000;
@@ -149,36 +172,6 @@
   --wc-negate: #ff5a50; --wc-little: #ffffff; --wc-folder: #ffffff;
   --band: 10px;
   --lift: none;
+  --sky-top: #000; --sky-low: #000; --grain: 0; --lit-ink: #000;
   color-scheme: dark;
-}
-
-/* Low-arousal: muted sage-slate surfaces for sensory regulation */
-:root[data-theme="low-arousal"] {
-  --fog: #e2e6e4;
-  --paper: #ecefed;
-  --paper-raised: #f2f4f3;
-  --ink: #1c2630;
-  --ink-soft: #424f5a;
-  --line: #b8c1bf;
-  --border: #75817f;
-  --dusk: #2a3640;
-  --dusk-ink: #cfd7de;
-  --lumen: #e2a83e;
-  --lumen-soft: rgba(226, 168, 62, 0.16);
-  --focus: #6e5214;
-  --scan-ring: #6e5214;
-
-  --wc-people: #8c6b1c;      --wc-people-tint: #efe9d6;
-  --wc-action: #2f6e44;      --wc-action-tint: #dce6df;
-  --wc-describe: #335f8a;    --wc-describe-tint: #dce3ec;
-  --wc-thing: #9c5b2b;       --wc-thing-tint: #ede2d8;
-  --wc-social: #8e4569;      --wc-social-tint: #eadce3;
-  --wc-question: #5c4987;    --wc-question-tint: #e2deeb;
-  --wc-negate: #963c36;      --wc-negate-tint: #ebdcdb;
-  --wc-little: #5c666e;      --wc-little-tint: #e4e7e8;
-  --wc-folder: #2a3640;      --wc-folder-tint: #dce1e5;
-
-  --ok: #2f6e44;
-  --alert: #963c36;
-  color-scheme: light;
 }

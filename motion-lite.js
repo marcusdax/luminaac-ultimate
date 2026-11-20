@@ -3,7 +3,8 @@
 // is confirmed, and a soft fade for new cards. Everything is skipped when the
 // person prefers reduced motion or turned motion off in LuminAAC.
 (function () {
-  const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.dataset.motion === "off";
+  // motion-gate.js decides (docs/MOTION-CONCEPT.md): these need level 2, "UI".
+  const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches || document.documentElement.dataset.motion === "off" || +(document.documentElement.dataset.ml ?? 3) < 2;
   const A = () => (window.Motion && window.Motion.animate) || null;
   function run(el, kf, opts) { if (!el || reduced() || !A()) return; try { A()(el, kf, opts); } catch (e) {} }
   window.LuminMotion = {

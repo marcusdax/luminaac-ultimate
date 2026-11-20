@@ -1,10 +1,14 @@
 // LuminAAC app. Vanilla ES modules, no build step, works offline
 // (except optional ARASAAC pictures). All data lives in localStorage.
-import { CORE, FOLDERS, QUICK, SCALE, CALM_NEEDS, PLANS, contextMatchForRules } from "./vocab.js";
+import { CORE, FOLDERS, QUICK, SCALE, CALM_NEEDS, PLANS, CONTEXT_PAGES } from "./vocab.js";
+import { load as loadBridge, activeRules, onBridgeChange } from "./shared.js";
 import { KOKORO_VOICES } from "./ai.js";
-import { speakUtterance } from "./speech.js";
-import { load, activeRules, exportUnifiedBackup, wipeUnifiedData } from "./shared.js";
-import { mergeSchedules, pushTrail, modelingSpeechOpts } from "./slp.js";
+import { hasVoice, hasPhoto, playVoice, applyPhoto } from "./symbols.js";
+import { initPredictionBar, updatePredictions, hidePredictionBar, getTtsLang, speakWithMms } from "./neural-features.js";
+import { buildOBZ, readOBZ, wordsFromBoard, mergeWords } from "./obf-core.js";
+import { wordForms, searchWords, scriptParts, scriptText, canMix, allPlans, choiceSentence } from "./slp-core.js";
+import { flyTo, swap, pillMove } from "./motion-gate.js";
+import { mountCalmSky } from "./shader-sky.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -23,7 +27,7 @@ const store = {
 
 const DEFAULTS = {
   theme: "auto", cols: "6", pictos: true, labelsTop: false,
-  voice: "", rate: 0.9, speakOnTap: true, stillness: false,
+  voice: "", rate: 0.9, speakOnTap: true, stillness: false, modelSpeak: true,
 };
 const settings = { ...DEFAULTS, ...store.get("settings", {}) };
 const data = {
@@ -40,16 +44,17 @@ const save = (k) => store.set(k, data[k]);
 // ---------- State ----------
 const state = { words: [], folder: "core", view: "talk", plan: PLANS[0].id, unlocked: false, breathing: null, modeling: false, trail: [] };
 
+// The Bridge document (scripts, choice boards, routines). Read fresh: the Bridge can change it.
+const bridgeDoc = () => { try { return loadBridge(); } catch { return {}; } };
+const scripts = () => (bridgeDoc().scripts || []).filter((x) => x?.text);
+
 const CLASS_NAMES = {
   people: "People", action: "Actions", describe: "Describing", thing: "Things & places",
   social: "Social", question: "Questions", negate: "Stop & no", little: "Little words",
 };
 
-// Boards imported from .obf / .obz files (stored on the shared db by support.js).
-const OBF_PREFIX = "obf:";
-const importedBoards = () => { try { return load().importedBoards || []; } catch { return []; } };
 function folderWords(id) {
-  if (id.startsWith(OBF_PREFIX)) return importedBoards().find((b) => OBF_PREFIX + b.id === id)?.words ?? [];
+  if (id === "scripts") return scripts().map((sc) => ({ w: scriptText(sc), e: sc.e || "💬", c: "social", script: sc }));
   const base = id === "core" ? CORE : FOLDERS.find((f) => f.id === id)?.words ?? [];
   return base.concat(data.custom.filter((x) => x.f === id));
 }
@@ -77,30 +82,99 @@ function loadVoices() {
   sel.value = settings.voice;
 }
 
-// ---------- Strip ----------
-function syncDataFromStore() {
-  data.log = store.get("log", []);
-  data.counts = store.get("counts", {});
-  data.pairs = store.get("pairs", {});
-  data.moments = store.get("moments", []);
+// True while the talker is saying something in any voice (device, natural, recorded),
+// so scanning previews never talk over the child. Clears itself if a voice never ends.
+let busy = false, busyTimer = 0;
+function say(text, opts = {}) {
+  if (!opts.tracked) {
+    busy = true; clearTimeout(busyTimer);
+    busyTimer = setTimeout(() => (busy = false), Math.max(5000, String(text).length * 200));
+    const end = opts.onEnd;
+    opts = { ...opts, tracked: true, onEnd: () => { busy = false; clearTimeout(busyTimer); end?.(); } };
+  }
+  const { onWord, onEnd } = opts;
+  // A caregiver's own recording of this exact word or phrase wins over any synthetic voice.
+  if (!opts.system && !opts.synth && hasVoice(text)) {
+    speechSynthesis?.cancel?.();
+    playVoice(text).then((ok) => (ok ? onEnd?.() : say(text, { ...opts, synth: true })));
+    return;
+  }
+  if (!opts.system && !opts.synth) {
+    const mmsLang = getTtsLang();
+    if (mmsLang !== "eng") {
+      speakWithMms(text, mmsLang, {
+        onProgress: (p) => window.dispatchEvent(new CustomEvent("voice:progress", { detail: p })),
+      }).then((r) => { if (r !== null) { onEnd?.(); return; } say(text, { ...opts, synth: true }); })
+        .catch(() => { toast("MMS voice failed; using system voice."); say(text, { ...opts, system: true }); });
+      return;
+    }
+  }
+  if (String(settings.voice || "").startsWith("kokoro:") && !opts.system) {
+    // Natural voice runs on this device in a worker; any failure falls back to the system voice.
+    const starts = [...text.matchAll(/\S+/g)].map((m) => m.index); let timer;
+    speechSynthesis?.cancel?.();
+    import("./ai.js").then((ai) => ai.speakKokoro(text, settings.voice.slice(7), {
+      speed: (Number(settings.rate) || 1) * (opts.rate || 1),
+      onProgress: (p) => window.dispatchEvent(new CustomEvent("voice:progress", { detail: p })),
+      onStart: (secs) => { let i = 0; onWord?.(0); window.dispatchEvent(new CustomEvent("voice:progress", { detail: { pct: 100, done: true } })); timer = setInterval(() => { i += 1; if (i < starts.length) onWord?.(starts[i]); else clearInterval(timer); }, (secs * 1000) / Math.max(1, starts.length)); },
+    })).then(() => { clearInterval(timer); onEnd?.(); })
+      .catch(() => { clearInterval(timer); toast("The natural voice isn't available right now, so the device voice is speaking."); say(text, { ...opts, system: true }); });
+    return;
+  }
+  if (!("speechSynthesis" in window)) { toast("This device can't speak aloud. The message is shown on screen."); onEnd?.(); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  const v = voices.find((x) => x.name === settings.voice);
+  if (v) u.voice = v;
+  u.rate = Number(settings.rate) * (opts.rate || 1);
+  let gotBoundary = false;
+  let timer;
+  u.onboundary = (e) => {
+    if (e.name && e.name !== "word") return;
+    gotBoundary = true;
+    clearInterval(timer);
+    onWord?.(e.charIndex);
+  };
+  u.onstart = () => {
+    onWord?.(0);
+    // Some voices never send word boundaries; estimate pacing instead.
+    let i = 0;
+    const starts = [...text.matchAll(/\S+/g)].map((m) => m.index);
+    timer = setInterval(() => {
+      if (gotBoundary) return clearInterval(timer);
+      i += 1;
+      if (i < starts.length) onWord?.(starts[i]); else clearInterval(timer);
+    }, 330 / u.rate);
+  };
+  u.onend = u.onerror = () => { clearInterval(timer); onEnd?.(); };
+  speechSynthesis.speak(u);
 }
 
+function record(text, kind = "message") {
+  data.log.push({ t: Date.now(), text, kind });
+  if (data.log.length > 5000) data.log.splice(0, data.log.length - 5000);
+  save("log");
+  dispatchEvent(new CustomEvent("luminaac:log", { detail: { text, kind } }));
+}
+
+// One voice for the whole talker. Other modules (Suggestions, I need help, Stories,
+// Practice, My things) speak through this, so they use the chosen voice and speed,
+// a caregiver's own recordings, and the same message log as the board.
+window.luminaacVoice = { say: (text, opts = {}) => say(text, opts), record, get busy() { return busy; } };
+
+// ---------- Strip ----------
 function renderStrip(fresh = false) {
   const box = $("#stripWords");
   box.textContent = "";
   state.words.forEach((w, i) => {
-    if (i > 0) box.append(" ");
     const s = document.createElement("span");
     s.className = "word" + (fresh && i === state.words.length - 1 ? " new" : "");
     s.textContent = w.w;
     box.append(s);
   });
   $("#strip").setAttribute("aria-label", state.words.length ? `Message: ${messageText()}. Tap to speak.` : "Message is empty");
-  window.dispatchEvent(new CustomEvent("luminaac:strip-changed", { detail: { words: state.words.map((w) => w.w) } }));
 }
-// What is spoken can differ from what is shown (an imported board's "vocalization").
-const spokenOf = (w) => w.say || w.w;
-const messageText = () => state.words.map(spokenOf).join(" ");
+const messageText = () => state.words.map((w) => w.say || w.w).join(" ");
 
 function speakMessage() {
   if (!state.words.length) { toast("Add a word first"); return; }
@@ -108,14 +182,17 @@ function speakMessage() {
   const spans = $$("#stripWords .word");
   const starts = [];
   let pos = 0;
-  state.words.forEach((w) => { starts.push(pos); pos += spokenOf(w).length + 1; });
-  const isMod = state.modeling;
-  speakUtterance(text, {
-    mode: isMod ? "modeling" : "child",
-    kind: isMod ? "modeling" : "message",
-    words: state.words.map(spokenOf),
-    onWordBoundary(_idx, ci) {
-      const idx = starts.findLastIndex((s) => s <= ci);
+  state.words.forEach((w) => { starts.push(pos); pos += (w.say || w.w).length + 1; });
+  // Partner modeling: speak (unless set to silent) but keep it out of the child's
+  // history, word counts and next-word ideas. It goes to its own log.
+  if (state.modeling) {
+    if (settings.modelSpeak) say(text);
+    recordModel(text);
+    return;
+  }
+  say(text, {
+    onWord(ci) {
+      let idx = starts.findLastIndex((s) => s <= ci);
       spans.forEach((s, j) => {
         s.classList.toggle("lit", j === idx);
         s.classList.toggle("done", j < idx);
@@ -123,64 +200,27 @@ function speakMessage() {
     },
     onEnd() { spans.forEach((s) => s.classList.remove("lit", "done")); },
   });
-  syncDataFromStore();
-}
-
-function addWord(item) {
-  if (document.documentElement.dataset.exploring === "1") return;
-  // Imported-board buttons can navigate or run a safe action instead of adding a word.
-  if (item.action === ":home") { state.folder = "core"; renderFolders(); renderGrid(); return; }
-  if (item.action === ":backspace") { state.words.pop(); renderStrip(); renderNext(); return; }
-  if (item.action === ":clear") { state.words = []; renderStrip(); renderNext(); return; }
-  if (item.action === ":speak") { speakMessage(); return; }
-  if (item.action === ":space") return;
-  if (item.loadBoard && importedBoards().some((b) => b.id === item.loadBoard)) {
-    state.folder = OBF_PREFIX + item.loadBoard; renderFolders(); renderGrid(); return;
-  }
-  // Aided Language Stimulation: partner models the word.
-  if (state.modeling) { modelWord(item); return; }
-  state.words.push(item);
-  renderStrip(true);
-  if (settings.speakOnTap) speakUtterance(spokenOf(item), { mode: "child", skipLog: true });
-  renderNext();
-}
-
-function modelWord(item) {
-  state.words.push(item);
-  state.trail = pushTrail(state.trail, item.w);
-  renderStrip(true);
-  paintTrail();
-  if (settings.speakOnTap) speakUtterance(spokenOf(item), { ...modelingSpeechOpts(load()), skipLog: true, words: [spokenOf(item)] });
-  renderNext();
-}
-function paintTrail() {
-  $$(".modeling-hi, .is-modeled, .modeled").forEach((el) => {
-    el.classList.remove("modeling-hi", "is-modeled", "modeled");
-    el.removeAttribute("data-trail");
-    el.removeAttribute("data-modeled");
-  });
-  const lows = state.trail.map((t) => t.toLowerCase());
-  $$(".grid .tile, .next-row .next-chip").forEach((el) => {
-    const i = lows.indexOf(String(el.dataset.w || "").toLowerCase());
-    if (i >= 0) {
-      el.classList.add("modeling-hi", "is-modeled", "modeled");
-      el.dataset.trail = String(i + 1);
-      el.dataset.modeled = "true";
+  record(text);
+  state.words.forEach((w, i) => {
+    const k = w.w.toLowerCase();
+    data.counts[k] = (data.counts[k] || 0) + 1;
+    if (i > 0) {
+      const p = state.words[i - 1].w.toLowerCase();
+      (data.pairs[p] ||= {})[k] = (data.pairs[p][k] || 0) + 1;
     }
   });
+  save("counts"); save("pairs");
 }
-function setModeling(on) {
-  const changed = state.modeling !== !!on;
-  state.modeling = !!on;
-  state.trail = [];
-  if (changed) { state.words = []; renderStrip(); renderNext(); }
-  const btn = $("#modelToggle");
-  btn.setAttribute("aria-pressed", String(state.modeling));
-  btn.textContent = state.modeling ? "Partner modeling: ON" : "Partner modeling";
-  $("#modelBanner").hidden = !state.modeling;
-  document.body.classList.toggle("is-modeling", state.modeling);
-  document.documentElement.dataset.modeling = state.modeling ? "true" : "false";
-  paintTrail();
+
+function addWord(item, src) {
+  if (item.script) return tapScript(item.script, src);
+  state.words.push(item);
+  renderStrip(true);
+  if (src) flyTo(src, $("#stripWords .word:last-child")); // the word travels to the strip (docs/MOTION-CONCEPT.md)
+  if (state.modeling) markTrail(item.w);
+  if (settings.speakOnTap && (!state.modeling || settings.modelSpeak)) say(item.say || item.w);
+  renderNext();
+  updatePredictions(messageText());
 }
 
 // ---------- Next-word ideas (learned locally from what's been said) ----------
@@ -206,18 +246,34 @@ function renderNext() {
       .slice(0, 5);
     $("#nextLabel").textContent = "Next";
   }
+  // Word endings for the last word (eat -> eating, eats, ate; dog -> dogs). A tap swaps it.
+  const forms = last && !last.script ? wordForms(last) : [];
+  forms.forEach((f) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "next-chip morph-chip";
+    b.dataset.c = last.c;
+    b.textContent = f;
+    b.setAttribute("aria-label", `Change ${last.w} to ${f}`);
+    b.addEventListener("click", () => {
+      const base = state.words.at(-1);
+      state.words[state.words.length - 1] = { ...base, w: f, say: undefined, from: base.from || base.w };
+      renderStrip(true); renderNext(); updatePredictions(messageText());
+      if (settings.speakOnTap && (!state.modeling || settings.modelSpeak)) say(f);
+    });
+    row.append(b);
+  });
+  if (forms.length) ideas = ideas.slice(0, Math.max(2, 5 - forms.length));
   ideas.forEach((w) => {
     const item = lexicon.get(w.toLowerCase()) || { w, c: "little" };
     const b = document.createElement("button");
     b.type = "button";
     b.className = "next-chip";
     b.dataset.c = item.c;
-    b.dataset.w = item.w;
     b.textContent = item.w;
-    b.addEventListener("click", () => addWord(item));
+    b.addEventListener("click", () => addWord(item, b));
     row.append(b);
   });
-  paintTrail();
 }
 
 // ---------- Board ----------
@@ -237,81 +293,178 @@ function tile(item, onTap) {
   label.className = "label";
   label.textContent = item.w;
   b.append(pic, label);
-  b.addEventListener("click", () => onTap(item));
+  applyPhoto(pic, item.w); // a photo symbol replaces the picture when a caregiver added one
+  if (item.script) { b.classList.add("script-tile"); b.setAttribute("aria-label", `${item.w}, script${canMix(item.script) ? ", in parts" : ""}`); }
+  b.addEventListener("click", () => onTap(item, b));
   return b;
-}
-
-let lastFolderSig = "";
-function orderedFolderList() {
-  const db = load();
-  const rules = activeRules(db);
-  const { activeFolderIds } = contextMatchForRules(rules, FOLDERS, data.custom, db.signals);
-  const activeSet = new Set(activeFolderIds);
-  const activeFolders = FOLDERS.filter((f) => activeSet.has(f.id));
-  const restFolders = FOLDERS.filter((f) => !activeSet.has(f.id));
-  const imported = importedBoards().map((b) => ({ id: OBF_PREFIX + b.id, label: b.name, e: "📥" }));
-  return { list: [{ id: "core", label: "Core words", e: "⭐" }, ...activeFolders, ...restFolders, ...imported], activeSet };
 }
 
 function renderFolders() {
   const bar = $("#folders");
   bar.textContent = "";
-  const { list, activeSet } = orderedFolderList();
-  lastFolderSig = `${state.folder}|${[...activeSet].join(",")}`;
-  list.forEach((f) => {
-    const isCtx = activeSet.has(f.id);
+  // Scripts (whole phrases) get their own tab at the end, so the other tabs never move.
+  const tabs = [{ id: "core", label: "Core words", e: "⭐" }, ...FOLDERS];
+  if (scripts().length) tabs.push({ id: "scripts", label: "Scripts", e: "💬" });
+  else if (state.folder === "scripts") state.folder = "core";
+  tabs.forEach((f) => {
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "folder" + (isCtx ? " is-context" : "");
-    b.dataset.f = f.id;
+    b.className = "folder";
     b.setAttribute("role", "tab");
     b.setAttribute("aria-selected", String(state.folder === f.id));
-    if (isCtx) {
-      b.dataset.context = "true";
-      b.setAttribute("aria-label", `${f.label} (active now)`);
-    }
     b.innerHTML = `<span class="pic" aria-hidden="true">${f.e}</span>`;
     b.append(f.label);
-    if (isCtx) {
-      const badge = document.createElement("span");
-      badge.className = "ctx-tag";
-      badge.textContent = "Now";
-      b.append(badge);
-    }
-    b.addEventListener("click", () => { state.folder = f.id; renderFolders(); renderGrid(); });
+    b.addEventListener("click", () => swap(() => { state.folder = f.id; renderFolders(); renderGrid(); }));
     bar.append(b);
   });
 }
 
 function renderGrid() {
   const grid = $("#grid");
-  const cols = Math.max(1, Number(settings.cols) || 6);
-  grid.setAttribute("role", "grid");
-  grid.style.setProperty("--cols", String(cols));
+  grid.setAttribute("role", "group");
+  grid.style.setProperty("--cols", settings.cols);
   grid.textContent = "";
   const words = folderWords(state.folder);
-  const rowCount = Math.max(1, Math.ceil(words.length / cols));
-  grid.setAttribute("aria-colcount", String(cols));
-  grid.setAttribute("aria-rowcount", String(rowCount));
-
-  for (let i = 0; i < words.length; i += cols) {
-    const row = document.createElement("div");
-    row.className = "grid-row";
-    row.setAttribute("role", "row");
-    row.style.setProperty("--cols", String(cols));
-    for (const w of words.slice(i, i + cols)) {
-      const cell = document.createElement("div");
-      cell.className = "grid-cell";
-      cell.setAttribute("role", "gridcell");
-      cell.append(tile(w, addWord));
-      row.append(cell);
-    }
-    grid.append(row);
-  }
+  words.forEach((w) => grid.append(tile(w, addWord)));
+  paintTrail();
   const used = [...new Set(words.map((w) => w.c))];
   $("#legend").innerHTML = used.map((c) => `<span data-c="${c}"><i></i>${CLASS_NAMES[c]}</span>`).join("");
   loadPictos(grid);
+}
+
+// ---------- Gestalt scripts ----------
+// Stage 1: a whole phrase, said at once. Stage 2 and up, with parts marked by "/":
+// each part goes to the strip as its own piece, so it can be mixed with others.
+function tapScript(sc, src) {
+  const text = scriptText(sc);
+  if (!canMix(sc)) {
+    if (!state.modeling || settings.modelSpeak) say(text);
+    state.modeling ? recordModel(text) : record(text, "gestalt");
+    if (state.modeling) markTrail(text);
+    return;
+  }
+  for (const part of scriptParts(sc.text)) state.words.push({ w: part, c: "social", e: sc.e, from: "script" });
+  renderStrip(true);
+  if (src) flyTo(src, $("#stripWords .word:last-child"));
+  if (state.modeling) markTrail(text);
+  if (settings.speakOnTap && (!state.modeling || settings.modelSpeak)) say(text);
+  renderNext();
+  updatePredictions(messageText());
+}
+
+// ---------- Partner modeling (Aided Language Stimulation) ----------
+// An adult shows how to say something by pressing the child's own buttons. Those
+// presses are not the child's words, so they never reach the message log, word
+// counts or next-word ideas. They go to luminaac:modeling instead.
+function recordModel(text) {
+  const log = store.get("modeling", []);
+  log.push({ t: Date.now(), text, kind: "modeling" });
+  store.set("modeling", log.slice(-2000));
+  dispatchEvent(new CustomEvent("luminaac:modeling", { detail: { text } }));
+}
+function markTrail(w) {
+  state.trail.push(String(w).toLowerCase());
+  if (state.trail.length > 12) state.trail.shift();
   paintTrail();
+}
+// Each modeled button keeps a numbered gold ring, so the child sees the path the adult took.
+function paintTrail() {
+  $$(".tile.modeled, .next-chip.modeled").forEach((t) => { t.classList.remove("modeled"); delete t.dataset.step; });
+  if (!state.modeling) return;
+  state.trail.forEach((w, i) => {
+    const t = $$("#grid .tile").find((x) => (x.dataset.w || "").toLowerCase() === w);
+    if (t) { t.classList.add("modeled"); t.dataset.step = String(i + 1); }
+  });
+}
+function setModeling(on) {
+  state.modeling = on;
+  state.trail = [];
+  document.body.classList.toggle("modeling", on);
+  $("#modelBanner").hidden = !on;
+  $("#modelToggle").setAttribute("aria-pressed", String(on));
+  $("#modelToggle").textContent = on ? "Stop modeling" : "Start modeling";
+  paintTrail();
+}
+
+// ---------- Find a word ----------
+// Search every folder. Choosing a result adds the word and opens its folder with the
+// button lit, so next time the child knows where it lives.
+function findSources() {
+  const mine = (id) => data.custom.filter((x) => x.f === id);
+  return [{ id: "core", label: "Core words", words: [...CORE, ...mine("core")] },
+    ...FOLDERS.map((f) => ({ id: f.id, label: f.label, words: [...f.words, ...mine(f.id)] })),
+    ...(scripts().length ? [{ id: "scripts", label: "Scripts", words: folderWords("scripts") }] : [])];
+}
+function renderFind() {
+  const q = $("#findInput").value, list = $("#findResults");
+  const hits = searchWords(q, findSources());
+  list.textContent = "";
+  $("#findStatus").textContent = !q.trim() ? "" : hits.length ? `${hits.length} found` : "No words found. A grown-up can add it in Caregiver.";
+  hits.forEach(({ item, folder }) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "find-hit";
+    b.dataset.c = item.c;
+    b.innerHTML = `<span class="pic" aria-hidden="true"></span><span class="find-w"></span><span class="find-f"></span>`;
+    $(".pic", b).textContent = item.e || "";
+    $(".find-w", b).textContent = item.w;
+    $(".find-f", b).textContent = `in ${folder.label}`;
+    b.addEventListener("click", () => {
+      $("#findDialog").close();
+      if (state.view !== "talk") show("talk");
+      state.folder = folder.id; renderFolders(); renderGrid();
+      const t = $$("#grid .tile").find((x) => x.dataset.w === item.w);
+      if (t) { t.classList.add("found"); setTimeout(() => t.classList.remove("found"), 2600); t.scrollIntoView({ block: "nearest" }); }
+      addWord(item, t || null);
+    });
+    li.append(b); list.append(li);
+  });
+}
+function bindFind() {
+  const dlg = $("#findDialog");
+  $("#btnFind").addEventListener("click", () => { $("#findInput").value = ""; renderFind(); dlg.showModal(); $("#findInput").focus(); });
+  $("#findInput").addEventListener("input", renderFind);
+  $("#findClose").addEventListener("click", () => dlg.close());
+  $("#findForm").addEventListener("submit", (e) => { e.preventDefault(); $("#findResults .find-hit")?.click(); });
+}
+
+// ---------- Context strip ("Now: School") ----------
+// Words for the pages the Bridge's rules say matter right now, in their own row.
+// The core grid and folders never move, so motor patterns stay the same.
+function contextWords(page) {
+  const k = String(page || "").trim().toLowerCase();
+  if (!k) return [];
+  const folder = FOLDERS.find((f) => f.id === k || f.label.toLowerCase() === k);
+  const base = CONTEXT_PAGES[k] || folder?.words || [];
+  const custom = data.custom.filter((x) => x.f === folder?.id || String(x.f || "").toLowerCase() === k);
+  return [...custom, ...base].map((x) => lexicon.get(x.w.toLowerCase()) || x);
+}
+function renderContext() {
+  const box = $("#ctx"), row = $("#ctxRow");
+  if (!box) return;
+  let rules = [];
+  try { rules = activeRules(loadBridge()); } catch {}
+  const seen = new Set(), pages = [], words = [];
+  for (const r of rules) {
+    const ws = contextWords(r.page);
+    if (!ws.length) continue;
+    pages.push(r.page);
+    for (const w of ws) if (!seen.has(w.w.toLowerCase())) { seen.add(w.w.toLowerCase()); words.push(w); }
+  }
+  row.textContent = "";
+  box.hidden = !words.length;
+  if (!words.length) return;
+  $("#ctxLabel").textContent = `Now: ${pages.join(", ")}`;
+  words.slice(0, 8).forEach((item) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "next-chip ctx-chip";
+    b.dataset.c = item.c; b.dataset.w = item.w;
+    b.textContent = item.w; // text only, like the Next chips beside it
+    b.addEventListener("click", () => addWord(item, b));
+    row.append(b);
+  });
 }
 
 function renderQuick() {
@@ -322,14 +475,9 @@ function renderQuick() {
     b.type = "button";
     b.className = "phrase";
     b.dataset.c = p.c;
-    b.dataset.w = p.w;
     b.innerHTML = `<span class="pic" aria-hidden="true">${p.e}</span>`;
     b.append(p.w);
-    b.addEventListener("click", () => speakUtterance(p.w, {
-      mode: "child",
-      kind: "quick",
-      functionTag: p.c === "negate" ? "protest" : p.c === "social" ? "social" : "request",
-    }));
+    b.addEventListener("click", () => { say(p.w); record(p.w, "quick"); });
     q.append(b);
   });
 }
@@ -341,6 +489,7 @@ function loadPictos(root) {
   if (!settings.pictos) return;
   $$(".tile", root).forEach((t) => {
     const w = t.dataset.w.toLowerCase();
+    if (hasPhoto(w)) return; // the family's own photo wins
     if (t.dataset.p) return setPicto(t, t.dataset.p);
     if (data.pictoIds[w] === 0) return setMoji(t);
     if (data.pictoIds[w]) return setPicto(t, data.pictoIds[w]);
@@ -354,7 +503,7 @@ function setPicto(t, id) {
   img.alt = "";
   img.decoding = "async";
   img.src = `https://static.arasaac.org/pictograms/${id}/${id}_300.png`;
-  img.onload = () => { pic.textContent = ""; pic.append(img); };
+  img.onload = () => { if (pic.querySelector(".sym-photo")) return; pic.textContent = ""; pic.append(img); };
   img.onerror = () => setMoji(t); // ARASAAC 404 or offline: use the local OpenMoji picture
 }
 // Local fallback pictures (OpenMoji, CC BY-SA 4.0, vendored in vendor/openmoji).
@@ -411,14 +560,15 @@ function renderCalm() {
     b.className = "need";
     b.innerHTML = `<span class="pic" aria-hidden="true">${n.e}</span>`;
     b.append(n.w);
-    b.addEventListener("click", () => speakUtterance(n.w, { mode: "child", kind: "calm", functionTag: "request" }));
+    b.addEventListener("click", () => { say(n.w); record(n.w, "calm"); });
     needs.append(b);
   });
 }
 
 function pickScale(s, btn) {
   $$(".scale-btn").forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
-  speakUtterance(s.say, { mode: "child", kind: "scale", functionTag: "emotion" });
+  say(s.say);
+  record(s.say, "scale");
   const high = s.n >= 3;
   $("#calmRoom").hidden = !high;
   $("#partnerCard").hidden = !high;
@@ -430,81 +580,67 @@ function startBreathing() {
   stopBreathing();
   const orb = $("#orb");
   const cue = $("#breatheCue");
+  // In for 4 s, out for 6 s (DESIGN.md --t-breath-in / --t-breath-out). The Calm sky follows the same clock.
   let inhale = true;
   const step = () => {
     orb.classList.toggle("in", inhale);
     cue.textContent = inhale ? "Breathe in" : "Breathe out";
+    state.breathing = setTimeout(step, inhale ? 4000 : 6000);
     inhale = !inhale;
   };
+  calmSky.breathe(Date.now());
   step();
-  state.breathing = setInterval(step, 4000);
   $("#breatheToggle").textContent = "Pause breathing";
 }
 function stopBreathing() {
-  clearInterval(state.breathing);
+  clearTimeout(state.breathing);
+  calmSky.breathe(null);
   state.breathing = null;
   $("#orb").classList.remove("in");
   $("#breatheToggle").textContent = "Start breathing";
 }
 
+// The Calm sky: a slow shader horizon inside the breathing panel (shader-sky.js).
+const calmSky = mountCalmSky($("#breathe"));
+
 // ---------- Plans ----------
+const planList = () => allPlans(PLANS, bridgeDoc().stories || []);
+const choiceList = () => (bridgeDoc().choices || []).filter((c) => c?.options?.length >= 2);
 function renderPlans() {
   const picker = $("#planPicker");
   picker.textContent = "";
-  // One unified list: built-in plans, caregiver stories / routines, and caregiver schedules.
-  const db = load();
-  const schedules = mergeSchedules(PLANS, db.stories || [], db.schedules || []);
-  if (!schedules.some((p) => p.id === state.plan)) state.plan = schedules[0].id;
-  schedules.forEach((p) => {
+  const plans = planList(), choices = choiceList();
+  if (!plans.some((p) => p.id === state.plan) && !choices.some((c) => "choice:" + c.id === state.plan)) state.plan = plans[0].id;
+  [...plans, ...choices.map((c) => ({ id: "choice:" + c.id, title: c.title, e: c.e || "🤔" }))].forEach((p) => {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "folder";
     b.setAttribute("role", "tab");
     b.setAttribute("aria-selected", String(state.plan === p.id));
-    const pic = document.createElement("span");
-    pic.className = "pic";
-    pic.setAttribute("aria-hidden", "true");
-    pic.textContent = p.e;
-    b.append(pic, p.title);
+    b.innerHTML = `<span class="pic" aria-hidden="true">${p.e}</span>`;
+    b.append(p.title);
     b.addEventListener("click", () => { state.plan = p.id; renderPlans(); });
     picker.append(b);
   });
 
-  const plan = schedules.find((p) => p.id === state.plan);
+  const board = choices.find((c) => "choice:" + c.id === state.plan);
+  $("#choiceBoard").hidden = !board;
+  $("#firstThen").hidden = $("#steps").hidden = !!board;
+  if (board) { renderChoice(board); dispatchEvent(new CustomEvent("mv:plans")); return; }
+  const plan = plans.find((p) => p.id === state.plan);
   const done = new Set(data.plans[plan.id] || []);
   const current = plan.steps.findIndex((_, i) => !done.has(i));
 
   const ft = $("#firstThen");
-  ft.textContent = "";
-  const card = (small, strong, emoji, cls = "") => {
-    const d = document.createElement("div");
-    d.className = "ft-card" + cls;
-    const s = document.createElement("small");
-    s.textContent = small;
-    const st = document.createElement("strong");
-    if (emoji) { const e = document.createElement("span"); e.setAttribute("aria-hidden", "true"); e.textContent = emoji; st.append(e); }
-    st.append(strong);
-    d.append(s, st);
-    return d;
-  };
   if (current === -1) {
-    const reset = document.createElement("div");
-    reset.className = "ft-card";
-    const rb = document.createElement("button");
-    rb.className = "ghost-btn"; rb.type = "button"; rb.id = "planReset"; rb.textContent = "Start again";
-    rb.addEventListener("click", () => { data.plans[plan.id] = []; save("plans"); renderPlans(); });
-    reset.append(rb);
-    ft.append(card("Finished", "All done", "🎉", " now"), reset);
+    ft.innerHTML = `<div class="ft-card now"><small>Finished</small><strong>🎉 All done</strong></div>
+      <div class="ft-card"><button class="ghost-btn" type="button" id="planReset">Start again</button></div>`;
+    $("#planReset").addEventListener("click", () => { data.plans[plan.id] = []; save("plans"); renderPlans(); });
   } else {
     const now = plan.steps[current];
     const then = plan.steps[current + 1];
-    ft.append(card("Now", now.t, now.e, " now"), card("Then", then ? then.t : "All done", then ? then.e : "🏁"));
-    if (done.size > 0) {
-      const rb = document.createElement("button");
-      rb.className = "ghost-btn"; rb.type = "button"; rb.id = "planReset"; rb.textContent = "Start again";
-      rb.addEventListener("click", () => { data.plans[plan.id] = []; save("plans"); renderPlans(); });
-      ft.append(rb);
-    }
+    ft.innerHTML = `<div class="ft-card now"><small>Now</small><strong><span aria-hidden="true">${now.e}</span>${now.t}</strong></div>
+      <div class="ft-card"><small>Then</small><strong><span aria-hidden="true">${then ? then.e : "🏁"}</span>${then ? then.t : "All done"}</strong></div>`;
   }
 
   const list = $("#steps");
@@ -512,21 +648,19 @@ function renderPlans() {
   plan.steps.forEach((s, i) => {
     const li = document.createElement("li");
     li.className = "step" + (done.has(i) ? " done" : "") + (i === current ? " current" : "");
-    li.innerHTML = `<div class="step-pic" aria-hidden="true"></div>
+    li.innerHTML = `<div class="step-pic" aria-hidden="true">${s.e}</div>
       <div><h3></h3><div class="step-says"></div></div>
       <button class="check-btn" type="button" aria-pressed="${done.has(i)}">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>`;
-    $(".step-pic", li).textContent = s.e || "";
     $("h3", li).textContent = s.t;
     $(".check-btn", li).setAttribute("aria-label", `${s.t}: ${done.has(i) ? "done" : "mark done"}`);
     s.say.forEach((p) => {
       const c = document.createElement("button");
       c.type = "button";
       c.className = "say-chip";
-      c.dataset.w = p;
       c.textContent = p;
-      c.addEventListener("click", () => speakUtterance(p, { mode: "child", kind: "plan", functionTag: "request" }));
+      c.addEventListener("click", () => { say(p); record(p, "plan"); });
       $(".step-says", li).append(c);
     });
     $(".check-btn", li).addEventListener("click", () => {
@@ -537,11 +671,40 @@ function renderPlans() {
     });
     list.append(li);
   });
+  dispatchEvent(new CustomEvent("mv:plans"));
+}
+
+// A choice board: 2 to 8 big pictures. Picking one says it and lights it.
+function renderChoice(board) {
+  const box = $("#choiceBoard");
+  box.textContent = "";
+  const h = document.createElement("h2");
+  h.className = "h2 choice-q";
+  h.textContent = board.title;
+  const grid = document.createElement("div");
+  grid.className = "choice-grid";
+  grid.style.setProperty("--n", String(board.options.length));
+  board.options.forEach((opt) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "choice-opt";
+    b.innerHTML = `<span class="pic" aria-hidden="true"></span><span class="label"></span>`;
+    $(".pic", b).textContent = opt.e || "";
+    $(".label", b).textContent = opt.w;
+    b.setAttribute("aria-pressed", "false");
+    b.addEventListener("click", () => {
+      $$(".choice-opt", grid).forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      const text = choiceSentence(board, opt);
+      if (!state.modeling || settings.modelSpeak) say(text);
+      state.modeling ? recordModel(text) : record(text, "choice");
+    });
+    grid.append(b);
+  });
+  box.append(h, grid);
 }
 
 // ---------- Caregiver ----------
 function renderCare() {
-  syncDataFromStore();
   const since = Date.now() - WEEK;
   const week = data.log.filter((x) => x.t >= since);
   const msgs = week.filter((x) => x.kind === "message");
@@ -626,30 +789,36 @@ function bindCareForms() {
   form.rate.value = settings.rate;
   form.speakOnTap.checked = settings.speakOnTap;
   form.stillness.checked = settings.stillness;
+  form.modelSpeak.checked = settings.modelSpeak;
   form.addEventListener("change", () => {
     Object.assign(settings, {
       theme: form.theme.value, cols: form.cols.value, pictos: form.pictos.checked,
       labelsTop: form.labelsTop.checked, voice: form.voice.value, rate: Number(form.rate.value),
-      speakOnTap: form.speakOnTap.checked, stillness: form.stillness.checked,
+      speakOnTap: form.speakOnTap.checked, stillness: form.stillness.checked, modelSpeak: form.modelSpeak.checked,
     });
     store.set("settings", settings);
     applySettings();
     renderGrid();
   });
-  $("#testVoice").addEventListener("click", () => speakUtterance("Hello. This is my voice.", { mode: "child", skipLog: true }));
+  $("#testVoice").addEventListener("click", () => say("Hello. This is my voice."));
 
   $("#exportBtn").addEventListener("click", () => {
-    const blob = new Blob([JSON.stringify(exportUnifiedBackup(), null, 2)], { type: "application/json" });
+    // The backup holds the talker's data and the Bridge document (signals, stories,
+    // My things, exploration), so one file restores the whole device.
+    let bridge = null; try { bridge = JSON.parse(localStorage.getItem("luminaac:bridge")); } catch {}
+    const blob = new Blob([JSON.stringify({ exported: new Date().toISOString(), settings, ...data, pictoIds: undefined, bridge }, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `luminaac-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
   });
-  $("#resetBtn").addEventListener("click", async () => {
-    if (!confirm("Erase message history, word counts and moments on this device? Custom words and settings stay.")) return;
-    await wipeUnifiedData({ mode: "history" });
+  $("#resetBtn").addEventListener("click", () => {
+    if (!confirm("Erase message history, word counts, exploring taps and moments on this device? Custom words and settings stay.")) return;
     data.log = []; data.counts = {}; data.pairs = {}; data.moments = [];
+    ["log", "counts", "pairs", "moments"].forEach(save);
+    // Exploring taps are history too; they live in the Bridge document.
+    try { const b = JSON.parse(localStorage.getItem("luminaac:bridge")); if (b) { b.exploration = []; localStorage.setItem("luminaac:bridge", JSON.stringify(b)); dispatchEvent(new CustomEvent("luminaac:bridge-updated")); } } catch {}
     renderCare();
     renderNext();
     toast("History erased");
@@ -688,16 +857,22 @@ function show(view) {
   if (view === "care" && !state.unlocked) return;
   if (view !== "care") state.unlocked = false;
   state.view = view;
+  const was = $(".nav-btn[aria-current]");
   $$(".view").forEach((v) => (v.hidden = v.id !== `view-${view}`));
   $$(".nav-btn:not(a)").forEach((b) => {
     const v = b.dataset.view || "care";
     v === view ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current");
   });
+  pillMove(was, $(".nav-btn[aria-current]"));
+  calmSky.active(view === "calm");
   if (view !== "calm") { stopBreathing(); document.body.classList.remove("low-arousal"); }
   if (view === "care") renderCare();
   if (view === "plans") renderPlans();
   $("#main").focus({ preventScroll: true });
+  dispatchEvent(new CustomEvent("mv:show", { detail: view }));
 }
+// For the redesign shell (myvoice-redesign.js): switch views and know the open plan.
+window.__myvoice = { show, openCare() { state.unlocked = true; show("care"); }, get view() { return state.view; }, get plan() { return state.plan; } };
 
 function applySettings() {
   const root = document.documentElement;
@@ -721,61 +896,70 @@ rebuildLexicon();
 applySettings();
 renderStrip();
 renderQuick();
+renderContext();
+onBridgeChange(renderContext);             // a rule added or removed in the Bridge
+setInterval(renderContext, 5 * 60 * 1000); // rules start and end with the clock
 renderNext();
 renderFolders();
 renderGrid();
 renderCalm();
 bindCareForms();
+bindOBF();
 bindCareLock();
+bindFind();
+$("#modelToggle").addEventListener("click", () => { const on = !state.modeling; setModeling(on); if (on) { show("talk"); toast("Modeling is on. Your presses won't count as the child's words."); } });
+$("#modelStop").addEventListener("click", () => setModeling(false));
+onBridgeChange(() => { renderFolders(); if (state.folder === "scripts") renderGrid(); if (state.view === "plans") renderPlans(); });
 loadVoices();
 if ("speechSynthesis" in window) speechSynthesis.onvoiceschanged = loadVoices;
 
+initPredictionBar($("#strip"), (word) => {
+  const item = lexicon.get(word.toLowerCase()) || { w: word, c: "little" };
+  addWord(item, null);
+});
+
 $("#btnSpeak").addEventListener("click", speakMessage);
 $("#strip").addEventListener("click", speakMessage);
-$("#btnBack").addEventListener("click", () => { state.words.pop(); renderStrip(); renderNext(); });
-$("#btnClear").addEventListener("click", () => { state.words = []; renderStrip(); renderNext(); });
+$("#btnBack").addEventListener("click", () => { state.words.pop(); renderStrip(); renderNext(); updatePredictions(messageText()); });
+$("#btnClear").addEventListener("click", () => { state.words = []; renderStrip(); renderNext(); hidePredictionBar(); });
 $("#breatheToggle").addEventListener("click", () => (state.breathing ? stopBreathing() : startBreathing()));
 $$(".nav-btn[data-view]").forEach((b) => b.addEventListener("click", () => show(b.dataset.view)));
 
-window.addEventListener("luminaac:logged", () => {
-  syncDataFromStore();
-  renderNext();
-  if (state.view === "care") renderCare();
-});
-window.addEventListener("luminaac:speech-notice", (e) => {
-  if (e.detail?.message) toast(e.detail.message);
-});
-window.addEventListener("luminaac:add-word", (e) => {
-  if (e.detail?.w) addWord(e.detail);
-});
-window.addEventListener("luminaac:set-words", (e) => {
-  const items = Array.isArray(e.detail?.words) ? e.detail.words : [];
-  state.words = items.map((x) => (typeof x === "string" ? { w: x, c: "social", e: "" } : x)).filter((x) => x && x.w);
-  renderStrip(true);
-  renderNext();
-});
-// Morphology helper: swap the last word for another form of it ("go" → "going").
-window.addEventListener("luminaac:replace-last-word", (e) => {
-  const w = String(e.detail?.w || "").trim();
-  if (!w || !state.words.length || state.modeling) return;
-  const last = state.words[state.words.length - 1];
-  state.words[state.words.length - 1] = { ...last, w, say: undefined };
-  renderStrip(true);
-  renderNext();
-});
-$("#modelToggle").addEventListener("click", () => setModeling(!state.modeling));
-setModeling(false);
-window.addEventListener("luminaac:open-folder", (e) => {
-  if (!e.detail?.id) return;
-  state.folder = e.detail.id;
-  renderFolders();
-  renderGrid();
-});
-const refreshFoldersIfChanged = () => {
-  const { activeSet } = orderedFolderList();
-  const nextSig = `${state.folder}|${[...activeSet].join(",")}`;
-  if (nextSig !== lastFolderSig) renderFolders();
-  if (state.view === "plans") renderPlans();
-};
-window.addEventListener("luminaac:bridge-updated", refreshFoldersIfChanged);
-window.addEventListener("storage", (e) => { if (e.key === "luminaac:bridge") refreshFoldersIfChanged(); });
+// ---------- Open Board Format import and export (v0.15) ----------
+function myBoards() {
+  const pick = ({ w, e, c, say }) => (say ? { w, e, c, say } : { w, e, c });
+  const mine = (id) => data.custom.filter((x) => x.f === id).map(pick);
+  return [{ id: "core", name: "Core words", words: [...CORE, ...mine("core")].map(pick), cols: 6 },
+    ...FOLDERS.map((f) => ({ id: f.id, name: f.label, e: f.e, words: [...f.words, ...mine(f.id)].map(pick), cols: 4 }))];
+}
+async function inflateRaw(u8) {
+  const s = new Blob([u8]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+function bindOBF() {
+  const sel = $("#obfFolder"), status = $("#obfStatus");
+  if (!sel) return;
+  [{ id: "core", label: "Core words" }, ...FOLDERS].forEach((f) => sel.add(new Option(f.label, f.id)));
+  $("#btnObfExport").addEventListener("click", () => {
+    const url = URL.createObjectURL(new Blob([buildOBZ(myBoards())], { type: "application/zip" }));
+    const a = Object.assign(document.createElement("a"), { href: url, download: `luminaac-boards-${new Date().toISOString().slice(0, 10)}.obz` });
+    document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+    status.textContent = "Saved your boards as an .obz file.";
+  });
+  $("#obfForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target), file = f.get("file");
+    if (!file?.size) return;
+    if (file.size > 30e6) { status.textContent = "That file is too big (over 30 MB)."; return; }
+    try {
+      const u8 = new Uint8Array(await file.arrayBuffer());
+      const isZip = u8[0] === 0x50 && u8[1] === 0x4b;
+      const words = isZip ? (await readOBZ(u8, inflateRaw)).flatMap((b) => b.words) : wordsFromBoard(JSON.parse(new TextDecoder().decode(u8)));
+      const existing = [...CORE, ...FOLDERS.flatMap((x) => x.words)].map((x) => x.w);
+      const add = mergeWords(data.custom, existing, words, f.get("f")).slice(0, 300);
+      data.custom.push(...add); save("custom"); rebuildLexicon(); renderCare(); renderGrid();
+      status.textContent = add.length ? `Added ${add.length} word${add.length > 1 ? "s" : ""}. Words you already had were skipped.` : "No new words. You already have every word on that board.";
+      e.target.reset();
+    } catch (err) { status.textContent = err?.message?.startsWith("This") || err?.message?.startsWith("No ") ? err.message : "That file couldn't be read as a board."; }
+  });
+}

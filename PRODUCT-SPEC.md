@@ -1,50 +1,139 @@
-# LuminAAC Ultimate — Product Specification & Clinical Feature Map
+# LuminAAC product spec (feature map)
 
-LuminAAC Ultimate ("The Empathic Guardian") is a local-first, clinically grounded Augmentative and Alternative Communication (AAC) and holistic neurodivergent co-regulation platform. Every feature below is **100% built, tested, and verified** in this repository (`387+` automated unit, backend, and Playwright E2E tests).
+Source: Google Doc "LuminAAC: The Empathic Guardian". This maps every feature the doc describes to its status in this build.
 
-**Status key:** ✅ Built & Verified in Production Code · 🔭 Optional External Hardware Extension (LuminNode Multi-Camera / AR Glasses)
+**Status key:** ✅ built · 🟡 simulated / partial (works in the prototype with on-device heuristics or sample data) · 🔭 future (needs hardware, a backend, or ML models)
 
----
+## Pillars
+1. **You are your child's best translator.** Caregiver knowledge is the ground truth.
+2. **The symbiotic loop.** Child expresses → sensors capture → caregiver explains → AI learns → My Voice becomes more personal.
+3. **Free to families.** Core access is a right.
+4. **Private by default.** Local first; sharing is a choice.
 
-## Core Architectural Pillars
-
-1. **You Are Your Child's Best Translator.** Caregiver and Speech-Language Pathologist (SLP) knowledge is the ground truth. Every AI estimate, semantic suggestion, and biometric correlation is explicitly labeled (`"Draft / Estimate — Caregiver or SLP review required"`) and only enters longitudinal learning when confirmed.
-2. **The Symbiotic Loop.** Child expresses → rolling buffer captures → caregiver explains → on-device semantic & federated models learn → *My Voice* adapts while keeping core motor coordinates 100% invariant.
-3. **Motor-Plan Invariance & Clinical SLP Rigor.** Built on Fitzgerald Key color-coding, a fixed 30-word Core grid, Aided Language Stimulation (ALS) Partner Modeling, Gestalt Language Processing (GLP / NLA Stages 1–4), Interoception Body Mapping, Auditory-Motor Mapping Training (AMMT) Sound Symphony, and Open Board Format (`.obf` / `.obz`) interoperability.
-4. **Holistic Neuro-Environmental & Gut-Brain Support.** Recognizes that a nonverbal child's communication is shaped by their sensory environment, acoustic comfort, gastrointestinal health, hydration, sleep, and geomagnetic/barometric fluctuations.
-5. **Private by Default, Zero-Build, Offline-First.** 100% vanilla ES modules + zero-dependency Node 18+ backend. Works offline as an installable PWA with zero unconsented network egress.
-
----
-
-## 1. My Voice — The Child's Communicator (`index.html`)
-
-| Capability | Status | Implementation & Clinical Grounding |
+## Core loop
+| Doc feature | Status | Where |
 |---|---|---|
-| **Motor-Invariant 30-Word Core Grid + Contextual Fringe Folders** | ✅ | `vocab.js`, `app.js` — Fixed 6-column Fitzgerald Key layout (`little`, `action`, `describe`, `place`, `thing`, `people`, `social`, `neg`). Spatial coordinates never shift across context rules (`School`, `Bedtime`, etc.), preserving motor automaticity. |
-| **Kokoro-82M Expressive Voices + Child Prosody Shaping** | ✅ | `ai.js`, `ai-worker.js`, `speech.js` — 9 natural ONNX voices (`af_sky`, `af_nicole`, `am_puck`, `bf_isabella`, `af_heart`, `af_bella`, `am_michael`, `bf_emma`, `bm_george`) with Web Audio pitch/semitone shifting (`[-12, +12]` semitones), warmth filtering, emotion-linked prosody (`shapeProsody`), and instant `<40ms` offline fallback to `speechSynthesis`. |
-| **Aided Language Stimulation (ALS) Partner Modeling Mode** | ✅ | `slp.js`, `support.js`, `app.js`, `speech.js` — Caregivers toggle Partner Modeling (`#modelToggle`) to model word combinations with a 5-step highlight trail (`is-modeled`). Modeled turns are logged (`mode: "modeling", actor: "partner"`) and **strictly excluded** from the child's word counts, bigram predictions, and MLU. |
-| **Gestalt Language Processing (GLP / NLA Stages 1–4)** | ✅ | `slp.js`, `support.js` — Supports whole-script gestalts (`Stage 1` verbatim speech or recorded caregiver voice clip `audioClipId`) and `Stage 2` **Mitigate into strip** (`mitigateGestalt`), splitting scripts into recombinable phrase chunks in the sentence bar. |
-| **Gamified "Sound Symphony Composer" & Lip-Viseme Articulatory Coach** | ✅ | `symphony.js`, `support.js` — Grounded in Auditory-Motor Mapping Training (AMMT; Wan et al., 2011; Chenausky et al., 2016) and DTTC (Strand et al., 2014). Interactive SVG mouth/lip posture coach (`bilabial`, `round-vowel`, `open-vowel`, `smile`, `alveolar`, `velar`) paired with 16 pentatonic phoneme instrument blocks that blend 2–4 sounds (`m + oh + r → "more"`, `w + aa + t + er → "water"`, `m + aa + m + aa → "mama"`, `h + eh + l + p → "help"`) into spoken words. |
-| **Acoustic Frequency Co-Regulation Studio** | ✅ | `symphony.js`, `support.js` — Pure Web Audio API zero-dependency therapeutic soundscapes: **Warm Pink Noise Shield** (`-3 dB/oct` hyperacusis masking), **Deep Brown Noise Blanket** (`-6 dB/oct` grounding), **432 Hz Warm Harmonic Drone**, **528 Hz Gentle Chime Pad**, and **6 Hz Theta Co-Regulation Pulse** (`200 Hz / 206 Hz` binaural beat). |
-| **Interoception Pain Body Map & Sensory Quick-Bar** | ✅ | `slp.js`, `support.js` — Persistent 1-tap Sensory Quick-Bar (`Stop`, `No`, `Help`, `Bathroom`, `Break`) plus a 14-region Body & Pain Check-In (`head`, `eyes`, `ears`, `mouth`, `throat`, `chest`, `stomach`, `skin`, `back`, `arm`, `hand`, `leg`, `foot`, `private`) with 7 sensations (`hurts`, `sharp`, `itchy`, `hot`, `cold`, `tight`, `sick`) and immediate relief phrases. |
-| **First-Then Visual Schedules, Choice Boards & Social Stories** | ✅ | `slp.js`, `support.js`, `myvoice.js` — Unified First-Then step schedules (`mergeSchedules`), 2–8 item Choice Boards (`choiceSentence`), and LunaScript Social Stories. |
-| **Vocabulary Search & Real-Time Morphology Inflection Bar** | ✅ | `slp.js`, `support.js` — Instant prefix/stem/semantic search (`#vsearch`) and automatic morphological inflection chips (`#morphBar`: `-s`, `-ing`, `-ed`, `-er`, `-est`, irregulars) for the last tapped word. |
-| **Multi-Modal Motor & Switch Accessibility** | ✅ | `access.js` — WCAG 2.5.2 pointer cancellation (triggers on `pointerup`), configurable acceptance delay (`acceptMs`), post-tap tremor bounce lockout (`debounceMs`), hover/eye-gaze dwell ring, 1-Switch Linear Scan, 1-Switch Row-Column Scan (`rowcol`), 2-Switch Step Scan (`step2`), and auditory scan preview cues (`scanAudio`). |
-| **WCAG 2.1 AA/AAA Visual Themes & Low-Arousal Sensory Mode** | ✅ | `tokens.css`, `app.css`, `myvoice.css`, `bridge.css`, `phase4.css` — Day, Night, High-Contrast (`>= 7:1` AAA), and Low-Arousal mode (`body.low-arousal` zero-animation, muted sensory palette). |
-| **Guardian Emergency Alerts & Safe-Zone Geofencing** | ✅ | `myvoice-p3.js`, `geo.js`, `shared.js` — 1-tap `"I need help"` and `"Take me home"` alerts with live SSE broadcast to The Bridge, optional parent-consented Haversine geofencing with 25m hysteresis, and deadman heartbeat monitoring. |
+| Magic moment capture: one tap keeps the last 15 s (sound, video, AAC context) | ✅ | Bridge → Today. Two staggered MediaRecorders form a rolling buffer; AAC words spoken in the last minute are attached |
+| Adjustable clip length | ✅ | Privacy → Moment length (5–60 s) |
+| "What did that mean?" open-text annotation | ✅ | Annotation sheet |
+| Smart suggestions while typing (link to existing button / create new) | 🟡 | Keyword match to existing signals; phrase guessing from text |
+| AI learns: sound + gesture + context = meaning, per child | 🟡 | Signals store cues, contexts, meaning, phrase; confidence = Beta(confirmations, rejections) |
+| Active learning: "I've seen this in three situations, does it mean something?" | 🟡 | "LuminAAC is wondering" questions (seeded) + flagged unexplained moments |
+| Feedback loop: suggestion used → stronger | ✅ | Tapping a suggestion in My Voice adds a confirmation |
 
----
-
-## 2. The Bridge — Caregiver, School & SLP Portal (`bridge.html`)
-
-| Capability | Status | Implementation & Clinical Grounding |
+## My Voice (primary user)
+| Doc feature | Status | Where |
 |---|---|---|
-| **Magic Moment Rolling Buffer & Annotation Studio** | ✅ | `myvoice.js`, `bridge.js` — Two staggered `MediaRecorder` instances maintain a continuous 5–60s rolling audio/video buffer without keeping unkept recordings in memory. Caregivers annotate meaning, intent, and phrase in seconds. |
-| **Offline Semantic Search & Moment-to-Signal Linking (`all-MiniLM-L6-v2`)** | ✅ | `ai.js`, `ai-worker.js`, `bridge.js` — 384-d `Xenova/all-MiniLM-L6-v2` embeddings in a Web Worker paired with an instant deterministic 64-d concept-cluster fallback (`embedText`, `semanticSearchSync`) for semantic symbol discovery and `smart()` signal matching. |
-| **K-Dense Local-First BYOK Telegraphic Expansion & Watchdog Guardrail** | ✅ | `byok.js`, `ai-worker.js` — Expands telegraphic AAC strips (`"want go park"` → `"I want to go to the park."`) via 3-tier routing (`on-device` SmolLM2-135M / deterministic grammar → local `ollama` `127.0.0.1:11434` → explicit `egressAck === true` `api`). Guarded by `watchdogCheck` (calibrated on `willwade/AACConversations`) to enforce negation/protest invariance and block PII/unsafe output. |
-| **Holistic Diet, Gut-Brain & Solar/Geomagnetic Storm ($K_p$ Index) Biometrics** | ✅ | `biometrics.js`, `support.js` — Tracks meals, sensory food textures (`crunchy`, `smooth`, `chewy`, `warm-liquid`, `cold-crisp`), hydration (mL), GI comfort (`comfortable`, `mild-gas`, `constipated`, `reflux`, `stomach-ache`), and NOAA Planetary $K_p$ geomagnetic storm index (`0–9`, live SWPC feed + offline 27-day Bartels Solar Cycle 25 estimator). Computes fact-separated correlations (`correlateBiometrics`) between solar storms, GI discomfort, pain logs, and sensory dysregulation. |
-| **Clinical Communication Matrix, `supersedes` Lineage & RFC 4180 Exports** | ✅ | `clinical.js`, `bridge-plus.js` — Computes isolated child MLU, unique word count, Core vs. Fringe ratio, and Communication Matrix breakdown (`Requesting`, `Protesting`, `Commenting`, `Social`, `Asking`). Preserves append-only `supersedes` revision history and exports formula-safe RFC 4180 CSV and JSON. |
-| **Open Board Format (`.obf` / `.obz`) Import & Export** | ✅ | `obf.js`, `support.js` — Full import and export of `.obf` JSON and `.obz` ZIP packages compatible with CoughDrop, Cboard, Snap, and Grid, complete with CRC32 validation and path-traversal security guards. |
-| **On-Device Emotion Fusion (Acoustic Prosody + `wav2vec2` + `Human` Face)** | ✅ | `emotion.js`, `ai-worker.js`, `vendor/human/` — Fuses personalized pitch/loudness/tempo z-scores with opt-in `wav2vec2` speech emotion recognition and vendored `Human` facial expression analysis. Always requires caregiver confirmation. |
-| **MASTERNEX PRINCE 4-Bit TurboQuant Federated Learning** | ✅ | `masternex-prince-fl.js`, `fl-core.js`, `backend/flserver.js` — Combines Bonawitz Shamir $t$-of-$n$ dropout-resilient secure aggregation and zCDP privacy accounting with 4-bit randomized Hadamard rotation (`TurboQuant`), Rényi Differential Privacy (`rdp_epsilon`), and Byzantine-robust coordinate-wise trimmed-mean aggregation. |
-| **Zero-Dependency Node 18+ Backend (Accounts, Passkeys, Pairing, Sync, SSE)** | ✅ | `backend/server.js`, `backend/store.js`, `backend/mail.js` — Scrypt auth, WebAuthn ES256/RS256 passkeys, QR + 6-digit device pairing, role-scoped share links (`parent`, `teacher`, `therapist`, `family`), optimistic-concurrency sync, and child telemetry push (`POST /api/sync/telemetry`). |
+| Speech output from symbols | ✅ | Original board + `speechSynthesis` |
+| Context-aware grid (time of day, place, routines) | ✅ / 🟡 | Next-word ideas (original); context line and suggestion ranking by part of day + place; page rules |
+| Proactive suggestions ("Go to park?", "My head hurts") | 🟡 | Suggestion chips ranked from learned signals; real-time sensing is future |
+| Personality page | ✅ | "My things" |
+| Play-moment output (button plays a caregiver clip) | ✅ | My things buttons linked to a recorded moment |
+| Exploration & learning mode (no speech, taps logged) | ✅ | "Explore quietly"; reviewed in Bridge → Vocabulary |
+| Calming, low-clutter, color schemes | ✅ | Calm view, day/night/contrast themes, "keep the screen still" |
+| Multi-modal input: touch, switch, eye-gaze, vocalization | 🟡 | Touch, keyboard, dwell selection, one-switch auto-scanning; eye-gaze via dwell; vocalization input future |
+| Guardian safety: emergency alert, "Go home" | ✅ | "I need help" and "Take me home" buttons speak, show an undo, raise an alert in every open Bridge, and push it to the family server when sync is on. "Take me home" carries location, and safe zones alert on arrive and leave (Phase 3) |
+| Pediatric / Clinical / Senior modes | 🟡 | Large, Playful and Focus modes + board size to 300% (Bridge → Vocabulary); full age modes in roadmap |
+| AR-assisted communication (point camera at an apple) | 🔭 | Roadmap |
+
+## The Bridge (caregiver)
+| Doc feature | Status | Where |
+|---|---|---|
+| Day viewer timeline: moments, AAC event log, AI event markers | ✅ | Bridge → Today |
+| Video thumbnails from multiple LuminNode cameras, synced audio waveform | 🔭 / 🟡 | One device camera; stylized waveforms |
+| Click-to-clip from any point in a continuous day recording | 🔭 | Needs continuous recording + storage backend; prototype keeps only tapped moments (privacy) |
+| Annotation studio | ✅ | Sheet with playback, smart linking |
+| Vocabulary manager: add buttons with symbols/photos/videos | ✅ | Emoji symbol + linked moment recording |
+| Review AI vocabulary suggestions | ✅ | Questions with "Add that button" |
+| Context rules (School page weekdays 8–3) | ✅ | Page rules |
+| Insight dashboard: trends, personality map, AI questions | ✅ | Bridge → Insights |
+| Share discoveries with teachers / therapists / family | 🟡 | Invites, role-scoped previews, shared notes, printable guide, share file. Live share links and multi-device sync via `backend/` ✅ |
+| Multi-caregiver annotation synthesis | 🟡 | Moments record who explained them; merging across devices is future |
+
+## Phase 2 additions (from LuminAAC-Repository, luminaac, LuminAAC-Advanced and the rest of the product doc)
+| Feature | Source | Status | Where |
+|---|---|---|---|
+| Emergency alert + "Go home" | repo `index.html`, guardian | ✅ | My Voice safety row → Bridge alert bar with "I'm on my way" |
+| Intent categories (help, emotion, physical need, social, preference) | repo caregiver dashboard | ✅ | Annotation intent select; Insights intent mix |
+| Prediction feedback, acceptance rate | repo `predictions.js` | ✅ | "Not these" chip; Insights suggestion stats; `/api/predictions/*` |
+| Milestones (5/10/25/50/100…) | repo `index.html` | ✅ | Celebration in My Voice; list in Insights |
+| Daily patterns by time of day | luminaac caretaker page | ✅ | Insights time-of-day chart |
+| Social stories (LunaScript) and first/then routines | product doc | ✅ | Bridge → Stories; story player in My Voice |
+| Speech practice with Dynamic Regulating Reward | product doc | ✅ / 🟡 | Practice targets, tries logged, caregiver-picked reward (stars, bubbles, quiet); automatic reward tuning future |
+| Dynamic button sizing, 300% scaling, dwell, scanning | product doc | ✅ | access.js |
+| Sync, share with therapist/teacher, export | repo, product doc | ✅ | backend + Bridge → Privacy |
+| Therapy tones (solfeggio), weather, meal plans | repo, luminaac | ⏭️ skipped | No evidence base or out of scope for an AAC core |
+| Geofencing, pairing, emotion AI, federated learning | guardian, repo, Advanced | ✅ in Phase 3 | See below. AR and a TensorFlow engine remain 🔭 |
+
+## Phase 3 additions
+| Feature | What's built | Status | Where |
+|---|---|---|---|
+| Geofencing / safe zones | Parent consent dialog. Leaflet + OSM map, with a lat/lng and size form when offline or as the accessible path. `watchPosition` on My Voice with hysteresis. Arrive and leave alerts through the live stream. "Take me home" carries location. Location stripped after 24 h. Turn off deletes zones. | ✅ | Bridge → Safety; `geo.js`; `myvoice-p3.js`; `/api/alerts` kinds `zone-enter`/`zone-leave` with `loc` |
+| Device pairing | QR code (qrcode-generator) plus a 6-digit single-use code valid for 10 min. jsQR scanner on My Voice. Hashed per-device keys. Device list with "Switch off". Sync scoped by device kind (a My Voice device reads only the child view and cannot write). | ✅ | Bridge → Account and devices; My Voice → This device; `/api/devices/*` |
+| Accounts | Email + scrypt password. Passkeys (WebAuthn, ES256/RS256, "none" attestation). 30-day sessions. Roles parent/admin, teacher, therapist and family, mapped to share scopes. Family and child profiles. Invite codes. Local-only mode needs no account, and an existing family key is adopted on sign-up. | ✅ | `/api/auth/*`, `/api/family/*` |
+| Emotion AI (on-device) | Voice prosody (pitch, pitch movement, loudness, tempo) mapped to arousal/valence against the child's own baseline. Optional face expression via Human (CDN) with a voice-only fallback. Always shown as an estimate with confidence, confirmed by a caregiver. Confirmed feelings feed suggestion ranking and Insights. | ✅ (heuristic, unvalidated) | Annotation sheet; Insights → Feelings; `emotion.js` |
+| Federated learning | 17-feature logistic model trained on the device. Delta clipped to L2 ≤ 1, Gaussian noise σ = 0.3·C, fixed-point pairwise ECDH masks. FedAvg on masked sums. Global model download. 3-client simulation in tests (accuracy 0.45 → 0.96). | ✅ (no dropout recovery, no ε accounting) | Bridge → Privacy; `fl-core.js`; `/api/fl/*` |
+| OSS adoption | Leaflet, qrcode-generator, jsQR, Motion and OpenMoji vendored with licences | ✅ | `vendor/`, `THIRD-PARTY.md`, `RESEARCH-OSS.md` |
+
+## Phase 4 additions
+- A speech feelings model (opt-in, on the device, works offline) fused with prosody. Caregivers still confirm every estimate.
+- Natural Kokoro voices for My Voice, with preview and progress.
+- Email confirmation and password reset.
+- Shared learning that survives families dropping out, with a privacy budget.
+- Installable apps that work offline; a quiet-device alert; a native app scaffold for true background zones.
+- The face estimate is vendored and tested.
+
+## Phase 8: Potty Path (v0.10)
+Everything in this table is behind a switch (`access.potty`, Bridge → Potty Path) that is off by default.
+
+| Feature | Status | Where |
+|---|---|---|
+| "I need the toilet" button: always speaks, always works (even when paused), alerts every Bridge | ✅ | My Voice Talk page; board words *toilet/bathroom/potty* also count as asking |
+| Now/Next step path, companion (train, dino, blob, cat, none), Approach and Sit modes | ✅ | Potty Path screen |
+| Silent sit timer (circle, jar, dots, walk), body check, All done / More time, hard caps | ✅ | Sit mode |
+| Break, Help and Stop always on screen; refusals respected | ✅ | Potty Path screen |
+| Add-only tokens, reward photo, a World that only grows, World book | ✅ | Done screen, "My train" |
+| Caregiver console, coaching scripts, prompt levels without physical AAC prompts | ✅ | Bridge → Potty Path; grown-up hold bar on the tablet |
+| Medical screening, sensory grid, known signals, reward inventory, step photos | ✅ | Bridge → Potty Path → Getting ready |
+| Red-flag pause, doctor summary, regression and constipation rules | ✅ | Bridge → Potty Path |
+| Explainable hints (pee times, drink→pee, time of day, suggestions) | ✅ | What the log shows |
+| Wall schedule, school handoff, calendar reminders | ✅ | Print and reminders |
+| QR handoff, opt-in server sync with end-to-end encryption | ✅ | Two devices |
+| Wetness sensors, predictive ML | 🔭 | Deferred: would move toward regulated medical software |
+
+## Phase 7: Videos, sound games and insights (v0.9)
+| Feature | Status | Where |
+|---|---|---|
+| Caregiver-chosen video board, privacy-enhanced YouTube player, "Talk about it" board | ✅ | Bridge → Videos and games; My Voice → My videos |
+| Four sound games (copy my sound, sound to picture, first sounds, turn-taking), stickers, weekly goals, sensory settings | ✅ | My Voice → Sound games; settings in Videos and games |
+| Interests and history, word growth, words to try, mood links, therapist summary | ✅ | Bridge → Insights |
+| Water danger zones, hand-drawn safe and danger zones | ✅ (v0.8) | Bridge → Safety |
+
+## Phase 9 and later (v0.11–v0.13)
+| Feature | Status | Where |
+|---|---|---|
+| Sound Path increment A (ladder, three games, "Say it with me", judge bar, inventory, SLP sheet) | ✅ behind a switch (off by default) | Bridge → Sound Path; My Voice → Play |
+| Sound Path increment B (family video models, Mouth Mirror) | 🔭 | `docs/SOUND-PATH.md` |
+| Simpler layout: five Bridge hubs, My Voice Talk · Calm · My day · Play, Now/Next line | ✅ default since v0.13 (`?redesign=0` for the older tabs) | `nav-core.js`, `bridge-hubs.js`, `myvoice-redesign.js` |
+| Redesign R2–R5 (Log button, role views, handoff card) | 🔭 | `docs/REDESIGN.md` |
+| Family server on Vercel with Upstash Redis | ✅ | `api/index.js`, `backend/mirror.js` |
+| Team chat | ✅ (needs an account) | Bridge → Team |
+| Sensor webhooks and tracker buttons | ✅ (needs an account) | Bridge → Safety |
+| YouTube channels | ✅ (needs the family server) | Bridge → Videos and games |
+| Live push alerts on hosted server, Web Push, sending reset emails from the hosted server | 🔭 | Hosted alerts arrive by polling every 30 s; mail stays in the outbox until SMTP is set |
+
+## AI / platform (from technical sections)
+| Doc feature | Status |
+|---|---|
+| Wav2Vec 2.0 / HuBERT audio representation, ViT + 3D CNN gestures, contrastive clustering | 🔭 (see TECH-DESIGN) |
+| LuminatingCore supervised fine-tuning, LLM annotation understanding | 🔭 |
+| Gemini predictive assistance / Gemini Audio Switch | 🔭 |
+| Luminall pattern recognition stack, neuromorphic core, LiDAR, IoT context | 🔭 |
+| Local processing, encrypted backup, on-device training, federated learning | 🟡 Local processing, on-device training and opt-in federated learning are built (Phase 3–4). Encrypted cloud backup is not built; its switch is shown disabled as "coming soon" |
+| Emotional state recognition, frustration detection | 🟡 Feeling *estimates* from voice (and optional face) are built, unvalidated and always confirmed by a caregiver (Phase 3–4). Validated recognition and frustration detection are 🔭 |
+
+## Onboarding
+Conversational, three short steps (child's name → who you are → the loop explained). Re-runnable from Privacy. ✅
+
+## Business model
+Free for families; institutional therapy subscriptions; opt-in, consented, de-identified research licensing. See GO-TO-MARKET.md.

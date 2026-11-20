@@ -2,6 +2,16 @@
 // "Install app" button where the browser supports it.
 if ("serviceWorker" in navigator && location.protocol !== "file:") {
   addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  // When an update takes over, the open page may mix old and new files, so
+  // reload once: the Bridge straight away, My Voice only while it is out of
+  // sight, so a child is never interrupted mid-sentence.
+  let had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!had) { had = true; return; } // first install, nothing old to replace
+    const go = () => location.reload();
+    if (document.hidden || /bridge\.html/.test(location.pathname)) go();
+    else addEventListener("visibilitychange", () => document.hidden && go(), { once: false });
+  });
 }
 let deferred = null;
 addEventListener("beforeinstallprompt", (e) => {

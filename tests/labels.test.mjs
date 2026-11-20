@@ -1,0 +1,20 @@
+import * as L from "../labels-core.js";
+let pass = 0, fail = 0; const t = (n, c) => (c ? pass++ : (fail++, console.log("FAIL", n)));
+const lab = { m1: { mom: "help", dad: "help" }, m2: { mom: "need", dad: "need" }, m3: { mom: "help", dad: "need" }, m4: { mom: "social", dad: "unsure" }, m5: { mom: "need" } };
+const a = L.agreement(lab, "mom", "dad");
+t("pairs skip unsure and missing", a.n === 3);
+t("percent", Math.abs(a.agree - 2 / 3) < 1e-9);
+// po=.667; mom: help 2/3 need 1/3; dad: help 1/3 need 2/3; pe = 2/9+2/9 = .444; k = (.667-.444)/.556 = .4
+t("kappa", Math.abs(a.kappa - 0.4) < 0.001, a.kappa);
+t("words", L.kappaWords(0.4) === "fair" && L.kappaWords(0.85) === "almost perfect" && L.kappaWords(null).includes("not enough"));
+t("perfect", L.agreement({ x: { a: "h", b: "h" } }, "a", "b").kappa === 1);
+t("empty", L.agreement({}, "a", "b").kappa === null);
+t("raters", JSON.stringify(L.raters(lab)) === '["dad","mom"]');
+t("todo blind per rater", L.todo(lab, [{ id: "m5" }, { id: "m6" }], "dad").map((m) => m.id).join() === "m5,m6");
+const moments = [{ id: "m1", cues: ["a", "b"], suggested: "help", note: "SECRET", t: 123 }];
+const ex = await L.exportAnon(lab, moments, "salt1");
+t("anon export has no ids or notes", !ex.csv.includes("m1") && !ex.csv.includes("SECRET") && !ex.csv.includes("mom") && ex.csv.startsWith("item,cues,ai,A,B"));
+t("export stats", ex.stats[0].raters === "A-B" && ex.stats[0].n === 3);
+const ex2 = await L.exportAnon(lab, moments, "salt2");
+t("salt unlinks exports", ex.rows[0].item !== ex2.rows[0].item);
+console.log(`${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
