@@ -6,6 +6,15 @@
   --night-text-shadow: 0 1px 2px rgba(8, 12, 17, 0.6), 0 0 28px rgba(8, 12, 17, 0.75);
   --frame: #1b2530;
   color-scheme: dark light;
+  /* Readability (Nov 2026): larger body text on the site only, heavier headings, and
+     solid backings so text never depends on where the animated sky happens to be. */
+  --fs-body: 1.1875rem;
+  --fs-lead: 1.4375rem;
+  --display-wght: 520;
+  --display-soft: 30;
+  --site-paper: rgba(246, 242, 234, 0.92);
+  --night-scrim: rgba(8, 12, 17, 0.74);
+  --eyebrow-day: #8a4400;       /* gold label on paper: 6.5:1 on --site-day */
 }
 
 * { box-sizing: border-box; }
@@ -34,7 +43,7 @@ img, svg, video { display: block; max-width: 100%; }
 main, .top, .foot { position: relative; z-index: 2; }
 
 /* ---------- type ---------- */
-.display { font-family: var(--font-display); font-variation-settings: "SOFT" 100, "opsz" 144; font-weight: 400; letter-spacing: -0.015em; }
+.display { font-family: var(--font-display); font-variation-settings: "SOFT" var(--display-soft), "opsz" 144; font-weight: var(--display-wght); letter-spacing: -0.015em; }
 .eyebrow { margin: 0 0 var(--s4); font-size: var(--fs-ui); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lit); }
 .h2 { margin: 0 0 var(--s5); font-size: var(--fs-d1); line-height: var(--lh-d1); max-width: 18ch; }
 .lead { font-size: var(--fs-lead); line-height: var(--lh-lead); max-width: var(--measure); margin: 0 0 var(--s6); }
@@ -46,7 +55,29 @@ a { color: var(--sky); text-underline-offset: 3px; }
 /* night sections read against the field */
 [data-sky="0"] { color: var(--site-ink-night); text-shadow: var(--night-text-shadow); }
 [data-sky="1"] { color: var(--ink); }
-[data-sky="1"] .eyebrow { color: var(--ember-deep); }
+
+/* The sky behind the page changes when a section crosses the middle of the screen,
+   but text colour belongs to its section. So each section carries its own backing:
+   day sections sit on warm paper (the sky still shows faintly through), and night
+   sections turn solid night whenever the sky has already gone to day. Text keeps
+   its contrast at every scroll position. */
+main > [data-sky="1"], .foot[data-sky="1"] {
+  background: linear-gradient(rgba(246, 242, 234, 0), var(--site-paper) min(var(--sec), 120px), var(--site-paper));
+}
+main > [data-sky="0"] { transition: background-color 0.6s var(--ease-out); }
+body.is-day main > [data-sky="0"] { background-color: var(--site-abyss); }
+/* Night text over the bright core of the sky gets a soft dark scrim behind it. */
+[data-sky="0"] :is(.eyebrow, .hero-title, .lead, .body, .scrub, .manifesto-end, .h2, .pull, .c-panel) { position: relative; isolation: isolate; }
+/* Gold labels and the tap hint sit closest to the glow, so they get a tighter, darker pad. */
+[data-sky="0"] .eyebrow { width: fit-content; }
+[data-sky="0"] p.eyebrow::before { inset: -0.45em -0.8em; background: rgba(8, 12, 17, 0.94); filter: blur(2px); border-radius: 999px; }
+.tap-hint { isolation: isolate; }
+.tap-hint::before { content: ""; position: absolute; inset: -0.6em -1em; z-index: -1; border-radius: 1.2em; background: rgba(8, 12, 17, 0.85); filter: blur(10px); }
+[data-sky="0"] :is(.eyebrow, .hero-title, .lead, .body, .scrub, .manifesto-end, .h2, .pull, .c-panel)::before {
+  content: ""; position: absolute; inset: -0.35em -0.9em; z-index: -1; pointer-events: none;
+  border-radius: 1.4em; background: var(--night-scrim); filter: blur(18px);
+}
+[data-sky="1"] .eyebrow { color: var(--eyebrow-day); }
 
 .wrap { width: min(100% - 2 * var(--gutter), var(--wrap)); margin-inline: auto; }
 section { position: relative; padding-block: var(--sec); }
@@ -94,11 +125,11 @@ body.is-day .top.is-band { background: rgba(246, 242, 234, 0.9); color: var(--in
 /* ---------- 1 hero ---------- */
 .hero { min-height: 100svh; display: grid; align-items: center; padding-top: 120px; cursor: crosshair; }
 .hero-in { position: relative; }
-.hero-title { font-size: var(--fs-hero); line-height: var(--lh-hero); margin: 0 0 var(--s6); max-width: 11ch; font-weight: 350; }
+.hero-title { font-size: var(--fs-hero); line-height: var(--lh-hero); margin: 0 0 var(--s6); max-width: 11ch; font-weight: var(--display-wght); }
 .hero-title .line { display: block; }
 .lit-word { font-style: italic; color: var(--lit); text-shadow: 0 0 40px rgba(242, 179, 61, 0.45); }
 .actions { display: flex; flex-wrap: wrap; gap: var(--s3); margin: 0; }
-.tap-hint { position: absolute; right: var(--gutter); bottom: calc(var(--s7) + 8px); margin: 0; display: flex; align-items: center; gap: var(--s2); font-size: var(--fs-meta); font-weight: 600; letter-spacing: 0.04em; opacity: 0.85; }
+.tap-hint { position: absolute; right: var(--gutter); bottom: calc(var(--s7) + 8px); margin: 0; display: flex; align-items: center; gap: var(--s2); font-size: var(--fs-meta); font-weight: 600; letter-spacing: 0.04em; }
 .tap-hint .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--lit); box-shadow: 0 0 0 0 rgba(242, 179, 61, 0.6); animation: beacon 2.4s infinite; }
 @keyframes beacon { 70% { box-shadow: 0 0 0 14px rgba(242, 179, 61, 0); } 100% { box-shadow: 0 0 0 0 rgba(242, 179, 61, 0); } }
 .scroll-cue { position: absolute; left: 50%; bottom: var(--s6); width: 26px; height: 42px; margin-left: -13px; border-radius: 14px; box-shadow: inset 0 0 0 2px rgba(238, 242, 244, 0.6); }
@@ -126,8 +157,8 @@ body.is-day .top.is-band { background: rgba(246, 242, 234, 0.9); color: var(--in
 /* ---------- 2 manifesto ---------- */
 .manifesto { padding-bottom: var(--s9); }
 .scrub-track { height: 190vh; }
-.manifesto .scrub { position: sticky; top: 22vh; font-size: var(--fs-d2); line-height: 1.3; max-width: 26ch; margin: 0; font-weight: 350; }
-.scrub .w { opacity: 0.18; transition: opacity 0.2s, color 0.2s; }
+.manifesto .scrub { position: sticky; top: 22vh; font-size: var(--fs-d2); line-height: 1.3; max-width: 26ch; margin: 0; font-weight: var(--display-wght); }
+.scrub .w { opacity: 0.34; transition: opacity 0.2s, color 0.2s; }
 .scrub .w.on { opacity: 1; }
 .scrub .w.key { color: var(--lit); font-style: italic; }
 .manifesto-end { font-size: var(--fs-d1); line-height: var(--lh-d1); margin: 0; max-width: 16ch; }
@@ -149,7 +180,7 @@ body.is-day .top.is-band { background: rgba(246, 242, 234, 0.9); color: var(--in
 .face.left { transform: rotateY(-90deg) translateZ(calc(var(--s) / 2)); transform-origin: center; background: linear-gradient(#4a545d, #343d45); }
 .face.right { transform: rotateY(90deg) translateZ(calc(var(--s) / 2)); background: linear-gradient(#4a545d, #343d45); }
 .face.lid { transform-origin: top center; transform: translateZ(calc(var(--s) / -2)) rotateX(var(--lid, 90deg)); background: linear-gradient(#6b7680, #4f5962); }
-.price { position: absolute; top: 18%; font: 800 1.1rem/1 var(--font); color: #c8d0d6; letter-spacing: 0.05em; text-shadow: none; }
+.price { position: absolute; top: 18%; font: 800 1.1rem/1 var(--font); color: #e6ebee; letter-spacing: 0.05em; text-shadow: none; }
 .lock { width: 64px; fill: #2a3138; stroke: #c8d0d6; stroke-width: 4; margin-top: 30px; }
 .lock path { stroke: #c8d0d6; }
 .freed { position: absolute; inset: 0; pointer-events: none; }
@@ -175,7 +206,7 @@ body.is-day .top.is-band { background: rgba(246, 242, 234, 0.9); color: var(--in
 .c-node {
   position: absolute; transform: translate(-50%, -50%); min-height: 44px; padding: 8px 14px 8px 10px; border-radius: var(--r-chip);
   display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(238, 242, 244, 0.22); cursor: pointer;
-  background: rgba(14, 20, 26, 0.72); color: var(--site-ink-night); font: 700 var(--fs-ui)/1.1 var(--font); white-space: nowrap;
+  background: rgba(14, 20, 26, 0.9); color: var(--site-ink-night); font: 700 var(--fs-ui)/1.1 var(--font); white-space: nowrap;
   transition: background var(--t-ui), color var(--t-ui), box-shadow var(--t-ui), border-color var(--t-ui); text-shadow: none;
 }
 .c-node .star { width: 12px; height: 12px; border-radius: 50%; background: var(--sky); box-shadow: 0 0 12px var(--sky); flex: none; }
@@ -184,7 +215,7 @@ body.is-day .top.is-band { background: rgba(246, 242, 234, 0.9); color: var(--in
 .c-node[aria-selected="true"] .star { background: var(--lit-ink); box-shadow: none; }
 .c-panel { width: min(100%, 520px); margin: var(--s4) auto 0; text-align: center; min-height: 7em; }
 .c-panel h3 { margin: 0 0 var(--s2); font-size: var(--fs-d2); line-height: var(--lh-d2); }
-.c-panel p { margin: 0; color: var(--site-ink-night-soft); }
+.c-panel p { margin: 0; color: var(--site-ink-night); }
 @media (max-width: 760px) {
   .constellation { aspect-ratio: auto; display: grid; gap: var(--s3); }
   .c-lines, .c-core { display: none; }
@@ -216,29 +247,48 @@ body.is-day .top.is-band { background: rgba(246, 242, 234, 0.9); color: var(--in
 .screen video.is-fading { opacity: 0; }
 .play-btn { position: absolute; inset: 0; margin: auto; width: 84px; height: 84px; border-radius: 50%; border: 0; background: var(--lit); color: var(--lit-ink); cursor: pointer; display: grid; place-items: center; box-shadow: var(--glow-lit); }
 .play-btn svg { width: 34px; fill: currentColor; }
-.device figcaption { margin-top: var(--s3); font-size: var(--fs-meta); color: var(--ink-soft); text-align: center; }
+.device figcaption { margin-top: var(--s3); font-size: var(--fs-meta); color: var(--ink); text-align: center; }
+.see-stage { display: contents; }
 @media (max-width: 900px) {
   .see-grid { grid-template-columns: 1fr; gap: var(--s3); }
-  .device { position: sticky; top: 72px; order: -1; z-index: 2; }
+  /* The tablet, the chapter pills and the open chapter's text stay on screen as one
+     block, so text can never slide underneath the tablet (it used to at the end). */
+  .see-stage { display: flex; flex-direction: column; gap: var(--s3); position: sticky; top: 72px; z-index: 2; }
+  .device { position: static; order: -1; }
   .device figcaption { display: none; }
-  /* chapters become a row of pills that stays under the tablet */
-  .chapters { position: sticky; top: calc(72px + (100vw - 2 * var(--gutter)) * 0.72 + 12px); display: flex; flex-wrap: wrap; gap: var(--s2); padding-bottom: 8.5em; z-index: 1; }
-  .chapter, .chapter.is-on { border: 0; position: static; }
-  .chapter button { width: auto; min-height: 44px; padding: 0 14px; border-radius: var(--r-chip); background: rgba(255, 255, 255, 0.75); gap: 6px; }
+  /* chapters become a row of pills under the tablet */
+  .chapters { position: static; display: flex; flex-wrap: wrap; gap: var(--s2); padding-bottom: 0; }
+  /* Each chapter's button joins the pill row; the open chapter's text goes on its own line below. */
+  .chapter, .chapter.is-on { display: contents; }
+  .chapter button { width: auto; min-height: 44px; padding: 0 14px; border-radius: var(--r-chip); background: rgba(255, 255, 255, 0.94); gap: 6px; }
   .chapter .ch-t { font-size: var(--fs-ui); }
   .chapter.is-on button { background: var(--lit); }
   .chapter.is-on .ch-t, .chapter.is-on .ch-n { color: var(--lit-ink); }
-  .ch-body { position: absolute; left: 0; right: 0; bottom: 0; padding: 0; }
+  .chapter .ch-n { color: var(--ink); }
+  .ch-body { position: static; flex-basis: 100%; order: 10; padding: var(--s2) 0 0; }
   .chapter:not(.is-on) .ch-body { display: none; }
   .ch-body h3 { font-size: 1.5rem; }
   .ch-body p { margin-bottom: 0; }
 }
 
+/* ---------- 6b what's new ---------- */
+.new-grid { list-style: none; margin: var(--s6) 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s5); }
+.new-card { display: flex; flex-direction: column; border-radius: var(--r-card); overflow: hidden; background: #fff; box-shadow: var(--lift); }
+.new-card img { width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; background: #e9eeec; border-bottom: 1px solid rgba(28, 38, 48, 0.08); }
+.new-text { padding: var(--s4) var(--s5) var(--s5); }
+.new-tag { margin: 0 0 var(--s1); font-size: var(--fs-meta); font-weight: 800; letter-spacing: 0.04em; color: var(--ember-deep); }
+.new-title { margin: 0 0 var(--s2); font-size: 1.6rem; line-height: 1.15; }
+.new-text p:last-child { margin: 0; color: var(--ink-soft); }
+.new-also { list-style: none; margin: var(--s6) 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s5); }
+.new-also li { padding: var(--s4) var(--s5); border-left: 4px solid var(--lit); background: rgba(255, 255, 255, 0.7); border-radius: 0 var(--r-card) var(--r-card) 0; }
+@media (max-width: 1000px) { .new-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .new-also { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .new-grid { grid-template-columns: 1fr; } }
+
 /* ---------- 7 pledge ---------- */
 .pledge { text-align: center; min-height: 100vh; display: grid; align-items: center; }
 .pledge-in { display: grid; justify-items: center; }
 .pledge .lead { margin-inline: auto; }
-.zero { margin: 0; font-family: var(--font-display); font-variation-settings: "SOFT" 100, "opsz" 144; font-weight: 300; line-height: 0.85; font-size: clamp(9rem, 30vw, 22rem); color: var(--lit-ink); display: flex; align-items: flex-start; }
+.zero { margin: 0; font-family: var(--font-display); font-variation-settings: "SOFT" var(--display-soft), "opsz" 144; font-weight: 420; line-height: 0.85; font-size: clamp(9rem, 30vw, 22rem); color: var(--lit-ink); display: flex; align-items: flex-start; }
 .zero .cur { font-size: 0.32em; margin-top: 0.25em; color: var(--ember-deep); }
 .zero .num { background: none; color: var(--lit-ink); text-shadow: 0 0 80px rgba(242, 179, 61, 0.65); }
 .per { font: 800 var(--fs-lead)/1 var(--font); color: var(--ember-deep); letter-spacing: 0.04em; margin: var(--s2) 0 var(--s6); min-height: 1.2em; }
@@ -270,7 +320,7 @@ body.is-day .top.is-band { background: rgba(246, 242, 234, 0.9); color: var(--in
 [data-sky="1"] a.res-link { color: var(--ink); }
 .res-link:hover .res-cover img { transform: scale(1.04); }
 .res-kind { font-size: var(--fs-meta); font-weight: 800; letter-spacing: 0.04em; color: var(--ember-deep); }
-.res-title { font-family: var(--font-display); font-variation-settings: "SOFT" 100, "opsz" 72; font-size: 1.5rem; line-height: 1.2; }
+.res-title { font-family: var(--font-display); font-variation-settings: "SOFT" var(--display-soft), "opsz" 72; font-weight: var(--display-wght); font-size: 1.5rem; line-height: 1.2; }
 .res-desc { color: var(--ink-soft); flex: 1; }
 .res-meta { display: flex; justify-content: space-between; align-items: center; margin-top: var(--s2); padding-top: var(--s3); border-top: 1px solid rgba(28, 38, 48, 0.1); font-size: var(--fs-meta); font-weight: 700; color: var(--ink-soft); }
 .res-go { color: var(--sky-deep); font-weight: 800; }
