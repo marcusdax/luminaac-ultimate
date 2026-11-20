@@ -7,6 +7,9 @@ import { hasVoice, hasPhoto, playVoice, applyPhoto } from "./symbols.js";
 import { initPredictionBar, updatePredictions, hidePredictionBar, getTtsLang, speakWithMms } from "./neural-features.js";
 import { buildOBZ, readOBZ, wordsFromBoard, mergeWords } from "./obf-core.js";
 import { wordForms, searchWords, scriptParts, scriptText, canMix, allPlans, choiceSentence } from "./slp-core.js";
+import { plan as voicePlan, PITCH_STEPS } from "./voice-core.js";
+import { related, rankByVector } from "./semantic-core.js";
+import { loadCfg, saveCfg, PROVIDERS } from "./byok.js";
 import { flyTo, swap, pillMove } from "./motion-gate.js";
 import { mountCalmSky } from "./shader-sky.js";
 
@@ -28,6 +31,7 @@ const store = {
 const DEFAULTS = {
   theme: "auto", cols: "6", pictos: true, labelsTop: false,
   voice: "", rate: 0.9, speakOnTap: true, stillness: false, modelSpeak: true,
+  pitch: 0, expressive: false, semantic: false,
 };
 const settings = { ...DEFAULTS, ...store.get("settings", {}) };
 const data = {
@@ -113,8 +117,9 @@ function say(text, opts = {}) {
     // Natural voice runs on this device in a worker; any failure falls back to the system voice.
     const starts = [...text.matchAll(/\S+/g)].map((m) => m.index); let timer;
     speechSynthesis?.cancel?.();
+    const vp = voicePlan({ text, speed: (Number(settings.rate) || 1) * (opts.rate || 1), semitones: settings.pitch, expressive: settings.expressive });
     import("./ai.js").then((ai) => ai.speakKokoro(text, settings.voice.slice(7), {
-      speed: (Number(settings.rate) || 1) * (opts.rate || 1),
+      speed: vp.synthSpeed, playbackRate: vp.playbackRate,
       onProgress: (p) => window.dispatchEvent(new CustomEvent("voice:progress", { detail: p })),
       onStart: (secs) => { let i = 0; onWord?.(0); window.dispatchEvent(new CustomEvent("voice:progress", { detail: { pct: 100, done: true } })); timer = setInterval(() => { i += 1; if (i < starts.length) onWord?.(starts[i]); else clearInterval(timer); }, (secs * 1000) / Math.max(1, starts.length)); },
     })).then(() => { clearInterval(timer); onEnd?.(); })
@@ -126,7 +131,10 @@ function say(text, opts = {}) {
   const u = new SpeechSynthesisUtterance(text);
   const v = voices.find((x) => x.name === settings.voice);
   if (v) u.voice = v;
-  u.rate = Number(settings.rate) * (opts.rate || 1);
+  // Pitch and expressive tone (voice-core.js). With both off this is just the rate setting.
+  const vp = voicePlan({ text, speed: Number(settings.rate) * (opts.rate || 1), semitones: settings.pitch, expressive: settings.expressive });
+  u.rate = vp.deviceRate;
+  if (vp.devicePitch !== 1) u.pitch = vp.devicePitch;
   let gotBoundary = false;
   let timer;
   u.onboundary = (e) => {
@@ -150,8 +158,8 @@ function say(text, opts = {}) {
   speechSynthesis.speak(u);
 }
 
-function record(text, kind = "message") {
-  data.log.push({ t: Date.now(), text, kind });
+function record(text, kind = "message", extra = {}) {
+  data.log.push({ t: Date.now(), text, kind, ...extra });
   if (data.log.length > 5000) data.log.splice(0, data.log.length - 5000);
   save("log");
   dispatchEvent(new CustomEvent("luminaac:log", { detail: { text, kind } }));
@@ -173,6 +181,7 @@ function renderStrip(fresh = false) {
     box.append(s);
   });
   $("#strip").setAttribute("aria-label", state.words.length ? `Message: ${messageText()}. Tap to speak.` : "Message is empty");
+  paintExpandBtn(); closeExpand();
 }
 const messageText = () => state.words.map((w) => w.say || w.w).join(" ");
 
@@ -332,6 +341,49 @@ function renderGrid() {
   loadPictos(grid);
 }
 
+// ---------- Sentence helper ("Say it fully") ----------
+// Offers fuller sentences for the message on the strip ("want juice" -> "I want juice,
+// please"). Off unless a grown-up turns it on. Each sentence was checked by
+// expand-core.js to keep the child's words and meaning. The panel floats over the
+// board, so nothing on the board moves.
+function paintExpandBtn() {
+  const b = $("#btnExpand");
+  if (b) b.hidden = loadCfg().provider === "off" || !state.words.length;
+}
+async function openExpand() {
+  const box = $("#expandBox"), list = $("#expandList"), note = $("#expandNote");
+  const items = state.words.slice();
+  box.hidden = false; $("#btnExpand").setAttribute("aria-expanded", "true");
+  list.textContent = ""; note.textContent = "Thinking…";
+  const add = (text, own) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "next-chip expand-chip" + (own ? " own" : "");
+    b.textContent = text;
+    b.addEventListener("click", () => {
+      closeExpand();
+      if (state.modeling) { if (settings.modelSpeak) say(text); recordModel(text); return; }
+      if (own) return speakMessage();
+      say(text);
+      // Marked as helped: the report leaves these out of sentence length (MLU).
+      record(text, "message", { helped: true, from: messageText() });
+    });
+    list.append(b);
+  };
+  add(messageText(), true);
+  const { expand } = await import("./byok.js");
+  const r = await expand(items);
+  if (box.hidden || messageText() !== items.map((w) => w.say || w.w).join(" ")) return;
+  r.sentences.forEach((x) => add(x, false));
+  note.textContent = r.note || (r.sentences.length ? `Checked to keep your words. From: ${PROVIDERS[r.source].split(" (")[0].toLowerCase()}.` : "No fuller sentence kept your exact words.");
+  list.querySelector(".expand-chip")?.focus();
+}
+function closeExpand() {
+  const box = $("#expandBox");
+  if (!box || box.hidden) return;
+  box.hidden = true; $("#btnExpand").setAttribute("aria-expanded", "false");
+}
+
 // ---------- Gestalt scripts ----------
 // Stage 1: a whole phrase, said at once. Stage 2 and up, with parts marked by "/":
 // each part goes to the strip as its own piece, so it can be mixed with others.
@@ -397,29 +449,56 @@ function findSources() {
 }
 function renderFind() {
   const q = $("#findInput").value, list = $("#findResults");
-  const hits = searchWords(q, findSources());
+  const sources = findSources(), hits = searchWords(q, sources);
+  // Words that mean the same idea ("thirsty" -> drink, water), from the built-in table.
+  const shown = new Set(hits.map((h) => h.item.w.toLowerCase()));
+  for (const r of related(q)) {
+    const h = searchWords(r.w, sources, 1)[0];
+    if (h && h.rank === 0 && !shown.has(h.item.w.toLowerCase())) { shown.add(h.item.w.toLowerCase()); hits.push({ ...h, why: r.why }); }
+  }
   list.textContent = "";
   $("#findStatus").textContent = !q.trim() ? "" : hits.length ? `${hits.length} found` : "No words found. A grown-up can add it in Caregiver.";
-  hits.forEach(({ item, folder }) => {
-    const li = document.createElement("li");
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "find-hit";
-    b.dataset.c = item.c;
-    b.innerHTML = `<span class="pic" aria-hidden="true"></span><span class="find-w"></span><span class="find-f"></span>`;
-    $(".pic", b).textContent = item.e || "";
-    $(".find-w", b).textContent = item.w;
-    $(".find-f", b).textContent = `in ${folder.label}`;
-    b.addEventListener("click", () => {
-      $("#findDialog").close();
-      if (state.view !== "talk") show("talk");
-      state.folder = folder.id; renderFolders(); renderGrid();
-      const t = $$("#grid .tile").find((x) => x.dataset.w === item.w);
-      if (t) { t.classList.add("found"); setTimeout(() => t.classList.remove("found"), 2600); t.scrollIntoView({ block: "nearest" }); }
-      addWord(item, t || null);
-    });
-    li.append(b); list.append(li);
+  if (settings.semantic && q.trim().length > 2) semanticFind(q, sources, shown);
+  hits.forEach((h) => list.append(findHit(h)));
+}
+// Optional meaning search with the on-device model. Results join the list when ready.
+let vecCache = null;
+async function semanticFind(q, sources, shown) {
+  try {
+    const ai = await import("./ai.js");
+    if (!(await ai.cached("embed")) && !semanticFind.asked) { semanticFind.asked = true; $("#findStatus").textContent += " · Getting meaning search ready (23 MB, once)…"; }
+    const items = sources.flatMap((s) => s.words.map((item) => ({ item, folder: { id: s.id, label: s.label } })));
+    const key = items.map((x) => x.item.w).join("|");
+    if (vecCache?.key !== key) vecCache = { key, vectors: (await ai.embed(items.map((x) => x.item.w))).vectors };
+    const [qv] = (await ai.embed([q])).vectors;
+    if ($("#findInput").value !== q) return;
+    for (const { item: x } of rankByVector(qv, items, vecCache.vectors, { min: 0.45, limit: 5 })) {
+      if (shown.has(x.item.w.toLowerCase())) continue;
+      shown.add(x.item.w.toLowerCase());
+      $("#findResults").append(findHit({ ...x, why: "meaning" }));
+    }
+  } catch { /* offline or not downloaded: the built-in results stay */ }
+}
+function findHit({ item, folder, why }) {
+  const li = document.createElement("li");
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "find-hit";
+  b.dataset.c = item.c;
+  b.innerHTML = `<span class="pic" aria-hidden="true"></span><span class="find-w"></span><span class="find-f"></span>`;
+  $(".pic", b).textContent = item.e || "";
+  $(".find-w", b).textContent = item.w;
+  $(".find-f", b).textContent = why ? `like "${why === "meaning" ? $("#findInput").value : why}" · in ${folder.label}` : `in ${folder.label}`;
+  b.addEventListener("click", () => {
+    $("#findDialog").close();
+    if (state.view !== "talk") show("talk");
+    state.folder = folder.id; renderFolders(); renderGrid();
+    const t = $$("#grid .tile").find((x) => x.dataset.w === item.w);
+    if (t) { t.classList.add("found"); setTimeout(() => t.classList.remove("found"), 2600); t.scrollIntoView({ block: "nearest" }); }
+    addWord(item, t || null);
   });
+  li.append(b);
+  return li;
 }
 function bindFind() {
   const dlg = $("#findDialog");
@@ -790,11 +869,31 @@ function bindCareForms() {
   form.speakOnTap.checked = settings.speakOnTap;
   form.stillness.checked = settings.stillness;
   form.modelSpeak.checked = settings.modelSpeak;
-  form.addEventListener("change", () => {
+  PITCH_STEPS.forEach((n) => form.pitch.add(new Option(n ? `+${n} (higher, younger)` : "Natural", String(n))));
+  form.pitch.value = String(settings.pitch || 0);
+  form.expressive.checked = settings.expressive;
+  form.semantic.checked = settings.semantic;
+  // Sentence helper: kept in its own store (byok.js), never in the data download.
+  const helper = loadCfg();
+  Object.entries(PROVIDERS).forEach(([v, label]) => form.helper.add(new Option(label, v)));
+  const paintHelper = () => {
+    const c = loadCfg();
+    form.helper.value = c.provider; form.helperUrl.value = c.url; form.helperModel.value = c.model; form.helperKey.value = c.key; form.helperOllama.value = c.ollamaModel; form.helperConsent.checked = c.consent;
+    $("#helperKeyOpts").hidden = c.provider !== "key"; $("#helperOllamaOpts").hidden = c.provider !== "ollama";
+  };
+  paintHelper();
+  form.addEventListener("change", (e) => {
+    if (!e.target.name?.startsWith("helper")) return;
+    saveCfg({ ...helper, provider: form.helper.value, url: form.helperUrl.value.trim(), model: form.helperModel.value.trim(), key: form.helperKey.value.trim(), ollamaModel: form.helperOllama.value.trim(), consent: form.helperConsent.checked });
+    paintHelper(); paintExpandBtn();
+  });
+  form.addEventListener("change", (e) => {
+    if (e.target.name?.startsWith("helper")) return;
     Object.assign(settings, {
       theme: form.theme.value, cols: form.cols.value, pictos: form.pictos.checked,
       labelsTop: form.labelsTop.checked, voice: form.voice.value, rate: Number(form.rate.value),
       speakOnTap: form.speakOnTap.checked, stillness: form.stillness.checked, modelSpeak: form.modelSpeak.checked,
+      pitch: Number(form.pitch.value) || 0, expressive: form.expressive.checked, semantic: form.semantic.checked,
     });
     store.set("settings", settings);
     applySettings();
@@ -907,6 +1006,10 @@ bindCareForms();
 bindOBF();
 bindCareLock();
 bindFind();
+$("#btnExpand").addEventListener("click", () => ($("#expandBox").hidden ? openExpand() : closeExpand()));
+$("#expandClose").addEventListener("click", closeExpand);
+addEventListener("keydown", (e) => { if (e.key === "Escape") closeExpand(); });
+paintExpandBtn();
 $("#modelToggle").addEventListener("click", () => { const on = !state.modeling; setModeling(on); if (on) { show("talk"); toast("Modeling is on. Your presses won't count as the child's words."); } });
 $("#modelStop").addEventListener("click", () => setModeling(false));
 onBridgeChange(() => { renderFolders(); if (state.folder === "scripts") renderGrid(); if (state.view === "plans") renderPlans(); });

@@ -42,6 +42,9 @@
         <span class="strip-empty" id="stripEmpty">Tap words to build a message</span>
       </button>
       <div class="strip-actions">
+        <button class="icon-btn" id="btnExpand" type="button" aria-label="Say it in a full sentence" aria-expanded="false" aria-controls="expandBox" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" fill="currentColor"/><path d="M18.5 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" fill="currentColor"/></svg>
+        </button>
         <button class="icon-btn" id="btnFind" type="button" aria-label="Find a word">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
         </button>
@@ -57,6 +60,12 @@
         </button>
       </div>
     </header>
+    <!-- Sentence helper: floats over the board so nothing below moves. -->
+    <div class="expand-box" id="expandBox" role="group" aria-labelledby="expandTitle" hidden>
+      <div class="expand-head"><span class="next-label" id="expandTitle">Say it like this?</span><button class="ghost-btn" type="button" id="expandClose">Close</button></div>
+      <div class="expand-list" id="expandList"></div>
+      <p class="soft" id="expandNote" role="status" aria-live="polite"></p>
+    </div>
 
     <nav class="nav" aria-label="Sections">
       <button class="nav-btn" data-view="talk" aria-current="page" type="button">
@@ -248,7 +257,26 @@
                 <label>Voice <select name="voice" id="voiceSelect"><option value="">Device default</option></select></label>
                 <label>Speed <input type="range" name="rate" min="0.6" max="1.4" step="0.1" /></label>
                 <label class="check"><input type="checkbox" name="speakOnTap" /> Say each word when tapped</label>
+                <label>Pitch <select name="pitch"></select></label>
+                <label class="check"><input type="checkbox" name="expressive" /> Expressive voice (happy words sound brighter, sad words softer)</label>
                 <button class="ghost-btn" type="button" id="testVoice">Test voice</button>
+              </fieldset>
+              <fieldset>
+                <legend>Search and sentences</legend>
+                <label class="check"><input type="checkbox" name="semantic" /> Meaning search: "thirsty" also finds drink and water using a small model on this device (downloads about 23 MB once). Without it, a built-in list of everyday ideas is used.</label>
+                <label>Sentence helper (✨ next to the message) <select name="helper"></select></label>
+                <p class="soft">Every sentence it offers is checked to keep the child's words, in order, and their meaning. The child's own words stay first.</p>
+                <div id="helperOllamaOpts" hidden>
+                  <label>Ollama model <input name="helperOllama" maxlength="60" placeholder="llama3.2:1b" /></label>
+                  <p class="soft">Ollama must be running on this computer and allow this site (OLLAMA_ORIGINS). Nothing leaves the computer.</p>
+                </div>
+                <div id="helperKeyOpts" hidden>
+                  <p class="warn-note"><b>This sends the message words to that service</b> each time ✨ is pressed. Nothing else is sent: no name, history or place. The key stays on this device and is never in "Download my data".</p>
+                  <label>Service address (OpenAI-compatible) <input name="helperUrl" type="url" maxlength="200" placeholder="https://api.openai.com/v1" /></label>
+                  <label>Model <input name="helperModel" maxlength="60" placeholder="gpt-4o-mini" /></label>
+                  <label>API key <input name="helperKey" type="password" maxlength="200" autocomplete="off" /></label>
+                  <label class="check"><input type="checkbox" name="helperConsent" /> I understand the message words go to this service</label>
+                </div>
               </fieldset>
               <fieldset>
                 <legend>Modeling</legend>

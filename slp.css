@@ -65,3 +65,14 @@ body.modeling .strip-wrap { outline: 4px dashed var(--lumen); outline-offset: -4
 .body-say { min-height: var(--target-min); }
 @media (max-width: 640px) { .body-cols { grid-template-columns: 1fr; } .body-figure { max-width: 220px; margin: 0 auto; } }
 @media (prefers-reduced-motion: reduce) { .tile.found { animation: none; } }
+
+/* M3: sentence helper panel. Fixed under the strip, over the board, so the board never moves. */
+.expand-box {
+  position: fixed; z-index: 35; left: 50%; top: 96px; transform: translateX(-50%); width: min(720px, calc(100vw - 32px));
+  padding: var(--s3) var(--s4); background: var(--paper-raised); color: var(--ink); border: 3px solid var(--lumen); border-radius: var(--r-tile); box-shadow: var(--lift);
+}
+.expand-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s2); }
+.expand-list { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.expand-chip { --wc-tint: var(--paper); --wc-color: var(--lumen); min-height: var(--target-min); font-size: var(--fs-md); }
+.expand-chip.own { --wc-color: var(--line); font-weight: 800; }
+.warn-note { padding: var(--s2) var(--s3); border-left: 5px solid var(--alert); background: var(--paper); border-radius: 8px; }

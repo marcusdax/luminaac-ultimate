@@ -5,6 +5,8 @@
 //   task "asr"          Whisper tiny speech recognition (ONNX, q8) — full utterances
 //   task "predict"      DistilGPT2 word prediction (ONNX, q8) — next-word suggestions
 //   task "tts-mms-{L}"  MMS text-to-speech for language L (fp32) — 1,100+ languages
+//   task "embed"        all-MiniLM-L6-v2 sentence embeddings (ONNX, q8, about 23 MB) — meaning search
+//   task "expand"       SmolLM2-135M-Instruct (ONNX, 4-bit) — opt-in sentence helper
 // Libraries load from jsDelivr (pinned versions) and models from the Hugging Face hub,
 // the first time only: Transformers.js keeps model files in Cache Storage
 // ("transformers-cache") and the service worker keeps the library files, so both work
@@ -15,6 +17,8 @@ export const SER_MODEL = "onnx-community/wav2vec2-base-Speech_Emotion_Recognitio
 export const TTS_MODEL = "onnx-community/Kokoro-82M-v1.0-ONNX";
 export const ASR_MODEL = "onnx-community/whisper-tiny";
 export const PREDICT_MODEL = "Xenova/distilgpt2";
+export const EMBED_MODEL = "Xenova/all-MiniLM-L6-v2";
+export const EXPAND_MODEL = "HuggingFaceTB/SmolLM2-135M-Instruct";
 let task = null, forceWasm = false;
 let ready = null, backend = null;
 
@@ -56,6 +60,20 @@ async function loadPredict(id) {
   env.allowLocalModels = false; env.useBrowserCache = true;
   const p = await pipeline("text-generation", PREDICT_MODEL, { dtype: "q8", device: "wasm", progress_callback: progress(id) }); backend = "wasm"; return p;
 }
+async function loadEmbed(id) {
+  const { pipeline, env } = await import(TF);
+  env.allowLocalModels = false; env.useBrowserCache = true;
+  const p = await pipeline("feature-extraction", EMBED_MODEL, { dtype: "q8", device: "wasm", progress_callback: progress(id) }); backend = "wasm"; return p;
+}
+async function loadExpand(id) {
+  const { pipeline, env } = await import(TF);
+  env.allowLocalModels = false; env.useBrowserCache = true;
+  if (await hasWebGPU()) {
+    try { const p = await pipeline("text-generation", EXPAND_MODEL, { dtype: "q4f16", device: "webgpu", progress_callback: progress(id) }); backend = "webgpu"; return p; }
+    catch (e) { self.postMessage({ id, type: "note", text: "WebGPU failed; using WebAssembly" }); }
+  }
+  const p = await pipeline("text-generation", EXPAND_MODEL, { dtype: "q4", device: "wasm", progress_callback: progress(id) }); backend = "wasm"; return p;
+}
 async function loadMmsTts(id, lang) {
   const { pipeline, env } = await import(TF);
   env.allowLocalModels = false; env.useBrowserCache = true;
@@ -72,6 +90,8 @@ self.onmessage = async ({ data: m }) => {
       : task === "tts" ? loadTts(m.id)
       : task === "asr" ? loadAsr(m.id)
       : task === "predict" ? loadPredict(m.id)
+      : task === "embed" ? loadEmbed(m.id)
+      : task === "expand" ? loadExpand(m.id)
       : mmslang ? loadMmsTts(m.id, mmslang)
       : Promise.reject(new Error("unknown task"));
     const model = await ready.catch((e) => { ready = null; throw e; });
@@ -107,6 +127,18 @@ self.onmessage = async ({ data: m }) => {
         })
         .filter((w) => w && w.length > 0 && !seen.has(w.toLowerCase()) && seen.add(w.toLowerCase()));
       return reply({ type: "result", result: { predictions, backend, ms: Math.round(performance.now() - t0) } });
+    }
+    if (task === "embed" && m.type === "embed") {
+      const t0 = performance.now();
+      const out = await model(m.texts, { pooling: "mean", normalize: true });
+      return reply({ type: "result", result: { vectors: out.tolist(), backend, ms: Math.round(performance.now() - t0) } });
+    }
+    if (task === "expand" && m.type === "expand") {
+      const t0 = performance.now();
+      const out = await model([{ role: "user", content: String(m.prompt).slice(0, 1200) }], { max_new_tokens: 60, do_sample: false });
+      const msgs = out?.[0]?.generated_text;
+      const text = Array.isArray(msgs) ? msgs.at(-1)?.content || "" : String(msgs || "");
+      return reply({ type: "result", result: { text, backend, ms: Math.round(performance.now() - t0) } });
     }
     if (mmslang && m.type === "speak") {
       const t0 = performance.now();
