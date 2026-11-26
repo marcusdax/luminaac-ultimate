@@ -12,6 +12,7 @@ import { related, rankByVector } from "./semantic-core.js";
 import { loadCfg, saveCfg, PROVIDERS } from "./byok.js";
 import { flyTo, swap, pillMove } from "./motion-gate.js";
 import { mountCalmSky } from "./shader-sky.js";
+import { CALM_PRESETS, createCalmAudioController } from "./calm-audio.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -31,7 +32,7 @@ const store = {
 const DEFAULTS = {
   theme: "auto", cols: "6", pictos: true, labelsTop: false,
   voice: "", rate: 0.9, speakOnTap: true, stillness: false, modelSpeak: true,
-  pitch: 0, expressive: false, semantic: false,
+  pitch: 0, expressive: false, semantic: false, calmVol: 55,
 };
 const settings = { ...DEFAULTS, ...store.get("settings", {}) };
 const data = {
@@ -89,12 +90,14 @@ function loadVoices() {
 // True while the talker is saying something in any voice (device, natural, recorded),
 // so scanning previews never talk over the child. Clears itself if a voice never ends.
 let busy = false, busyTimer = 0;
+const calmAudio = createCalmAudioController();
 function say(text, opts = {}) {
   if (!opts.tracked) {
     busy = true; clearTimeout(busyTimer);
-    busyTimer = setTimeout(() => (busy = false), Math.max(5000, String(text).length * 200));
+    calmAudio.duck();
+    busyTimer = setTimeout(() => { busy = false; calmAudio.unduck(); }, Math.max(5000, String(text).length * 200));
     const end = opts.onEnd;
-    opts = { ...opts, tracked: true, onEnd: () => { busy = false; clearTimeout(busyTimer); end?.(); } };
+    opts = { ...opts, tracked: true, onEnd: () => { busy = false; clearTimeout(busyTimer); calmAudio.unduck(); end?.(); } };
   }
   const { onWord, onEnd } = opts;
   // A caregiver's own recording of this exact word or phrase wins over any synthetic voice.
@@ -642,6 +645,50 @@ function renderCalm() {
     b.addEventListener("click", () => { say(n.w); record(n.w, "calm"); });
     needs.append(b);
   });
+
+  const soundBox = $("#calmSoundPresets");
+  if (soundBox) {
+    soundBox.textContent = "";
+    const syncPressed = () => {
+      const active = calmAudio.getState().activeId;
+      $$(".calm-sound-btn", soundBox).forEach((btn) => btn.setAttribute("aria-pressed", String(btn.dataset.preset === active)));
+    };
+    CALM_PRESETS.forEach((p) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "calm-sound-btn";
+      b.dataset.preset = p.id;
+      b.setAttribute("aria-pressed", "false");
+      b.title = p.description;
+      b.innerHTML = `<span class="calm-sound-icon" aria-hidden="true">${p.icon}</span>`;
+      b.append(p.label);
+      b.addEventListener("click", () => { calmAudio.start(p.id); syncPressed(); });
+      soundBox.append(b);
+    });
+    const vol = $("#calmSoundVol");
+    if (vol) {
+      vol.value = String(settings.calmVol ?? 55);
+      calmAudio.setVolume(Number(vol.value) / 100);
+      if (!vol.dataset.bound) {
+        vol.dataset.bound = "1";
+        vol.addEventListener("input", () => {
+          settings.calmVol = Number(vol.value);
+          store.set("settings", settings);
+          calmAudio.setVolume(settings.calmVol / 100);
+        });
+      }
+    }
+    const mute = $("#calmSoundMute");
+    if (mute && !mute.dataset.bound) {
+      mute.dataset.bound = "1";
+      mute.addEventListener("click", () => stopCalmAudio());
+    }
+  }
+}
+
+function stopCalmAudio() {
+  calmAudio.stop();
+  $$(".calm-sound-btn").forEach((b) => b.setAttribute("aria-pressed", "false"));
 }
 
 function pickScale(s, btn) {
@@ -652,7 +699,7 @@ function pickScale(s, btn) {
   $("#calmRoom").hidden = !high;
   $("#partnerCard").hidden = !high;
   document.body.classList.toggle("low-arousal", s.n >= 4);
-  if (high) startBreathing(); else stopBreathing();
+  if (high) startBreathing(); else { stopBreathing(); stopCalmAudio(); }
 }
 
 function startBreathing() {
@@ -874,7 +921,6 @@ function bindCareForms() {
   form.expressive.checked = settings.expressive;
   form.semantic.checked = settings.semantic;
   // Sentence helper: kept in its own store (byok.js), never in the data download.
-  const helper = loadCfg();
   Object.entries(PROVIDERS).forEach(([v, label]) => form.helper.add(new Option(label, v)));
   const paintHelper = () => {
     const c = loadCfg();
@@ -882,11 +928,14 @@ function bindCareForms() {
     $("#helperKeyOpts").hidden = c.provider !== "key"; $("#helperOllamaOpts").hidden = c.provider !== "ollama";
   };
   paintHelper();
-  form.addEventListener("change", (e) => {
+  const persistHelper = (e) => {
     if (!e.target.name?.startsWith("helper")) return;
-    saveCfg({ ...helper, provider: form.helper.value, url: form.helperUrl.value.trim(), model: form.helperModel.value.trim(), key: form.helperKey.value.trim(), ollamaModel: form.helperOllama.value.trim(), consent: form.helperConsent.checked });
-    paintHelper(); paintExpandBtn();
-  });
+    saveCfg({ ...loadCfg(), provider: form.helper.value, url: form.helperUrl.value.trim(), model: form.helperModel.value.trim(), key: form.helperKey.value.trim(), ollamaModel: form.helperOllama.value.trim(), consent: form.helperConsent.checked });
+    if (e.type === "change") paintHelper();
+    paintExpandBtn();
+  };
+  form.addEventListener("change", persistHelper);
+  form.addEventListener("input", persistHelper);
   form.addEventListener("change", (e) => {
     if (e.target.name?.startsWith("helper")) return;
     Object.assign(settings, {
@@ -964,7 +1013,11 @@ function show(view) {
   });
   pillMove(was, $(".nav-btn[aria-current]"));
   calmSky.active(view === "calm");
-  if (view !== "calm") { stopBreathing(); document.body.classList.remove("low-arousal"); }
+  if (view !== "calm") {
+    stopBreathing();
+    stopCalmAudio();
+    document.body.classList.remove("low-arousal");
+  }
   if (view === "care") renderCare();
   if (view === "plans") renderPlans();
   $("#main").focus({ preventScroll: true });
@@ -979,6 +1032,7 @@ function applySettings() {
   else root.dataset.theme = settings.theme === "day" ? "day" : settings.theme;
   document.body.classList.toggle("still", settings.stillness);
   document.body.classList.toggle("labels-top", settings.labelsTop);
+  dispatchEvent(new CustomEvent("motion:refresh"));
 }
 
 let toastTimer;

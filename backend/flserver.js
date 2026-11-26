@@ -16,18 +16,21 @@ import { join as pjoin } from "node:path";
 import { randomUUID } from "node:crypto";
 import { DIR } from "./store.js";
 import { DIM, FEATURES, zeros, decodeSum, addMod, CLIP, NOISE, combine, unmask, seedHex, rhoPerRound, epsilon, DELTA } from "../fl-core.js";
+import { applyServerMomentum } from "../masternex-prince-fl.js";
 
 const F = pjoin(DIR, "_fl.json");
 const SIZE = () => Math.max(2, Number(process.env.FL_ROUND_SIZE || 3));
 export const QUORUM = () => Math.min(SIZE(), Math.max(2, Number(process.env.FL_QUORUM || Math.ceil((2 * SIZE()) / 3))));
 const PHASE_MS = () => Number(process.env.FL_PHASE_MS || 120000);
 export const CAP = () => Number(process.env.FL_EPSILON_CAP || 50);
+const MOMENTUM = () => Math.max(0, Math.min(0.95, Number(process.env.FL_MOMENTUM || 0)));
 let S;
 function load() {
   if (S) return S;
   try { S = JSON.parse(readFileSync(F, "utf8")); } catch { S = null; }
-  if (!S) S = { version: 0, weights: zeros(), history: [], round: null };
+  if (!S) S = { version: 0, weights: zeros(), velocity: zeros(), history: [], round: null };
   S.budget ||= {};
+  S.velocity ||= zeros();
   return S;
 }
 export function forget() { S = undefined; } // hosted mode: re-read after another instance changed the file
@@ -79,7 +82,7 @@ export function budget(principal) {
   const b = load().budget[principal] || { rho: 0, rounds: 0 };
   return { rounds: b.rounds, rho: +b.rho.toFixed(4), epsilon: +epsilon(b.rho).toFixed(3), delta: DELTA, cap: CAP(), nextRoundEpsilon: +epsilon(b.rho + rhoPerRound(QUORUM())).toFixed(3) };
 }
-export function model() { const s = load(); return { version: s.version, weights: s.weights, dim: DIM, features: FEATURES, clip: CLIP, noise: NOISE, quorum: QUORUM(), roundSize: SIZE(), epsilonCap: CAP(), history: s.history.slice(-20) }; }
+export function model() { const s = load(); return { version: s.version, weights: s.weights, dim: DIM, features: FEATURES, clip: CLIP, noise: NOISE, quorum: QUORUM(), roundSize: SIZE(), epsilonCap: CAP(), prince: { version: "v2", compression: "turboquant-4bit", aggregator: "geomed", momentum: MOMENTUM() }, history: s.history.slice(-20) }; }
 export const current = () => pub(round());
 export function join(publicKey, principal) {
   if (typeof publicKey !== "string" || publicKey.length < 40 || publicKey.length > 200) return { error: "publicKey (base64url P-256 raw) is required" };
@@ -149,12 +152,19 @@ export async function reveal(id, client, out, principal) {
   catch (e) { abandon(r, "unmasking failed: " + e.message); return { error: "Unmasking failed; the round was abandoned", status: 500 }; }
   const avg = decodeSum(sum, r.survivors.length);
   if (avg.some((x) => !Number.isFinite(x) || Math.abs(x) > 10)) { abandon(r, "unmasked sum out of range (bad shares?)"); return { error: "Unmasking produced an invalid sum; the round was abandoned", status: 500 }; }
-  s.weights = s.weights.map((w, i) => +(w + avg[i]).toFixed(6));
+  const beta = MOMENTUM();
+  let step = avg;
+  if (beta > 0) {
+    const mom = applyServerMomentum(s.velocity, avg, beta);
+    s.velocity = mom.velocity;
+    step = mom.step;
+  }
+  s.weights = s.weights.map((w, i) => +(w + step[i]).toFixed(6));
   s.version += 1;
   const rho = rhoPerRound(r.survivors.length);
   for (const c of r.survivors) { const p = r.who[c]; const b = (s.budget[p] ||= { rho: 0, rounds: 0 }); b.rho += rho; b.rounds += 1; }
-  s.history.push({ round: r.id, version: s.version, clients: r.survivors.length, dropped: r.dropped.length, t: Date.now(), norm: +Math.hypot(...avg).toFixed(4), epsilonPerRound: +epsilon(rho).toFixed(3) });
+  s.history.push({ round: r.id, version: s.version, clients: r.survivors.length, dropped: r.dropped.length, t: Date.now(), norm: +Math.hypot(...step).toFixed(4), epsilonPerRound: +epsilon(rho).toFixed(3) });
   s.history = s.history.slice(-100); s.round = null; save();
   return { done: true, version: s.version, dropped: r.dropped.length };
 }
-export function reset() { S = { version: 0, weights: zeros(), history: [], round: null, budget: {} }; save(); }
+export function reset() { S = { version: 0, weights: zeros(), velocity: zeros(), history: [], round: null, budget: {} }; save(); }

@@ -23,6 +23,7 @@ import * as yt from "./youtube.js";
 import * as wp from "./webpush.js";
 import * as summary from "./summary.js";
 import { hookEvent, exitRule, calmCheck, foundView } from "../safety-core.js";
+import { verifyEdgeBundle } from "../edge-bundle.js";
 
 const PORT = Number(process.env.PORT || 3001);
 const ORIGINS = (process.env.ALLOWED_ORIGINS || "*").split(",").map((s) => s.trim());
@@ -523,6 +524,24 @@ async function route(req, res, url) {
     if ((m = /^\/api\/fl\/round\/([\w-]+)\/update$/.exec(p)) && M === "POST") { const b = await body(req); return R(fl.submit(m[1], b.client, b.masked, P)); }
     if ((m = /^\/api\/fl\/round\/([\w-]+)\/unmask$/.exec(p)) && M === "GET") return R(fl.unmaskRequest(m[1]));
     if ((m = /^\/api\/fl\/round\/([\w-]+)\/reveal$/.exec(p)) && M === "POST") { const b = await body(req); return R(await fl.reveal(m[1], b.client, b, P)); }
+  }
+
+  // ---- Offline MASTERNEX PWA edge bundle (C2SP + WebCrypto verified) ----
+  if (p === "/api/edge-bundle") {
+    if (M === "GET") return ok(res, store.read(key).edgeBundle || null);
+    if (M === "POST") {
+      if (w.role !== "parent") return deny();
+      const b = await body(req);
+      const check = await verifyEdgeBundle(b);
+      if (!check.ok) return fail(res, 400, "Edge bundle verification failed", check.reasons);
+      store.update(key, (d) => { d.edgeBundle = b; audit(d, `Verified offline edge bundle installed (${check.modelPreset}, ${check.quantization})`); });
+      return ok(res, { verified: check, bundle: b }, "Edge bundle verified and saved");
+    }
+    if (M === "DELETE") {
+      if (w.role !== "parent") return deny();
+      store.update(key, (d) => { delete d.edgeBundle; audit(d, "Offline edge bundle removed"); });
+      return ok(res, { removed: true }, "Removed");
+    }
   }
 
   // ---- Weekly summary ----

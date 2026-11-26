@@ -80,9 +80,9 @@
     ["Free, forever", "The full app for every family. No trial, no tier, no ads.", "#e0517f"],
     ["Learns their voice", "It notices the sounds and moments they already use, then asks you what they mean. You are their best translator.", "#ee8b2c"],
     ["Words stay put", "Core words never move, so hands can learn where they live.", "#e8c13a"],
-    ["Private by default", "Words and recordings stay on your own devices unless you choose to sync. Camera, microphone and sensors are optional, and only switch on when you ask.", "#3fb98a"],
-    ["Works offline", "No signal at the doctor's? It still speaks.", "#2fb3b3"],
-    ["Calm by design", "No ads, no clutter, no flashing. One lit word at a time.", "#3d8fe0"],
+    ["Private by default", "Words and recordings stay on your own devices unless you choose end-to-end encrypted sync. Optional shared learning uses PRINCE v2 (4-bit TurboQuant + Weiszfeld Geometric Median + strict differential privacy), and offline model bundles verify right in the browser with WebCrypto and C2SP transparency logs.", "#3fb98a"],
+    ["Works offline", "No signal at the doctor's? It still speaks, runs its calming soundscapes, and verifies its own offline bundles without a single cloud call.", "#2fb3b3"],
+    ["Calm by design", "No ads, no clutter, no flashing. One lit word at a time, plus gentle offline ocean and rain soundscapes that automatically duck the moment your child speaks.", "#3d8fe0"],
     ["Plays well with others", "Bring boards from other AAC apps, or take yours with you.", "#6a7fe0"],
     ["Open source", "MIT licensed. No one can lock it away, not even us.", "#8b6fe0"],
   ];
