@@ -1,0 +1,132 @@
+/* Procedural calm soundscapes in My Voice (#view-calm) and edge-bundle verification card in The Bridge.
+   Uses only tokens.css variables for full Day, Night, and High Contrast parity. */
+
+.calm-sound {
+  margin-top: var(--s5);
+  padding: var(--s4);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sheet);
+  box-shadow: var(--lift);
+}
+
+.calm-sound-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s3);
+}
+
+.calm-sound-head .h2 {
+  margin: 0;
+}
+
+.calm-sound-presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: var(--s3);
+}
+
+.calm-sound-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s1);
+  min-height: var(--target-min);
+  padding: var(--s3) var(--s4);
+  font-family: var(--font);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--paper-raised);
+  border: 2px solid var(--line);
+  border-radius: var(--r-tile);
+  cursor: pointer;
+  transition: background var(--t-ui) var(--ease), border-color var(--t-ui) var(--ease), transform var(--t-press) var(--ease);
+}
+
+.calm-sound-btn:hover {
+  border-color: var(--dusk);
+}
+
+.calm-sound-btn:active {
+  transform: scale(0.98);
+}
+
+.calm-sound-btn:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.calm-sound-btn[aria-pressed="true"] {
+  background: var(--dusk);
+  color: var(--paper-raised);
+  border-color: var(--lumen);
+}
+
+.calm-sound-icon {
+  font-size: var(--fs-lg);
+  line-height: 1;
+}
+
+.calm-sound-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s4);
+  margin-top: var(--s4);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--line);
+}
+
+.calm-sound-vol {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  flex: 1 1 200px;
+  font-size: var(--fs-xs);
+  color: var(--ink-soft);
+}
+
+.calm-sound-vol input[type="range"] {
+  flex: 1;
+  min-height: 44px;
+  accent-color: var(--dusk);
+}
+
+/* Bridge offline edge-bundle verification summary */
+.edge-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--s3);
+  margin: var(--s3) 0;
+  padding: var(--s3);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-tile);
+}
+
+.edge-meta dt {
+  font-size: var(--fs-xs);
+  color: var(--ink-soft);
+}
+
+.edge-meta dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.edge-ok {
+  color: var(--ok-ink);
+  font-weight: 600;
+}
+
+.edge-err {
+  color: var(--alert);
+  font-weight: 600;
+}

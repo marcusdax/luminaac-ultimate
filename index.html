@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="phase7.css" />
   <link rel="stylesheet" href="potty.css" />
   <link rel="stylesheet" href="sound.css" />
+  <link rel="stylesheet" href="calm-audio.css" />
   <link rel="stylesheet" href="play.css" />
   <link rel="stylesheet" href="redesign.css" />
   <link rel="stylesheet" href="motion.css" />
@@ -125,6 +126,19 @@
             <h2 class="h2">I need</h2>
             <div class="needs" id="needs"></div>
           </div>
+          <section class="calm-sound" id="calmSound" aria-labelledby="calmSoundTitle">
+            <div class="calm-sound-head">
+              <h2 class="h2" id="calmSoundTitle">Calm sounds</h2>
+              <button class="ghost-btn" type="button" id="calmSoundMute">Mute</button>
+            </div>
+            <div class="calm-sound-presets" id="calmSoundPresets" role="group" aria-label="Calming soundscapes"></div>
+            <div class="calm-sound-controls">
+              <label class="calm-sound-vol" for="calmSoundVol">
+                <span>Volume</span>
+                <input type="range" id="calmSoundVol" min="0" max="100" value="55" aria-label="Calm sound volume" />
+              </label>
+            </div>
+          </section>
         </div>
 
         <!-- Body map: where it hurts and how it feels (myvoice-body.js) -->

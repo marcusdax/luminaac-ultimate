@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="phase7.css" />
   <link rel="stylesheet" href="potty.css" />
   <link rel="stylesheet" href="sound.css" />
+  <link rel="stylesheet" href="calm-audio.css" />
   <link rel="stylesheet" href="redesign.css" />
   <link rel="stylesheet" href="motion.css" />
   <script src="dialog-guard.js"></script>
@@ -663,6 +664,17 @@
             <div class="row gap"><button class="btn quiet" type="button" id="btnFlTrain">Train on this device</button><button class="btn quiet" type="button" id="btnFlSend">Send an update</button></div>
             <p class="soft" id="flStatus" role="status"></p>
           </section>
+          <section class="card" aria-labelledby="h-edge">
+            <h2 id="h-edge">Offline model &amp; ledger verification</h2>
+            <p class="soft">Verify a MASTERNEX.os offline edge bundle (TurboQuant 4-bit manifest + C2SP transparency checkpoint) right in this browser using WebCrypto. Nothing is uploaded to the cloud.</p>
+            <div class="row gap">
+              <label class="btn quiet file">Import edge bundle JSON <input type="file" id="edgeBundleFile" accept="application/json" /></label>
+              <button class="btn quiet" type="button" id="btnEdgePull">Check family server</button>
+              <button class="btn quiet" type="button" id="btnEdgeClear">Clear</button>
+            </div>
+            <p class="soft" id="edgeBundleStatus" role="status" aria-live="polite"></p>
+            <dl class="edge-meta" id="edgeBundleMeta" hidden></dl>
+          </section>
           <section class="card" aria-labelledby="h-data">
             <h2 id="h-data">Your data</h2>
             <p class="soft">Everything is stored in this browser only. Nothing is uploaded.</p>
@@ -778,6 +790,7 @@
   <script type="module" src="bridge-symbols.js"></script>
   <script type="module" src="bridge-e2ee.js"></script>
   <script type="module" src="bridge-labels.js"></script>
+  <script type="module" src="bridge-edge.js"></script>
   <dialog id="dlgReset" aria-labelledby="dlgResetT">
     <form id="formReset" class="form" method="dialog">
       <h2 id="dlgResetT">Choose a new password</h2>

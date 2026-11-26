@@ -353,7 +353,7 @@ function renderFl() {
   renderFeelPrefs();
   const f = db().fl; $("#formFl").optIn.checked = !!f.optIn;
   $("#btnFlSend").disabled = !f.optIn;
-  if (!$("#flStatus").textContent) flStatus(`${samples().length} suggestion choices on this device to learn from.${f.version ? ` Shared model version ${f.version}.` : ""}${f.local ? " This device's personal model is in use." : ""}`);
+  if (!$("#flStatus").textContent) flStatus(`${samples().length} suggestion choices on this device to learn from.${f.version ? ` Shared model version ${f.version} (PRINCE v2 · TurboQuant 4-bit · Geomed).` : ""}${f.local ? " This device's personal model is in use." : ""}`);
 }
 $("#formFl").addEventListener("change", (e) => { db().fl.optIn = e.target.checked; B.save(e.target.checked ? "Joined shared learning" : "Left shared learning"); flStatus(""); renderFl(); });
 $("#btnFlTrain").addEventListener("click", async () => {

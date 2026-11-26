@@ -7,7 +7,7 @@
 <p align="center">A free AAC app for nonverbal people that learns their own language from the people who love them. Finally, technology that sees what you see.</p>
 
 <p align="center">
-  Version 0.20 &middot; free for families, forever &middot; vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
+  Version 0.21 &middot; free for families, forever &middot; vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
 </p>
 
 <p align="center">
@@ -66,6 +66,7 @@ A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as 
 | 16 | v0.17 | **Sound Path B–D and Safety Links** (from [the Sound Path plan](docs/SOUND-PATH.md)): Watch my mouth (family clips on the device), Mouth Mirror (jaw and lips, camera off by default), Sound and treat; tracker cards with battery reminders, an "if found" QR page with no location, a wandering plan sheet, smart sensor events and the "going out together" door rule; Bluetooth near or far (Android/Chrome); research-mode wristband "calm check?" behind a separate consent; export of labelled sounds |
 | 14 | v0.14.2 to v0.15 | **Lock-up fix and shared boards.** Sound games, stories and Sound Path no longer freeze the page after one go (their pop-ups opened inside the hidden Talk view); the microphone is let go when a game closes. **Open Board Format** import and export (.obf and .obz) in the Caregiver area, so boards move to and from CoughDrop, Cboard, AsTeRICS Grid and other AAC apps. |
 | 18 | v0.18.1 to v0.20 | **Enhancement milestones M1–M3.** M1: one voice and log for every spoken thing, Explore quietly covers every button, the Bridge updates My Voice in the same tab, offline symbols, a "Now" row for Bridge rules, hold-to-choose and ignore-repeat-taps for unsteady hands, switch scanning that reaches every choice, and WCAG AA contrast in every theme. M2: partner modeling mode, gestalt scripts with NLA stages, a body map, choice boards and Bridge routines in Plans, Find a word, word endings, OBF label and vocalization. M3: lighter Kokoro voices with pitch and expressive tone, meaning search, an opt-in sentence helper with a watchdog (rules, on-device model, Ollama or the family's own key), and a draft communication report for SLPs with append-only corrections. See [the research evaluation](docs/RESEARCH_EVALUATION.md) |
+| 19 | v0.21 | **MASTERNEX PRINCE v2, Offline C2SP Edge Bundles & Procedural Calm Audio.** `masternex-prince-fl.js` upgrades federated learning with true 4-bit TurboQuant (`R·S·R` Walsh–Hadamard rotation + Gaussian Lloyd-Max codebook), Smoothed Weiszfeld Geometric Median aggregation (0.5 Byzantine breakdown point + MAD outlier flagging), Adaptive Robust DP clipping, and optional server momentum (`FL_MOMENTUM`). `edge-bundle.js`, `bridge-edge.js` and `/api/edge-bundle` let families verify signed MASTERNEX.os offline PWA edge bundles (`masternex.pwa.edge-bundle/v1`) and C2SP `tlog-checkpoint` witness quorums directly in the browser via WebCrypto with zero cloud PII. `calm-audio.js` adds four offline procedural Web Audio soundscapes (Ocean, Rain, Stream, Soft hum) in My Voice's Calm Room, capped at a sensory-safe gain (`0.35`) with automatic TTS ducking. |
 
 ## Architecture
 
@@ -74,6 +75,7 @@ flowchart LR
   subgraph Child device
     MV[My Voice<br/>index.html] --> SH[(shared.js<br/>localStorage + IndexedDB)]
     MV --> GEO[geo.js<br/>safe zones]
+    MV --> CA[calm-audio.js<br/>procedural Web Audio + TTS ducking]
     MV --> SW1[Service worker<br/>offline cache]
     MV --> GM[games.js + interests.js<br/>sound games, history]
     MV -. caregiver-chosen videos only .-> YT[(youtube-nocookie.com)]
@@ -82,12 +84,13 @@ flowchart LR
     BR[The Bridge<br/>bridge.html] --> SH2[(shared.js<br/>localStorage + IndexedDB)]
     BR --> AI[ai.js + ai-worker.js<br/>speech emotion, Kokoro]
     BR --> EMO[emotion.js<br/>prosody + face]
-    BR --> FL[fl-core.js<br/>local training, DP, masks]
+    BR --> FL[fl-core.js + masternex-prince-fl.js<br/>TurboQuant 4-bit, Geomed, DP]
+    BR --> EB[edge-bundle.js + bridge-edge.js<br/>WebCrypto + C2SP verifier]
   end
   subgraph Family server - Node 18, zero dependencies
-    VF[api/index.js<br/>Vercel function] --> API[server.js<br/>sync, alerts, chat, sensors]
+    VF[api/index.js<br/>Vercel function] --> API[server.js<br/>sync, alerts, chat, sensors, edge-bundle]
     API --> ACC[accounts.js<br/>webauthn.js]
-    API --> FLS[flserver.js<br/>FedAvg, Shamir unmasking]
+    API --> FLS[flserver.js<br/>PRINCE v2, Shamir unmasking, momentum]
     API --> MAIL[mailer.js<br/>SMTP]
     API --> YTL[youtube.js<br/>channel lookup]
     API --> ST[(store.js<br/>JSON files)]
@@ -95,12 +98,12 @@ flowchart LR
   end
   SEN[Sensors, IFTTT,<br/>Home Assistant] -- webhook --> API
   MV <-- sync, alerts, pairing --> API
-  BR <-- sync, alerts, share links --> API
+  BR <-- sync, alerts, share links, edge bundles --> API
   FL -- masked weight deltas --> FLS
   AI -. models, first use only .-> HF[(Hugging Face Hub)]
 ```
 
-Everything works without the backend. The backend adds sync between devices, alerts, team chat, sensor webhooks, share links, accounts, YouTube channel lookups and federated learning. On the live site it runs at the same address as the app (`/api`).
+Everything works without the backend. The backend adds sync between devices, alerts, team chat, sensor webhooks, share links, accounts, YouTube channel lookups, verified offline edge bundle distribution and federated learning. On the live site it runs at the same address as the app (`/api`).
 
 ## Quick start
 
@@ -125,7 +128,7 @@ The live app at <https://luminaac.app> is deployed on Vercel from `main`, with n
 - `.vercelignore` keeps `native/`, `tests/`, `docs/`, `backend/test.mjs`, `backend/data/` and Markdown files (except `PRIVACY.md` and `THIRD-PARTY.md`) off public hosting. `screenshots/` is served because the in-app guide shows them.
 - Any static host works for the front end alone. Serve over HTTPS and don't cache `sw.js` long-term. Point the Bridge at your own server under Account and devices.
 
-When you change any shipped file, bump `VERSION` in `sw.js` (currently `luminaac-v0.18.0`) so devices pick up the new copy. When an update takes over, `pwa.js` reloads the Bridge once, and My Voice only while it is out of sight. To rebuild `guide.html` from `docs/CARETAKER-GUIDE.md`, run `python3 tools/mkguide.py` (needs the Python `markdown` package).
+When you change any shipped file, bump `VERSION` in `sw.js` (currently `luminaac-v0.21.0`) so devices pick up the new copy. When an update takes over, `pwa.js` reloads the Bridge once, and My Voice only while it is out of sight. To rebuild `guide.html` from `docs/CARETAKER-GUIDE.md`, run `python3 tools/mkguide.py` (needs the Python `markdown` package).
 
 ### Backend (optional)
 

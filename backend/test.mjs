@@ -525,6 +525,22 @@ t("youtube: @name without a key explains how to paste the channel link", /channe
   t("e2ee: sealed chat stored as is", c.status === 200 && c.json.data.text === sealedMsg && (await E.open(fk, c.json.data.text, "chat")) === "see you at 3");
 }
 
+// ---- Offline MASTERNEX PWA edge bundle + PRINCE v2 metadata ----
+{
+  const eb = await import("../edge-bundle.js");
+  const flm = (await call("GET", "/api/fl/model", null, TOK)).json.data;
+  t("prince: model exposes v2 metadata", flm.prince?.version === "v2" && flm.prince?.compression === "turboquant-4bit" && flm.prince?.aggregator === "geomed");
+  t("edge-bundle: empty initially", (await call("GET", "/api/edge-bundle", null, TOK)).json.data === null);
+  const manifest = { platform: "luminaac-ultimate", model_preset: "nano-mtp", quantization: "turboquant-4bit", offline_capable: true, zero_cloud_pii: true, packet_id: "pkt-test", tree_size: 2, root_hash: "b".repeat(64) };
+  const validBundle = { schema: "masternex.pwa.edge-bundle/v1", manifest, manifest_sha256: await eb.sha256Hex(eb.canonicalJson(manifest)), signature: "ab", signature_alg: "shield-hybrid-ed25519-mldsa", c2sp_checkpoint: { origin: "masternex.os/pwa/luminaac-ultimate", tree_size: 2, root_hash: "b".repeat(64), cosignatures: { "witness.luminaac-ultimate.edge": "sig" } } };
+  const tampered = { ...validBundle, manifest: { ...manifest, quantization: "tampered" } };
+  t("edge-bundle: tampered bundle rejected with 400", (await call("POST", "/api/edge-bundle", tampered, TOK)).status === 400);
+  t("edge-bundle: teacher cannot install bundle", (await call("POST", "/api/edge-bundle", validBundle, TT)).status === 403);
+  t("edge-bundle: parent installs verified bundle", (await call("POST", "/api/edge-bundle", validBundle, TOK)).status === 200);
+  t("edge-bundle: family devices read verified bundle", (await call("GET", "/api/edge-bundle", null, TT)).json.data?.manifest?.model_preset === "nano-mtp");
+  t("edge-bundle: parent removes bundle", (await call("DELETE", "/api/edge-bundle", null, TOK)).status === 200 && (await call("GET", "/api/edge-bundle", null, TOK)).json.data === null);
+}
+
 console.log(`\n${pass} passed, ${failN} failed`);
 
 server.close(); process.exit(failN ? 1 : 0);
