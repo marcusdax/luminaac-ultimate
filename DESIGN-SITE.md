@@ -1,80 +1,69 @@
-# LuminAAC website design direction: "Night to light"
+# LuminAAC website design direction: "Daylight prism"
 
-Status: November 2026, built at [`welcome/`](welcome/) (served at `/welcome/`). The app keeps its own calm direction in [DESIGN.md](DESIGN.md). The website doesn't have to look like the app: it is where LuminAAC is allowed to be a visual piece. They share the gold action colour, the body typeface and the word-class colours, so the site still feels like home when someone opens the app. Values live in `brand/brand-tokens.css` ("Website") and `welcome/site.css`, and are used by name.
+Status: November 2026, built at [`welcome/`](welcome/) (served at `/welcome/`, and at luminaac.org). This replaces the earlier "Night to light" direction (still in git history). The app keeps its own calm direction in [DESIGN.md](DESIGN.md). The website shares the app's body typeface (Atkinson Hyperlegible Next) and its word-class colours, so opening the app still feels like home.
 
-**The idea.** The logo is a wave (a voice) under a rising sun. The site tells that story as one scroll, from night to morning. Behind every section is the **Luminous Field**: a living, visionary mandala of light. You start in a night sky full of light where a voice can't get out yet. You finish in morning light, on the promise: free for families, forever. **Lit means chosen**: the gold marks only what matters (the call to action, the spoken word, "$0").
+**The idea.** White light goes into a prism and comes out as every colour. A voice works the same way: one person, every word they need. The site is pure daylight: pearl-white light, refracted rays, glass and a rainbow fringe wherever light bends. Nothing on the page is dark except the ink.
 
-**The message.** No one should have to pay for their voice to be heard. LuminAAC is free for nonverbal people, their families and caregivers, for the full app, forever. The founder's story is told in general terms: a single dad who refused to accept a voice in a box or behind a subscription. The site doesn't use the child's name or family photos.
+**The message.** No one should have to pay for their voice to be heard. LuminAAC is free for nonverbal people, their families and caregivers, for the full app, forever. The founder's story is told in general terms. The site doesn't use the child's name or family photos.
 
-## 1. The Luminous Field (`welcome/field.js`)
+## 1. The light (`welcome/prism.js`)
 
-One full-screen WebGL fragment shader behind the page, inspired by visionary art (intricate, radiant, sacred geometry) but kept light:
-- a flower-of-life mandala, with an inner layer and an outer layer turning slowly in opposite directions
-- iridescent filaments radiating from a warm golden heart
-- a fine "capillary" filigree that flows across the whole field
-- tap ripples (sky blue)
+One full-screen WebGL fragment shader behind the page:
+- pearl paper, faintly warm at the top and cool at the bottom
+- three soft pastel blooms of spectrum that drift
+- light rays falling from a light source, each with a rainbow fringe at its edge
+- caustics (light on the floor of a pool), tinted by the spectrum
+- a ring of spectrum where someone taps
 
-Each section sets the field with `data-*` attributes: `data-sky` (0 night, 1 morning), `data-center` and `data-center-m` (where the heart sits on desktop and on phones), `data-zoom` (0.6 times on portrait screens), `data-glow` (line intensity: 1 in the hero, 0.45 to 0.55 behind reading text) and `data-warm` (a warmer dusk behind the founder's story). Values ease over time, so the mood shifts the same way at any frame rate.
+Each section sets the light with `data-hue` (0 to 1 around the colour wheel) and `data-light` (where the light source sits, as x,y fractions of the screen). Values ease over time.
 
-The field scales its resolution down on slow devices, pauses when the tab is hidden, renders one still frame in Still mode or with reduced motion, and falls back to a CSS gradient without WebGL.
+**Readability rule:** the shader clamps every pixel to at least 90% brightness (`clamp(col, vec3(.9), vec3(1.))`), so the dark ink always reads on it. That is why the site needs no dark backings or scrims.
 
-## 2. Colour roles
+It renders at roughly half resolution, caps at 30 frames a second, pauses when the tab is hidden, draws one still frame in Still mode or with reduced motion, and falls back to a CSS gradient without WebGL.
+
+## 2. Colour (site-local `--p-*` tokens in `welcome/site.css`)
+
+The site defines its own colours, so the app's night theme in `tokens.css` can't leak in. `<html data-theme="day">` also turns that theme off.
 
 | Token | Value | Role |
 |---|---|---|
-| `--site-abyss` | `#080c11` | Deepest night, the page base |
-| `--site-day` | `#f6f2ea` | Morning paper behind the closing sections |
-| `--site-ink-night` | `#eef2f4` | Text on night (16.4:1). Night text also gets a soft dark halo (`--night-text-shadow`) so it reads over the field |
-| `--site-ink-night-soft` | `#a9b6bf` | Secondary text on night (8.9:1) |
-| `--ink` / `--ink-soft` | `#1c2630` / `#4b5864` | Text on morning (13.7:1 and 6.5:1) |
-| `--lit` | `#f2b33d` | **Primary.** Buttons, focus ring, the spoken word, "heard.", "$0" |
-| `--sky` / `--sky-deep` | `#64b5f6` / `#1f64a8` | **Accent.** The voice: links, ripples, the second button |
-| `--ember-deep` | `#a35200` | Eyebrows and the "$" on morning sections |
-| `--rose`, `--teal` | `#f2a7c3`, `#7fd6cf` | Iridescent line art only (mandala, constellation). Never text or UI |
-| `--wc-*` | Fitzgerald Key | Word tiles: lanterns, the freed words, board demos |
+| `--p-pearl` | `#f6f4ef` | Page base |
+| `--p-ink` | `#14202b` | Text and primary buttons (15.9:1 on pearl) |
+| `--p-ink-soft` | `#3c4955` | Secondary text (9.1:1) |
+| `--p-label` | `#5a34b8` | Eyebrow labels, tags, "per year" (7.9:1) |
+| `--p-spectrum` | rose, amber, sun, mint, sky, violet | Line art, glows, rays, the rainbow edge on glass. **Never small text** |
+| `--p-spectrum-text` | the spectrum deepened (`#b8235f` to `#6a3fd0`) | Gradient fill for large display words only ("heard.", "We let the light through.", "$0"). Every stop is at least 3:1 on pearl |
+| `--p-wc-*` | the board's word colours (day values) | Word tiles in the hero, the prism scene and taps |
+| `--p-glass` / `--p-glass-strong` | white at 66% / 84% | Glass cards, with an 18 px backdrop blur. Without backdrop-filter they use the stronger white |
 
-Rules:
-- One gold thing per screen.
-- Rainbow colour lives only in the light lines of the field and the mandalas. Text, buttons and cards stay in the core palette.
-- No gradient text, no gradient buttons, no glass panels.
+## 3. Type
 
-## 3. Typography
+- **Display:** Plus Jakarta Sans 800, letter-spacing −0.035em. Heavy and friendly at large sizes.
+- **Accent:** Instrument Serif italic, for the one word a heading turns on ("heard.", "not a subscription.", the pull quote), usually filled with `--p-spectrum-text`.
+- **Body:** Atkinson Hyperlegible Next 19 px / 1.6, the app's own typeface, chosen for low vision.
 
-- **Display: Fraunces** (SOFT 100, opsz 144, weights 300 to 400). Used for headlines, the manifesto, the founder's words and "$0".
-- **Body and UI: Atkinson Hyperlegible Next** (400, 600 and 800), the same as the app.
-- Scale: `--fs-hero` clamp(3.25–7rem), `--fs-d1` clamp(2.5–4.5rem), `--fs-d2` clamp(1.75–2.75rem), `--fs-lead` 22 px, `--fs-body` 18 px, `--fs-ui` 16 px, `--fs-meta` 14 px. Measure 38rem.
+## 4. Components
 
-## 4. Sections
+- **Glass card** (`.glass`): translucent white, backdrop blur, a white edge, a soft shadow, and a thin rainbow along the top edge where light enters.
+- **Buttons:** primary is ink with a spectrum glow on hover and focus; secondary is glass with an ink outline.
+- **Eyebrow:** violet uppercase label with a short rainbow bar before it.
+- **Word tiles:** the app's tiles, with a coloured base for their word class.
 
-| # | Section | Sky | What moves |
-|---|---|---|---|
-| 1 | **Hero:** "No one should have to pay to be heard." | night, full glow | Title lines rise out of a blur. Tap anywhere: a word tile floats up as a lantern, the field ripples, and the word is spoken (sound toggle in the header) |
-| 2 | **Manifesto** | night | The words light up one by one as you scroll. "box", "price tag" and "subscription" light in gold. Ends on "A voice is a right, not a subscription." |
-| 3 | **The box** | night | Pinned and scrubbed: a grey 3D box with a padlock and "$ / month". The lock falls, the lid swings open and the front drops. "I want to be heard" rises out as word tiles, and the headline changes to "We opened the box." |
-| 4 | **Our story** | warm dusk | An SVG flower-of-life mandala draws itself on scroll, then turns slowly with a beating heart |
-| 5 | **What makes it different** | night, low glow | A constellation of 8 differences around the logo. It cycles on its own until touched; arrow keys move between them |
-| 6 | **See it speak** | morning | A sticky tablet frame plays **real recordings** of the app (Talk, Calm, My day, Play, the Bridge). The chapter changes as you scroll or tap. On phones the chapters become pills under the tablet |
-| 7 | **$0** | morning | Counts down from 300 to 0. The "per…" line steps through month → year → the full app → every family → forever |
-| 8 | **Get LuminAAC** | morning | Open in the browser (`/`), Add to home screen (a real Install button where the browser supports it, plus steps for iPad/iPhone and Android), App Store and Google Play marked "Coming soon" (honest: not submitted yet, see docs/STORE-CHECKLIST.md) |
-| 9 | **Guides** (`#resources`) | morning | Three PDF cards (brochure, user guide, clinician brief) with cover thumbnails, served from `welcome/docs/`. Cards rise in on scroll and lift on hover |
+## 5. Sections and motion (GSAP + ScrollTrigger, Lenis smooth scroll)
 
-## 5. Components
+1. **Hero.** The title rises out of a blur; a glass prism turns in; a beam of white light enters and fans out into six coloured rays; the words "I want to be heard" ride out along the rays. Tap anywhere in the hero and a word appears in its board colour, is spoken aloud (when sound is on) and sends a ring of spectrum through the light.
+2. **Manifesto.** Pinned. Each word catches the light as you scroll; "box", "price tag" and "subscription" turn into spectrum italics.
+3. **The prism (Why it's free).** Pinned scroll scene. A locked "$ / month" box fades back, a beam passes through glass and splits into rays, and the words "I want to be heard" come out. The heading turns from "Other apps keep a voice in a box." to "We let the light through."
+4. **Story.** Rings of spectrum turning slowly beside a glass card with the founder's words.
+5. **Spectrum of differences.** A rainbow band paints across; eight values as glass chips with their own colour; a panel explains the chosen one. It cycles on its own and stops when someone points at or focuses it. Arrow keys move between chips.
+6. **See it speak.** The app's real recordings (unchanged) in a glass tablet with a spectrum glow. The chapters follow the scroll. On phones and tablets, the tablet, chapter pills and text stay on screen as one block.
+7. **What's new, $0, Get it, Guides.** Glass cards that rise in with a little depth; "$0" counts down from 300 and blooms out of the light.
 
-- **Buttons:** primary `--lit` pill (56 px), ghost `--sky` outline, ink button on cards. 3 px gold focus ring everywhere.
-- **Header:** transparent over the hero; turns into a band after 80 px (dark at night, paper in the morning). Sound and Still toggles are 44 px icon buttons with `aria-pressed`.
-- **Lanterns and freed words** reuse the app's tile look: a tint fill and a class-colour band.
-- **Device frame:** dark bezel, 34 px radius, with the recording at the app's 1180×820 aspect ratio.
+Still mode (the pause button, remembered on the device) and `prefers-reduced-motion` turn every animation off, show the finished state of each scene and draw the light once.
 
-## 6. Motion and access
+## 6. Accessibility
 
-- Libraries are vendored in `welcome/vendor/`: GSAP 3.13 with ScrollTrigger and SplitText (GreenSock standard no-charge licence), and Lenis 1.3.4 smooth scroll (MIT).
-- **Still mode** (header button, remembered) and `prefers-reduced-motion`: the field renders one frame, there is no smooth scroll and no pinning, every section shows its final state, the walkthrough shows a play button instead of autoplaying, and lanterns fade in place.
-- Videos are muted, `playsinline`, play only while on screen, and have a WebM fallback.
-- Nothing flashes. Ripples fade over 6 s.
-
-## 7. Imagery
-
-- **Walkthroughs:** recorded from the real app with `tools/record-walkthroughs.js` (Playwright, with a visible gold "finger"), then encoded to H.264 MP4 plus VP9 WebM with posters, about 4 MB in total. Re-record them whenever the app's look changes.
-- **No stock and no family photos.** All art is generated in code: the field shader and the SVG mandala and constellation.
-- **Icons:** stroked, 24 px, 2 px or 1.8 px lines. No emoji in the site interface; emoji appear only inside app recordings.
-- **R&D decks and Drive:** the VIVELLA poster's radial "compass" geometry informed the constellation. Its branding is not used.
+- Text over the light is checked against the rendered pixels, not just the tokens.
+- All interactive pieces are real buttons and links with visible focus (ink outline plus a violet halo).
+- Decorative art is `aria-hidden`. The prism scene's words are also in the heading and copy.
+- Targets are at least 44 px.
