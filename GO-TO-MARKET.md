@@ -1,12 +1,12 @@
 # Go-to-market
 
 ## Positioning
-**For** parents of nonverbal and minimally speaking children **who** already understand their child's signals but can't get the rest of the world to see them, **LuminAAC** is the AAC app that **learns your child's own language from you**. Unlike symbol-only AAC apps, it turns your knowledge into words your child can use everywhere.
+**For** nonverbal and minimally speaking people, and the families and caregivers who already understand their signals but can't get the rest of the world to see them, **LuminAAC** is the AAC app that **learns a person's own language from the people who love them**. Unlike symbol-only AAC apps, it turns that knowledge into words they can use everywhere. It is free for families, forever.
 
-Tagline options: "Finally, technology that sees what you see." · "Their voice. Not someone else's."
+Lead line: **"No one should have to pay to be heard."** Second line: **"Finally, technology that sees what you see."** Supporting line: "Their voice. Not someone else's." See [.claude/brand-voice-guidelines.md](.claude/brand-voice-guidelines.md).
 
 ## Audiences
-1. **Parents (free core)** – acquisition engine and source of truth.
+1. **Families and caregivers (free, forever)** – the people LuminAAC is for, and the source of truth.
 2. **Speech-language pathologists and therapists** – credibility, referrals, paid clinical tier.
 3. **Schools and districts** – paid seats; teachers get the shared signal guide.
 4. **Researchers** – opt-in, de-identified data partnerships (ethics board reviewed).
@@ -14,8 +14,7 @@ Tagline options: "Finally, technology that sees what you see." · "Their voice. 
 ## Model: monetization with impact
 | Tier | Price (draft) | What |
 |---|---|---|
-| Family | Free forever | My Voice, the Bridge, local learning, sharing with up to 3 people |
-| Family plus | $6/mo (waivable) | Encrypted backup, multi-device sync, unlimited circle |
+| Family | Free forever | Everything a family needs: My Voice, the Bridge, local learning, encrypted backup, multi-device sync and the whole care circle. There is no paid family tier, now or later |
 | Clinic | $29/clinician/mo | Caseload dashboard, progress reports, goal tracking |
 | School | per-student annual | Teacher views, IEP-ready exports, SSO |
 
@@ -36,4 +35,4 @@ North star: **signals confirmed by someone other than the parent** per child per
 Parent groups and AAC forums, SLP associations (ASHA conventions), autism nonprofits, app store search ("AAC app learns"), content on reading nonverbal cues.
 
 ## Risks
-Clinical claims (avoid; frame as a communication aid), data trust (local-first is the answer), AI over-promise (be honest about what is simulated today).
+Clinical claims (avoid; frame as a communication aid), any paid family tier (rejected: it breaks the promise the brand is built on), data trust (local-first is the answer), AI over-promise (be honest about what is simulated today).

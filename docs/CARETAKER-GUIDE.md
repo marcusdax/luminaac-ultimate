@@ -2,7 +2,7 @@
 
 A friendly guide for parents, grandparents, carers, teachers and therapists. You don't need to be technical. Read the [quick start](#quick-start) if you only have five minutes, and come back to the rest when you need it.
 
-*This guide covers LuminAAC version 0.16 (November 2026). Open the app at [luminaac-web.vercel.app](https://luminaac-web.vercel.app): My Voice for your child, [the Bridge](https://luminaac-web.vercel.app/bridge.html) for you.*
+*This guide covers LuminAAC version 0.16 (November 2026). Open the app at [luminaac.app](https://luminaac.app): My Voice for your child, [the Bridge](https://luminaac.app/bridge.html) for you.*
 
 ## Contents
 
@@ -49,7 +49,7 @@ Everything works on your own device. You don't need an account, and nothing leav
 <a id="first-setup"></a>
 ## 2. First setup
 
-1. Open [luminaac-web.vercel.app/bridge.html](https://luminaac-web.vercel.app/bridge.html) in your browser (Chrome, Edge or Safari). On your child's device, open [luminaac-web.vercel.app](https://luminaac-web.vercel.app) for My Voice.
+1. Open [luminaac.app/bridge.html](https://luminaac.app/bridge.html) in your browser (Chrome, Edge or Safari). On your child's device, open [luminaac.app](https://luminaac.app) for My Voice.
 2. A short welcome appears: "You know your child better than anyone." Type your child's name.
 3. Type what we should call you, and choose your role (parent, teacher, therapist or family member).
 4. Read the three-step idea (catch it, say what it meant, watch them be heard), then finish. You'll see the **Today** page. **Skip for now** is fine too.
@@ -58,7 +58,7 @@ The first time, LuminAAC loads some sample moments so the pages aren't empty. Yo
 
 **Tip:** you can open the welcome again from the Bridge any time if someone new is setting up.
 
-**How the app is laid out.** Since version 0.13 every device uses the simpler layout below. If you prefer the older one with a long row of tabs, open the app once with `?redesign=0` at the end of the address (for example `luminaac-web.vercel.app/bridge.html?redesign=0`). Use `?redesign=1` to come back. Each device remembers its choice. The page names in this guide (Vocabulary, Insights, Safety and so on) are the same in both.
+**How the app is laid out.** Since version 0.13 every device uses the simpler layout below. If you prefer the older one with a long row of tabs, open the app once with `?redesign=0` at the end of the address (for example `luminaac.app/bridge.html?redesign=0`). Use `?redesign=1` to come back. Each device remembers its choice. The page names in this guide (Vocabulary, Insights, Safety and so on) are the same in both.
 
 - **The Bridge** groups its pages into five buttons: **Home**, **Programs** (vocabulary, stories, Sound Path, Potty Path, videos and games), **Progress** (signals and insights), **Circle** (team and chat, account and devices, privacy) and **Safety**. Small tabs under the title switch pages inside a group, and each group remembers where you were. On a phone the buttons sit along the bottom; swipe them left and right if they don't all fit.
 - **My Voice** gets **Talk**, **Calm**, **My day** (plans), **Play** (stories, videos, sound games and Sound Path in one place) and **Caregiver**. While a plan is under way, a **Now / Next** line at the top of Talk shows the step to do now and the one after.
@@ -495,7 +495,7 @@ Use **See it as** to check exactly what someone else sees. Anyone can add a note
 
 1. Create your family account on **Account and devices** (see [section 15](#accounts)).
 2. Under **Members**, pick a role (teacher, therapist, family member or co-parent) and choose **Create invite code**. Each code works once, for 7 days.
-3. Send the code to the person. They open [the Bridge](https://luminaac-web.vercel.app/bridge.html) on their own phone or computer, go to **Account and devices**, create an account with the code under **Invite code, if someone invited you**, and then see the chat on **Team**.
+3. Send the code to the person. They open [the Bridge](https://luminaac.app/bridge.html) on their own phone or computer, go to **Account and devices**, create an account with the code under **Invite code, if someone invited you**, and then see the chat on **Team**.
 
 Messages show who wrote them and their role. A dot on **Circle** (or **Team**) means there's something new. Press Ctrl+Enter (or Cmd+Enter) to send from a keyboard. A parent can delete any message.
 
@@ -532,7 +532,7 @@ Under **Privacy → Help improve suggestions for everyone** you can join shared 
 
 You can add LuminAAC to your home screen so it opens like an app and works offline.
 
-Open [luminaac-web.vercel.app](https://luminaac-web.vercel.app) (My Voice) or [the Bridge](https://luminaac-web.vercel.app/bridge.html) first.
+Open [luminaac.app](https://luminaac.app) (My Voice) or [the Bridge](https://luminaac.app/bridge.html) first.
 
 - **Chrome or Edge (Android, Windows, Mac):** choose **Install app** in the Bridge header, or the install icon in the address bar.
 - **iPhone or iPad (Safari):** tap Share, then **Add to Home Screen**.
