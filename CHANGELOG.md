@@ -2,6 +2,14 @@
 
 All notable changes. Versions match the service worker cache name in `sw.js`.
 
+## Unreleased: brand and website
+- **Brand guidelines** ([.claude/brand-voice-guidelines.md](.claude/brand-voice-guidelines.md)) and the [discovery report](docs/BRAND-DISCOVERY.md). Lead line "No one should have to pay to be heard.", second line "Finally, technology that sees what you see."
+- **No paid tier for families:** the draft "Family plus" tier is removed from GO-TO-MARKET; backup, sync and the full care circle are free.
+- **"Nonverbal people"** in the README, About page and GO-TO-MARKET. Guide and README links now point to luminaac.app.
+- **Website:** "Daylight prism" direction, a longer founder story (no names), the second tagline, sensing described as optional, and walkthroughs re-recorded from the current app.
+- **Public vision** in plain language: [docs/VISION.md](docs/VISION.md).
+- `tools/record-walkthroughs.js` renamed to `.cjs` so it runs under the package's ES module setting.
+
 ## 0.20.0 (18 November 2026)
 Milestone M3 (features 14–17). Everything new is off by default except the built-in meaning search.
 ### Added

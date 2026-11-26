@@ -78,9 +78,9 @@
   /* ---------- spectrum of differences ---------- */
   const DIFF = [
     ["Free, forever", "The full app for every family. No trial, no tier, no ads.", "#e0517f"],
-    ["Learns their voice", "It notices the sounds and moments your child already uses, then asks you what they mean.", "#ee8b2c"],
+    ["Learns their voice", "It notices the sounds and moments they already use, then asks you what they mean. You are their best translator.", "#ee8b2c"],
     ["Words stay put", "Core words never move, so hands can learn where they live.", "#e8c13a"],
-    ["Private by default", "Words and recordings stay on your own devices unless you choose to sync.", "#3fb98a"],
+    ["Private by default", "Words and recordings stay on your own devices unless you choose to sync. Camera, microphone and sensors are optional, and only switch on when you ask.", "#3fb98a"],
     ["Works offline", "No signal at the doctor's? It still speaks.", "#2fb3b3"],
     ["Calm by design", "No ads, no clutter, no flashing. One lit word at a time.", "#3d8fe0"],
     ["Plays well with others", "Bring boards from other AAC apps, or take yours with you.", "#6a7fe0"],

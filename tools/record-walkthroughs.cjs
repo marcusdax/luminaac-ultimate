@@ -1,6 +1,6 @@
 // Re-records the website walkthroughs (welcome/media) from the real app.
 // Usage: python3 -m http.server 8765 (repo root), then:
-//   node tools/record-walkthroughs.js /tmp/rec [talk|calm|day|play|bridge]
+//   node tools/record-walkthroughs.cjs /tmp/rec [talk|calm|day|play|bridge]
 // Then encode each raw .webm to welcome/media/<name>.mp4/.webm/.jpg (see DESIGN-SITE.md §7).
 // Records walkthroughs of the real LuminAAC app with a visible "finger".
 const {chromium}=require('playwright');

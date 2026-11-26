@@ -2,14 +2,16 @@
   <img src="brand/logo-wordmark.svg" alt="LuminAAC" width="320" />
 </p>
 
-<h3 align="center">An AAC app for nonverbal children that learns the child's own language from the people who love them.</h3>
+<h3 align="center">No one should have to pay to be heard.</h3>
+
+<p align="center">A free AAC app for nonverbal people that learns their own language from the people who love them. Finally, technology that sees what you see.</p>
 
 <p align="center">
-  Version 0.18 &middot; vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
+  Version 0.20 &middot; free for families, forever &middot; vanilla HTML, CSS and JavaScript &middot; no build step &middot; installable PWA &middot; WCAG 2.2 AA &middot; local-first
 </p>
 
 <p align="center">
-  <strong>Try it:</strong> <a href="https://luminaac-web.vercel.app">My Voice</a> &middot; <a href="https://luminaac-web.vercel.app/bridge.html">The Bridge</a> &middot; <a href="https://luminaac-web.vercel.app/guide.html">Caretaker guide</a><br />
+  <strong>Try it:</strong> <a href="https://luminaac.app">My Voice</a> &middot; <a href="https://luminaac.app/bridge.html">The Bridge</a> &middot; <a href="https://luminaac.app/guide.html">Caretaker guide</a> &middot; <a href="https://luminaac.org">luminaac.org</a><br />
   Open on a phone or tablet and choose <em>Add to Home Screen</em> (Safari) or <em>Install app</em> (Chrome).
 </p>
 
@@ -17,14 +19,14 @@
 
 ## Mission
 
-Many nonverbal children already communicate: a hum that means "more", a hand flap that means "I'm done", a look toward the door. The people around them learn these signals, but the knowledge lives in their heads. LuminAAC captures those moments, lets caregivers say what they meant, and turns them into words the child can use on their own talker. The child's voice gets stronger every day, and the family stays in control of every byte.
+Many nonverbal people already communicate: a hum that means "more", a hand flap that means "I'm done", a look toward the door. The people around them learn these signals, but the knowledge lives in their heads. LuminAAC captures those moments, lets caregivers say what they meant, and turns them into words they can use on their own talker. Their voice gets stronger every day, and the family stays in control of every byte.
 
 Two connected experiences:
 
 - **My Voice** (`index.html`): the child's talker. A motor-stable core-word board with speech, quick phrases, prediction, proactive suggestions from learned signals, help buttons, an "I need the toilet" button, **My videos** (only caregiver-chosen videos and YouTube channels, then a "Talk about it" board), four gentle **Sound games** and **Sound Path**.
 - **The Bridge** (`bridge.html`): the caregiver portal. Catch a 15-second moment, say what it meant, and watch My Voice start offering the right words. Includes a signal library, vocabulary rules, stories, a **Videos and games** tab, insights with **Interests and history** and a printable therapist summary, sharing, **team chat**, safe zones (circles, hand-drawn shapes and water danger zones), **sensors and wearable trackers**, Potty Path, Sound Path and privacy controls.
 
-A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as [`guide.html`](https://luminaac-web.vercel.app/guide.html), linked from the Bridge header and the My Voice caregiver area, and cached for offline use) walks families through everything, with a printable quick-start one-pager.
+A plain-language [Caretaker guide](docs/CARETAKER-GUIDE.md) (also in the app as [`guide.html`](https://luminaac.app/guide.html), linked from the Bridge header and the My Voice caregiver area, and cached for offline use) walks families through everything, with a printable quick-start one-pager.
 
 ## Screenshots
 
@@ -115,7 +117,7 @@ The microphone, camera and service worker need `localhost` or HTTPS.
 
 ### Hosting
 
-The live app at <https://luminaac-web.vercel.app> is deployed on Vercel from `main`, with no build step. Pushing to `main` deploys it.
+The live app at <https://luminaac.app> is deployed on Vercel from `main`, with no build step. Pushing to `main` deploys it.
 
 - `vercel.json` serves the repository root as is, and sends `sw.js` and the web manifests with `Cache-Control: no-cache` so updates reach installed apps. `sw.js` also gets `Service-Worker-Allowed: /`.
 - **The family server** runs as one Vercel function, `api/index.js`, and `vercel.json` rewrites every `/api/*` path to it. It is the unchanged `backend/server.js`. Vercel's disk is temporary, so `backend/mirror.js` copies the server's JSON files to and from Upstash Redis around each request (one `HGETALL` per request, and only changed files are read or written). It needs `KV_REST_API_URL` and `KV_REST_API_TOKEN`, which the Upstash integration sets. Without them, `/api` answers 503 except `/api/health` and `/api/youtube`.

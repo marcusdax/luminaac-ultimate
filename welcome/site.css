@@ -195,6 +195,7 @@ section { position: relative; padding-block: var(--sec); }
 @media (max-width: 860px) { .story-grid { grid-template-columns: 1fr; } .story-light { max-width: 240px; } }
 
 /* ---------- 5 spectrum of differences ---------- */
+#different .intro { max-width: 46rem; margin-top: var(--s4); }
 .spectrum { margin-top: var(--s6); }
 .s-band { height: 10px; border-radius: 10px; background: var(--p-spectrum); opacity: 0.85; margin-bottom: var(--s5); box-shadow: 0 6px 24px -6px rgba(139, 111, 224, 0.5); }
 .s-nodes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s3); }
